@@ -89,7 +89,7 @@ ul.task-list li input[type="checkbox"] {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="../docs/index.html" aria-current="page"> 
+    <a class="nav-link" href="../index.qmd" target="docs/index.qmd"> 
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
@@ -132,7 +132,8 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#design-philosophy" id="toc-design-philosophy" class="nav-link active" data-scroll-target="#design-philosophy">Design Philosophy</a></li>
+  <li><a href="#features" id="toc-features" class="nav-link active" data-scroll-target="#features">Features</a></li>
+  <li><a href="#design-philosophy" id="toc-design-philosophy" class="nav-link" data-scroll-target="#design-philosophy">Design Philosophy</a></li>
   <li><a href="#tech-stack" id="toc-tech-stack" class="nav-link" data-scroll-target="#tech-stack">Tech Stack</a></li>
   <li><a href="#license" id="toc-license" class="nav-link" data-scroll-target="#license">License</a></li>
   </ul>
@@ -166,6 +167,8 @@ ul.task-list li input[type="checkbox"] {
 <figcaption>Screenshot of homepage</figcaption>
 </figure>
 </div>
+<section id="features" class="level2">
+<h2 class="anchored" data-anchor-id="features">Features</h2>
 <p>This template combines three of the most lightweight and performant open-source web development frameworks into a customizable webapp template with:</p>
 <ul>
 <li>Pure Python backend</li>
@@ -178,6 +181,7 @@ ul.task-list li input[type="checkbox"] {
 <li>Password recovery flow</li>
 <li>Role-based access control system</li>
 </ul>
+</section>
 <section id="design-philosophy" class="level2">
 <h2 class="anchored" data-anchor-id="design-philosophy">Design Philosophy</h2>
 <p>The design philosophy of the template is to prefer low-level, best-in-class open-source frameworks that offer flexibility, scalability, and performance without vendor-lock-in. You’ll find the template amazingly easy not only to understand and customize, but also to deploy to any major cloud hosting platform.</p>
@@ -287,7 +291,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   }
     var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
     var mailtoRegex = new RegExp(/^mailto:/);
-      var filterRegex = new RegExp('/' + window.location.host + '/');
+      var filterRegex = new RegExp("https:\/\/Promptly-Technologies-LLC\.github\.io\/fastapi-jinja2-postgres-webapp\/");
     var isInternal = (href) => {
         return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
     }

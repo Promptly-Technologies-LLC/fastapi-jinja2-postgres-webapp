@@ -102,7 +102,14 @@
     "href": "docs/index.html",
     "title": "FastAPI, Jinja2, PostgreSQL Webapp Template",
     "section": "",
-    "text": "Screenshot of homepage\nThis template combines three of the most lightweight and performant open-source web development frameworks into a customizable webapp template with:\nThe template also includes full-featured secure auth with:"
+    "text": "Screenshot of homepage"
+  },
+  {
+    "objectID": "docs/index.html#features",
+    "href": "docs/index.html#features",
+    "title": "FastAPI, Jinja2, PostgreSQL Webapp Template",
+    "section": "Features",
+    "text": "Features\nThis template combines three of the most lightweight and performant open-source web development frameworks into a customizable webapp template with:\n\nPure Python backend\nLow-Javascript frontend\nPowerful, easy-to-manage database layer\n\nThe template also includes full-featured secure auth with:\n\nToken-based authentication\nPassword recovery flow\nRole-based access control system"
   },
   {
     "objectID": "docs/index.html#design-philosophy",
