@@ -67,7 +67,7 @@
     "href": "docs/contributing.html#maintainers",
     "title": "Contributing",
     "section": "Maintainers",
-    "text": "Maintainers\n\nIncrement the version\nRun the following command to increment the version:\npoetry version patch minor\n\n\nPublish the documentation\nTo publish the documentation to GitHub Pages, run the following command:\nquarto publish"
+    "text": "Maintainers\n\nIncrement the version\nRun the following command to increment the version:\npoetry version patch minor\n\n\nPublish the documentation\nTo publish the documentation to GitHub Pages, run the following command:\nquarto publish gh-pages"
   },
   {
     "objectID": "docs/architecture.html",
