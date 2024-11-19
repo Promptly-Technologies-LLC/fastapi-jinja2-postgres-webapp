@@ -46,14 +46,14 @@
     "href": "docs/contributing.html",
     "title": "Contributing",
     "section": "",
-    "text": "Fork the repository, create a new branch, make your changes, and submit a pull request.\n\n\nThe documentation is rendered with Quarto. Make changes to the .qmd files in the docs folder. Then run the following command to render:\nquarto render"
+    "text": "Fork the repository, create a new branch, make your changes, and submit a pull request.\n\n\nThe README and documentation website are rendered with Quarto. Make changes to the .qmd files in the root folder and the docs folder. Then run the following commands to render:\n# To render the documentation website\nquarto render\n# To render the README\nquarto render index.qmd --output-dir . --output README.md --to gfm\nDue to a quirk of Quarto, an unnecessary index.html file is created in the root folder when the README is rendered. This file can be safely deleted."
   },
   {
     "objectID": "docs/contributing.html#contributors",
     "href": "docs/contributing.html#contributors",
     "title": "Contributing",
     "section": "",
-    "text": "Fork the repository, create a new branch, make your changes, and submit a pull request.\n\n\nThe documentation is rendered with Quarto. Make changes to the .qmd files in the docs folder. Then run the following command to render:\nquarto render"
+    "text": "Fork the repository, create a new branch, make your changes, and submit a pull request.\n\n\nThe README and documentation website are rendered with Quarto. Make changes to the .qmd files in the root folder and the docs folder. Then run the following commands to render:\n# To render the documentation website\nquarto render\n# To render the README\nquarto render index.qmd --output-dir . --output README.md --to gfm\nDue to a quirk of Quarto, an unnecessary index.html file is created in the root folder when the README is rendered. This file can be safely deleted."
   },
   {
     "objectID": "docs/contributing.html#maintainers",

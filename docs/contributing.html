@@ -205,8 +205,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Fork the repository, create a new branch, make your changes, and submit a pull request.</p>
 <section id="render-the-documentation" class="level3">
 <h3 class="anchored" data-anchor-id="render-the-documentation">Render the documentation</h3>
-<p>The documentation is rendered with <a href="https://quarto.org/docs/">Quarto</a>. Make changes to the <code>.qmd</code> files in the <code>docs</code> folder. Then run the following command to render:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> render</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The README and documentation website are rendered with <a href="https://quarto.org/docs/">Quarto</a>. Make changes to the <code>.qmd</code> files in the root folder and the <code>docs</code> folder. Then run the following commands to render:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># To render the documentation website</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> render</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># To render the README</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> render index.qmd <span class="at">--output-dir</span> . <span class="at">--output</span> README.md <span class="at">--to</span> gfm</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Due to a quirk of Quarto, an unnecessary <code>index.html</code> file is created in the root folder when the README is rendered. This file can be safely deleted.</p>
 </section>
 </section>
 <section id="maintainers" class="level2">
