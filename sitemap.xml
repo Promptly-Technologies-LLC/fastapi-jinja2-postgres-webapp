@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/installation.html</loc>
-    <lastmod>2024-11-19T16:55:55.609Z</lastmod>
+    <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/index.html</loc>
+    <lastmod>2024-11-19T21:01:46.328Z</lastmod>
   </url>
   <url>
     <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/deployment.html</loc>
@@ -25,7 +25,7 @@
     <lastmod>2024-11-19T16:55:55.563Z</lastmod>
   </url>
   <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/index.html</loc>
-    <lastmod>2024-11-19T20:43:26.596Z</lastmod>
+    <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/installation.html</loc>
+    <lastmod>2024-11-19T16:55:55.609Z</lastmod>
   </url>
 </urlset>
