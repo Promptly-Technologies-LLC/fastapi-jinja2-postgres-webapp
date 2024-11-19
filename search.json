@@ -1,0 +1,128 @@
+[
+  {
+    "objectID": "docs/installation.html",
+    "href": "docs/installation.html",
+    "title": "Installation",
+    "section": "",
+    "text": "If you use VSCode with Docker to develop in a container, the following VSCode Dev Container configuration will install all dependencies:\n{\n    \"name\": \"Python 3\",\n    \"image\": \"mcr.microsoft.com/devcontainers/python:1-3.12-bullseye\",\n    \"postCreateCommand\": \"sudo apt update && sudo apt install -y python3-dev libpq-dev graphviz && pipx install poetry && poetry install && poetry shell\",\n    \"features\": {\n        \"ghcr.io/devcontainers/features/docker-outside-of-docker:1\": {},\n        \"ghcr.io/rocker-org/devcontainer-features/quarto-cli:1\": {}\n    }\n}\nSimply create a .devcontainer folder in the root of the project and add a devcontainer.json file in the folder with the above content. VSCode may prompt you to install the Dev Container extension if you haven’t already, and/or to open the project in a container. If not, you can manually select “Dev Containers: Reopen in Container” from View &gt; Command Palette."
+  },
+  {
+    "objectID": "docs/installation.html#install-development-dependencies-in-a-vscode-dev-container",
+    "href": "docs/installation.html#install-development-dependencies-in-a-vscode-dev-container",
+    "title": "Installation",
+    "section": "",
+    "text": "If you use VSCode with Docker to develop in a container, the following VSCode Dev Container configuration will install all dependencies:\n{\n    \"name\": \"Python 3\",\n    \"image\": \"mcr.microsoft.com/devcontainers/python:1-3.12-bullseye\",\n    \"postCreateCommand\": \"sudo apt update && sudo apt install -y python3-dev libpq-dev graphviz && pipx install poetry && poetry install && poetry shell\",\n    \"features\": {\n        \"ghcr.io/devcontainers/features/docker-outside-of-docker:1\": {},\n        \"ghcr.io/rocker-org/devcontainer-features/quarto-cli:1\": {}\n    }\n}\nSimply create a .devcontainer folder in the root of the project and add a devcontainer.json file in the folder with the above content. VSCode may prompt you to install the Dev Container extension if you haven’t already, and/or to open the project in a container. If not, you can manually select “Dev Containers: Reopen in Container” from View &gt; Command Palette."
+  },
+  {
+    "objectID": "docs/installation.html#install-development-dependencies-manually",
+    "href": "docs/installation.html#install-development-dependencies-manually",
+    "title": "Installation",
+    "section": "Install development dependencies manually",
+    "text": "Install development dependencies manually\n\nPython and Docker\n\nPython 3.12 or higher\nDocker and Docker Compose\n\n\n\nPostgreSQL headers\nFor Ubuntu/Debian:\nsudo apt update && sudo apt install -y python3-dev libpq-dev\nFor macOS:\nbrew install postgresql\nFor Windows:\n\nNo installation required\n\n\n\nQuarto CLI and Graphviz\n\nQuarto CLI\n\nFor macOS:\nbrew install graphviz\nFor Ubuntu/Debian:\nsudo apt update && sudo apt install -y graphviz\nFor Windows:\n\nDownload and install from Graphviz.org\n\n\n\nPython dependencies\n\nInstall Poetry\n\npipx install poetry\n\nInstall project dependencies\n\npoetry install\n\nActivate shell\n\npoetry shell\n(Note: You will need to activate the shell every time you open a new terminal session. Alternatively, you can use the poetry run prefix before other commands to run them without activating the shell.)"
+  },
+  {
+    "objectID": "docs/installation.html#set-environment-variables",
+    "href": "docs/installation.html#set-environment-variables",
+    "title": "Installation",
+    "section": "Set environment variables",
+    "text": "Set environment variables\nCopy .env.example to .env with cp .env.example .env.\nGenerate a 256 bit secret key with openssl rand -base64 32 and paste it into the .env file.\nSet your desired database name, username, and password in the .env file.\nTo use password recovery, register a Resend account, verify a domain, get an API key, and paste the API key into the .env file."
+  },
+  {
+    "objectID": "docs/installation.html#start-development-database",
+    "href": "docs/installation.html#start-development-database",
+    "title": "Installation",
+    "section": "Start development database",
+    "text": "Start development database\ndocker compose up -d"
+  },
+  {
+    "objectID": "docs/installation.html#run-the-development-server",
+    "href": "docs/installation.html#run-the-development-server",
+    "title": "Installation",
+    "section": "Run the development server",
+    "text": "Run the development server\nMake sure the development database is running and tables and default permissions/roles are created first.\nuvicorn main:app --host 0.0.0.0 --port 8000 --reload\nNavigate to http://localhost:8000/"
+  },
+  {
+    "objectID": "docs/installation.html#lint-types-with-mypy",
+    "href": "docs/installation.html#lint-types-with-mypy",
+    "title": "Installation",
+    "section": "Lint types with mypy",
+    "text": "Lint types with mypy\nmypy ."
+  },
+  {
+    "objectID": "docs/contributing.html",
+    "href": "docs/contributing.html",
+    "title": "Contributing",
+    "section": "",
+    "text": "Fork the repository, create a new branch, make your changes, and submit a pull request.\n\n\nThe documentation is rendered with Quarto. Make changes to the .qmd files in the docs folder. Then run the following command to render:\nquarto render"
+  },
+  {
+    "objectID": "docs/contributing.html#contributors",
+    "href": "docs/contributing.html#contributors",
+    "title": "Contributing",
+    "section": "",
+    "text": "Fork the repository, create a new branch, make your changes, and submit a pull request.\n\n\nThe documentation is rendered with Quarto. Make changes to the .qmd files in the docs folder. Then run the following command to render:\nquarto render"
+  },
+  {
+    "objectID": "docs/contributing.html#maintainers",
+    "href": "docs/contributing.html#maintainers",
+    "title": "Contributing",
+    "section": "Maintainers",
+    "text": "Maintainers\n\nIncrement the version\nRun the following command to increment the version:\npoetry version patch minor\n\n\nPublish the documentation\nTo publish the documentation to GitHub Pages, run the following command:\nquarto publish"
+  },
+  {
+    "objectID": "docs/architecture.html",
+    "href": "docs/architecture.html",
+    "title": "Architecture",
+    "section": "",
+    "text": "This application uses a Post-Redirect-Get (PRG) pattern. The user submits a form, which sends a POST request to a FastAPI endpoint on the server. The database is updated, and the user is redirected to a GET endpoint, which fetches the updated data and re-renders the Jinja2 page template with the new data.\n\n\n\nWebapp Flow\n\n\nThe advantage of the PRG pattern is that it is very straightforward to implement and keeps most of the rendering logic on the server side. The disadvantage is that it requires an extra round trip to the database to fetch the updated data, and re-rendering the entire page template may be less efficient than a partial page update on the client side."
+  },
+  {
+    "objectID": "docs/architecture.html#architecture",
+    "href": "docs/architecture.html#architecture",
+    "title": "Architecture",
+    "section": "",
+    "text": "This application uses a Post-Redirect-Get (PRG) pattern. The user submits a form, which sends a POST request to a FastAPI endpoint on the server. The database is updated, and the user is redirected to a GET endpoint, which fetches the updated data and re-renders the Jinja2 page template with the new data.\n\n\n\nWebapp Flow\n\n\nThe advantage of the PRG pattern is that it is very straightforward to implement and keeps most of the rendering logic on the server side. The disadvantage is that it requires an extra round trip to the database to fetch the updated data, and re-rendering the entire page template may be less efficient than a partial page update on the client side."
+  },
+  {
+    "objectID": "docs/authentication.html",
+    "href": "docs/authentication.html",
+    "title": "Authentication",
+    "section": "",
+    "text": "This template implements a comprehensive authentication system with security best practices:\n\nToken Security:\n\nJWT-based with separate access/refresh tokens\nStrict expiry times (30 min access, 30 day refresh)\nToken type validation\nHTTP-only cookies\nSecure flag enabled\nSameSite=strict restriction\n\nPassword Security:\n\nStrong password requirements enforced\nBcrypt hashing with random salt\nPassword reset tokens are single-use\nReset tokens have expiration\n\nCookie Security:\n\nHTTP-only prevents JavaScript access\nSecure flag ensures HTTPS only\nStrict SameSite prevents CSRF\n\nError Handling:\n\nValidation errors properly handled\nSecurity-related errors don’t leak information\nComprehensive error logging\n\n\nThe diagrams below show the main authentication flows and security measures.\n\n\n\n\n\nRegistration and Login Flow\n\n\n\n\n\n\n\n\nPassword Reset Flow"
+  },
+  {
+    "objectID": "docs/authentication.html#authentication-flow",
+    "href": "docs/authentication.html#authentication-flow",
+    "title": "Authentication",
+    "section": "",
+    "text": "This template implements a comprehensive authentication system with security best practices:\n\nToken Security:\n\nJWT-based with separate access/refresh tokens\nStrict expiry times (30 min access, 30 day refresh)\nToken type validation\nHTTP-only cookies\nSecure flag enabled\nSameSite=strict restriction\n\nPassword Security:\n\nStrong password requirements enforced\nBcrypt hashing with random salt\nPassword reset tokens are single-use\nReset tokens have expiration\n\nCookie Security:\n\nHTTP-only prevents JavaScript access\nSecure flag ensures HTTPS only\nStrict SameSite prevents CSRF\n\nError Handling:\n\nValidation errors properly handled\nSecurity-related errors don’t leak information\nComprehensive error logging\n\n\nThe diagrams below show the main authentication flows and security measures.\n\n\n\n\n\nRegistration and Login Flow\n\n\n\n\n\n\n\n\nPassword Reset Flow"
+  },
+  {
+    "objectID": "docs/index.html",
+    "href": "docs/index.html",
+    "title": "FastAPI, Jinja2, PostgreSQL Webapp Template",
+    "section": "",
+    "text": "Screenshot of homepage\nThis template combines three of the most lightweight and performant open-source web development frameworks into a customizable webapp template with:\nThe template also includes full-featured secure auth with:"
+  },
+  {
+    "objectID": "docs/index.html#design-philosophy",
+    "href": "docs/index.html#design-philosophy",
+    "title": "FastAPI, Jinja2, PostgreSQL Webapp Template",
+    "section": "Design Philosophy",
+    "text": "Design Philosophy\nThe design philosophy of the template is to prefer low-level, best-in-class open-source frameworks that offer flexibility, scalability, and performance without vendor-lock-in. You’ll find the template amazingly easy not only to understand and customize, but also to deploy to any major cloud hosting platform."
+  },
+  {
+    "objectID": "docs/index.html#tech-stack",
+    "href": "docs/index.html#tech-stack",
+    "title": "FastAPI, Jinja2, PostgreSQL Webapp Template",
+    "section": "Tech Stack",
+    "text": "Tech Stack\nCore frameworks: - FastAPI: scalable, high-performance, type-annotated Python web backend framework - PostgreSQL: the world’s most advanced open-source database engine - Jinja2: frontend HTML templating engine - SQLModel: easy-to-use Python ORM\nAdditional technologies: - Poetry: Python dependency manager - Pytest: testing framework - Docker: development containerization - Github Actions: CI/CD pipeline - Quarto: simple documentation website renderer - MyPy: static type checker for Python - Bootstrap: HTML/CSS styler - Resend: zero- or low-cost email service used for password recovery"
+  },
+  {
+    "objectID": "docs/index.html#license",
+    "href": "docs/index.html#license",
+    "title": "FastAPI, Jinja2, PostgreSQL Webapp Template",
+    "section": "License",
+    "text": "License\nThis project is developed and maintained by Promptly Technologies, LLC and licensed under the open-source MIT License. See the LICENSE file for more details."
+  }
+]
