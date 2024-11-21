@@ -46,21 +46,21 @@
     "href": "docs/contributing.html",
     "title": "Contributing",
     "section": "",
-    "text": "Fork the repository, create a new branch, make your changes, and submit a pull request.\n\n\nThe README and documentation website are rendered with Quarto. Make changes to the .qmd files in the root folder and the docs folder. Then run the following commands to render:\n# To render the documentation website\nquarto render\n# To render the README\nquarto render index.qmd --output-dir . --output README.md --to gfm\nDue to a quirk of Quarto, an unnecessary index.html file is created in the root folder when the README is rendered. This file can be safely deleted."
+    "text": "When opening a new issue or submitting a bug report, please include:\n\nA clear, descriptive title\nFor bug reports:\n\nDescription of the expected behavior\nDescription of the actual behavior\nSteps to reproduce the issue\nVersion information (OS, Python version, package version)\nAny relevant error messages or screenshots\n\nFor feature requests:\n\nDescription of the proposed feature\nUse case or motivation for the feature\nAny implementation suggestions (optional)\n\n\nLabels help categorize issues: - Use bug for reporting problems - Use enhancement for feature requests - Use documentation for documentation improvements - Use question for general queries\n\n\n\nTo contribute code to the project:\n\nFork the repository and clone your fork locally\nCreate a new branch from main with a descriptive name\nReview the customization, architecture, and authentication pages for guidance on design patterns and code structure and style\nEnsure all tests pass, including mypy type checking\nStage, commit, and push your changes to the branch:\n\nUse clear, descriptive commit messages\nKeep commits focused and atomic\n\nSubmit your pull request:\n\nProvide a clear description of the changes\nLink to any related issues\n\n\n\n\n\nThe README and documentation website are rendered with Quarto. If you ,make changes to the .qmd files in the root folder and the docs folder, run the following commands to re-render the docs:\n# To render the documentation website\nquarto render\n# To render the README\nquarto render index.qmd --output-dir . --output README.md --to gfm\nDue to a quirk of Quarto, an unnecessary index.html file is created in the root folder when the README is rendered. This file can be safely deleted.\nNote that even if your pull request is merged, your changes will not be reflected on the live website until a maintainer republishes the docs."
   },
   {
     "objectID": "docs/contributing.html#contributors",
     "href": "docs/contributing.html#contributors",
     "title": "Contributing",
     "section": "",
-    "text": "Fork the repository, create a new branch, make your changes, and submit a pull request.\n\n\nThe README and documentation website are rendered with Quarto. Make changes to the .qmd files in the root folder and the docs folder. Then run the following commands to render:\n# To render the documentation website\nquarto render\n# To render the README\nquarto render index.qmd --output-dir . --output README.md --to gfm\nDue to a quirk of Quarto, an unnecessary index.html file is created in the root folder when the README is rendered. This file can be safely deleted."
+    "text": "When opening a new issue or submitting a bug report, please include:\n\nA clear, descriptive title\nFor bug reports:\n\nDescription of the expected behavior\nDescription of the actual behavior\nSteps to reproduce the issue\nVersion information (OS, Python version, package version)\nAny relevant error messages or screenshots\n\nFor feature requests:\n\nDescription of the proposed feature\nUse case or motivation for the feature\nAny implementation suggestions (optional)\n\n\nLabels help categorize issues: - Use bug for reporting problems - Use enhancement for feature requests - Use documentation for documentation improvements - Use question for general queries\n\n\n\nTo contribute code to the project:\n\nFork the repository and clone your fork locally\nCreate a new branch from main with a descriptive name\nReview the customization, architecture, and authentication pages for guidance on design patterns and code structure and style\nEnsure all tests pass, including mypy type checking\nStage, commit, and push your changes to the branch:\n\nUse clear, descriptive commit messages\nKeep commits focused and atomic\n\nSubmit your pull request:\n\nProvide a clear description of the changes\nLink to any related issues\n\n\n\n\n\nThe README and documentation website are rendered with Quarto. If you ,make changes to the .qmd files in the root folder and the docs folder, run the following commands to re-render the docs:\n# To render the documentation website\nquarto render\n# To render the README\nquarto render index.qmd --output-dir . --output README.md --to gfm\nDue to a quirk of Quarto, an unnecessary index.html file is created in the root folder when the README is rendered. This file can be safely deleted.\nNote that even if your pull request is merged, your changes will not be reflected on the live website until a maintainer republishes the docs."
   },
   {
     "objectID": "docs/contributing.html#maintainers",
     "href": "docs/contributing.html#maintainers",
     "title": "Contributing",
     "section": "Maintainers",
-    "text": "Maintainers\n\nIncrement the version\nRun the following command to increment the version:\npoetry version patch minor\n\n\nPublish the documentation\nTo publish the documentation to GitHub Pages, run the following command:\nquarto publish gh-pages"
+    "text": "Maintainers\n\nGit flow\nWhen creating new features,\n\nOpen a Github issue with the label feature and assign it to yourself.\nCreate a new branch from the issue sidebar.\nFollow the instructions in the popup to check out the branch locally and make your changes on the branch.\nCommit your changes and push to the branch.\nWhen you are ready to merge, open a pull request from the branch to main.\nAssign someone else for code review.\n\n\n\nPublishing the documentation\nTo publish the documentation to GitHub Pages, run the following command:\nquarto publish gh-pages"
   },
   {
     "objectID": "docs/architecture.html",
@@ -81,14 +81,28 @@
     "href": "docs/authentication.html",
     "title": "Authentication",
     "section": "",
-    "text": "This template implements a comprehensive authentication system with security best practices:\n\nToken Security:\n\nJWT-based with separate access/refresh tokens\nStrict expiry times (30 min access, 30 day refresh)\nToken type validation\nHTTP-only cookies\nSecure flag enabled\nSameSite=strict restriction\n\nPassword Security:\n\nStrong password requirements enforced\nBcrypt hashing with random salt\nPassword reset tokens are single-use\nReset tokens have expiration\n\nCookie Security:\n\nHTTP-only prevents JavaScript access\nSecure flag ensures HTTPS only\nStrict SameSite prevents CSRF\n\nError Handling:\n\nValidation errors properly handled\nSecurity-related errors don’t leak information\nComprehensive error logging\n\n\nThe diagrams below show the main authentication flows.\n\n\n\n\n\nRegistration and login flow\n\n\n\n\n\n\n\n\nPassword reset flow"
+    "text": "This template implements a comprehensive authentication system with security best practices:\n\nToken Security:\n\nJWT-based with separate access/refresh tokens\nStrict expiry times (30 min access, 30 day refresh)\nToken type validation\nHTTP-only cookies\nSecure flag enabled\nSameSite=strict restriction\n\nPassword Security:\n\nStrong password requirements enforced\nBcrypt hashing with random salt\nPassword reset tokens are single-use\nReset tokens have expiration\n\nCookie Security:\n\nHTTP-only prevents JavaScript access\nSecure flag ensures HTTPS only\nStrict SameSite prevents CSRF\n\nError Handling:\n\nValidation errors properly handled\nSecurity-related errors don’t leak information\nComprehensive error logging\n\n\nThe diagrams below show the main authentication flows."
   },
   {
     "objectID": "docs/authentication.html#security-features",
     "href": "docs/authentication.html#security-features",
     "title": "Authentication",
     "section": "",
-    "text": "This template implements a comprehensive authentication system with security best practices:\n\nToken Security:\n\nJWT-based with separate access/refresh tokens\nStrict expiry times (30 min access, 30 day refresh)\nToken type validation\nHTTP-only cookies\nSecure flag enabled\nSameSite=strict restriction\n\nPassword Security:\n\nStrong password requirements enforced\nBcrypt hashing with random salt\nPassword reset tokens are single-use\nReset tokens have expiration\n\nCookie Security:\n\nHTTP-only prevents JavaScript access\nSecure flag ensures HTTPS only\nStrict SameSite prevents CSRF\n\nError Handling:\n\nValidation errors properly handled\nSecurity-related errors don’t leak information\nComprehensive error logging\n\n\nThe diagrams below show the main authentication flows.\n\n\n\n\n\nRegistration and login flow\n\n\n\n\n\n\n\n\nPassword reset flow"
+    "text": "This template implements a comprehensive authentication system with security best practices:\n\nToken Security:\n\nJWT-based with separate access/refresh tokens\nStrict expiry times (30 min access, 30 day refresh)\nToken type validation\nHTTP-only cookies\nSecure flag enabled\nSameSite=strict restriction\n\nPassword Security:\n\nStrong password requirements enforced\nBcrypt hashing with random salt\nPassword reset tokens are single-use\nReset tokens have expiration\n\nCookie Security:\n\nHTTP-only prevents JavaScript access\nSecure flag ensures HTTPS only\nStrict SameSite prevents CSRF\n\nError Handling:\n\nValidation errors properly handled\nSecurity-related errors don’t leak information\nComprehensive error logging\n\n\nThe diagrams below show the main authentication flows."
+  },
+  {
+    "objectID": "docs/authentication.html#registration-and-login-flow",
+    "href": "docs/authentication.html#registration-and-login-flow",
+    "title": "Authentication",
+    "section": "Registration and login flow",
+    "text": "Registration and login flow\n\n\n\nRegistration and login flow"
+  },
+  {
+    "objectID": "docs/authentication.html#password-reset-flow",
+    "href": "docs/authentication.html#password-reset-flow",
+    "title": "Authentication",
+    "section": "Password reset flow",
+    "text": "Password reset flow\n\n\n\nPassword reset flow"
   },
   {
     "objectID": "docs/installation.html",

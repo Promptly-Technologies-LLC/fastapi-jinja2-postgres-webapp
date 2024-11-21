@@ -175,12 +175,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#contributors" id="toc-contributors" class="nav-link active" data-scroll-target="#contributors">Contributors</a>
   <ul class="collapse">
-  <li><a href="#render-the-documentation" id="toc-render-the-documentation" class="nav-link" data-scroll-target="#render-the-documentation">Render the documentation</a></li>
+  <li><a href="#opening-issues-and-bug-reports" id="toc-opening-issues-and-bug-reports" class="nav-link" data-scroll-target="#opening-issues-and-bug-reports">Opening issues and bug reports</a></li>
+  <li><a href="#contributing-code" id="toc-contributing-code" class="nav-link" data-scroll-target="#contributing-code">Contributing code</a></li>
+  <li><a href="#rendering-the-documentation" id="toc-rendering-the-documentation" class="nav-link" data-scroll-target="#rendering-the-documentation">Rendering the documentation</a></li>
   </ul></li>
   <li><a href="#maintainers" id="toc-maintainers" class="nav-link" data-scroll-target="#maintainers">Maintainers</a>
   <ul class="collapse">
-  <li><a href="#increment-the-version" id="toc-increment-the-version" class="nav-link" data-scroll-target="#increment-the-version">Increment the version</a></li>
-  <li><a href="#publish-the-documentation" id="toc-publish-the-documentation" class="nav-link" data-scroll-target="#publish-the-documentation">Publish the documentation</a></li>
+  <li><a href="#git-flow" id="toc-git-flow" class="nav-link" data-scroll-target="#git-flow">Git flow</a></li>
+  <li><a href="#publishing-the-documentation" id="toc-publishing-the-documentation" class="nav-link" data-scroll-target="#publishing-the-documentation">Publishing the documentation</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -209,28 +211,77 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="contributors" class="level2">
 <h2 class="anchored" data-anchor-id="contributors">Contributors</h2>
-<p>Fork the repository, create a new branch, make your changes, and submit a pull request.</p>
-<section id="render-the-documentation" class="level3">
-<h3 class="anchored" data-anchor-id="render-the-documentation">Render the documentation</h3>
-<p>The README and documentation website are rendered with <a href="https://quarto.org/docs/">Quarto</a>. Make changes to the <code>.qmd</code> files in the root folder and the <code>docs</code> folder. Then run the following commands to render:</p>
+<section id="opening-issues-and-bug-reports" class="level3">
+<h3 class="anchored" data-anchor-id="opening-issues-and-bug-reports">Opening issues and bug reports</h3>
+<p>When opening a new issue or submitting a bug report, please include:</p>
+<ol type="1">
+<li>A clear, descriptive title</li>
+<li>For bug reports:
+<ul>
+<li>Description of the expected behavior</li>
+<li>Description of the actual behavior</li>
+<li>Steps to reproduce the issue</li>
+<li>Version information (OS, Python version, package version)</li>
+<li>Any relevant error messages or screenshots</li>
+</ul></li>
+<li>For feature requests:
+<ul>
+<li>Description of the proposed feature</li>
+<li>Use case or motivation for the feature</li>
+<li>Any implementation suggestions (optional)</li>
+</ul></li>
+</ol>
+<p>Labels help categorize issues: - Use <code>bug</code> for reporting problems - Use <code>enhancement</code> for feature requests - Use <code>documentation</code> for documentation improvements - Use <code>question</code> for general queries</p>
+</section>
+<section id="contributing-code" class="level3">
+<h3 class="anchored" data-anchor-id="contributing-code">Contributing code</h3>
+<p>To contribute code to the project:</p>
+<ol type="1">
+<li>Fork the repository and clone your fork locally</li>
+<li>Create a new branch from <code>main</code> with a descriptive name</li>
+<li>Review the <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/customization.html">customization</a>, <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/architecture.html">architecture</a>, and <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/authentication.html">authentication</a> pages for guidance on design patterns and code structure and style</li>
+<li>Ensure all tests pass, including <code>mypy</code> type checking</li>
+<li>Stage, commit, and push your changes to the branch:
+<ul>
+<li>Use clear, descriptive commit messages</li>
+<li>Keep commits focused and atomic</li>
+</ul></li>
+<li>Submit your pull request:
+<ul>
+<li>Provide a clear description of the changes</li>
+<li>Link to any related issues</li>
+</ul></li>
+</ol>
+</section>
+<section id="rendering-the-documentation" class="level3">
+<h3 class="anchored" data-anchor-id="rendering-the-documentation">Rendering the documentation</h3>
+<p>The README and documentation website are rendered with <a href="https://quarto.org/docs/">Quarto</a>. If you ,make changes to the <code>.qmd</code> files in the root folder and the <code>docs</code> folder, run the following commands to re-render the docs:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># To render the documentation website</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> render</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># To render the README</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> render index.qmd <span class="at">--output-dir</span> . <span class="at">--output</span> README.md <span class="at">--to</span> gfm</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Due to a quirk of Quarto, an unnecessary <code>index.html</code> file is created in the root folder when the README is rendered. This file can be safely deleted.</p>
+<p>Note that even if your pull request is merged, your changes will not be reflected on the live website until a maintainer republishes the docs.</p>
 </section>
 </section>
 <section id="maintainers" class="level2">
 <h2 class="anchored" data-anchor-id="maintainers">Maintainers</h2>
-<section id="increment-the-version" class="level3">
-<h3 class="anchored" data-anchor-id="increment-the-version">Increment the version</h3>
-<p>Run the following command to increment the version:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">poetry</span> version patch minor</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="git-flow" class="level3">
+<h3 class="anchored" data-anchor-id="git-flow">Git flow</h3>
+<p>When creating new features,</p>
+<ol type="1">
+<li>Open a Github issue with the label <code>feature</code> and assign it to yourself.</li>
+<li>Create a new branch from the issue sidebar.</li>
+<li>Follow the instructions in the popup to check out the branch locally and make your changes on the branch.</li>
+<li>Commit your changes and push to the branch.</li>
+<li>When you are ready to merge, open a pull request from the branch to main.</li>
+<li>Assign someone else for code review.</li>
+</ol>
 </section>
-<section id="publish-the-documentation" class="level3">
-<h3 class="anchored" data-anchor-id="publish-the-documentation">Publish the documentation</h3>
+<section id="publishing-the-documentation" class="level3">
+<h3 class="anchored" data-anchor-id="publishing-the-documentation">Publishing the documentation</h3>
 <p>To publish the documentation to GitHub Pages, run the following command:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> publish gh-pages</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> publish gh-pages</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 
 </section>
