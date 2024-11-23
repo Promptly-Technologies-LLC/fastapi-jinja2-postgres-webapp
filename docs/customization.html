@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -134,8 +168,27 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#development-workflow" id="toc-development-workflow" class="nav-link active" data-scroll-target="#development-workflow">Development workflow</a>
+  <ul class="collapse">
+  <li><a href="#dependency-management-with-poetry" id="toc-dependency-management-with-poetry" class="nav-link" data-scroll-target="#dependency-management-with-poetry">Dependency management with Poetry</a></li>
+  <li><a href="#testing" id="toc-testing" class="nav-link" data-scroll-target="#testing">Testing</a></li>
+  <li><a href="#type-checking-with-mypy" id="toc-type-checking-with-mypy" class="nav-link" data-scroll-target="#type-checking-with-mypy">Type checking with mypy</a></li>
+  </ul></li>
+  <li><a href="#project-structure" id="toc-project-structure" class="nav-link" data-scroll-target="#project-structure">Project structure</a>
+  <ul class="collapse">
+  <li><a href="#customizable-folders-and-files" id="toc-customizable-folders-and-files" class="nav-link" data-scroll-target="#customizable-folders-and-files">Customizable folders and files</a></li>
+  <li><a href="#defining-a-web-backend-with-fastapi" id="toc-defining-a-web-backend-with-fastapi" class="nav-link" data-scroll-target="#defining-a-web-backend-with-fastapi">Defining a web backend with FastAPI</a></li>
+  <li><a href="#html-templating-with-jinja2" id="toc-html-templating-with-jinja2" class="nav-link" data-scroll-target="#html-templating-with-jinja2">HTML templating with Jinja2</a></li>
+  <li><a href="#writing-type-annotated-code" id="toc-writing-type-annotated-code" class="nav-link" data-scroll-target="#writing-type-annotated-code">Writing type annotated code</a></li>
+  <li><a href="#database-configuration-and-access-with-sqlmodel" id="toc-database-configuration-and-access-with-sqlmodel" class="nav-link" data-scroll-target="#database-configuration-and-access-with-sqlmodel">Database configuration and access with SQLModel</a></li>
+  </ul></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -159,8 +212,227 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
+<section id="development-workflow" class="level2">
+<h2 class="anchored" data-anchor-id="development-workflow">Development workflow</h2>
+<section id="dependency-management-with-poetry" class="level3">
+<h3 class="anchored" data-anchor-id="dependency-management-with-poetry">Dependency management with Poetry</h3>
+<p>The project uses Poetry to manage dependencies:</p>
+<ul>
+<li>Add new dependency: <code>poetry add &lt;dependency&gt;</code></li>
+<li>Add development dependency: <code>poetry add --dev &lt;dependency&gt;</code></li>
+<li>Remove dependency: <code>poetry remove &lt;dependency&gt;</code></li>
+<li>Update lock file: <code>poetry lock</code></li>
+<li>Install dependencies: <code>poetry install</code></li>
+<li>Update all dependencies: <code>poetry update</code></li>
+</ul>
+</section>
+<section id="testing" class="level3">
+<h3 class="anchored" data-anchor-id="testing">Testing</h3>
+<p>The project uses Pytest for unit testing. It’s highly recommended to write and run tests before committing code to ensure nothing is broken!</p>
+<p>The following fixtures, defined in <code>tests/conftest.py</code>, are available in the test suite:</p>
+<ul>
+<li><code>engine</code>: Creates a new SQLModel engine for the test database.</li>
+<li><code>set_up_database</code>: Sets up the test database before running the test suite by dropping all tables and recreating them to ensure a clean state.</li>
+<li><code>session</code>: Provides a session for database operations in tests.</li>
+<li><code>clean_db</code>: Cleans up the database tables before each test by deleting all entries in the <code>PasswordResetToken</code> and <code>User</code> tables.</li>
+<li><code>client</code>: Provides a <code>TestClient</code> instance with the session fixture, overriding the <code>get_session</code> dependency to use the test session.</li>
+<li><code>test_user</code>: Creates a test user in the database with a predefined name, email, and hashed password.</li>
+</ul>
+<p>To run the tests, use these commands:</p>
+<ul>
+<li>Run all tests: <code>pytest</code></li>
+<li>Run tests in debug mode (includes logs and print statements in console output): <code>pytest -s</code></li>
+<li>Run particular test files by name: <code>pytest &lt;test_file_name&gt;</code></li>
+<li>Run particular tests by name: <code>pytest -k &lt;test_name&gt;</code></li>
+</ul>
+</section>
+<section id="type-checking-with-mypy" class="level3">
+<h3 class="anchored" data-anchor-id="type-checking-with-mypy">Type checking with mypy</h3>
+<p>The project uses type annotations and mypy for static type checking. To run mypy, use this command from the root directory:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">mypy</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>We find that mypy is an enormous time-saver, catching many errors early and greatly reducing time spent debugging unit tests. However, note that mypy requires you type annotate every variable, function, and method in your code base, so taking advantage of it is a lifestyle change!</p>
+</section>
+</section>
+<section id="project-structure" class="level2">
+<h2 class="anchored" data-anchor-id="project-structure">Project structure</h2>
+<section id="customizable-folders-and-files" class="level3">
+<h3 class="anchored" data-anchor-id="customizable-folders-and-files">Customizable folders and files</h3>
+<ul>
+<li>FastAPI application entry point and GET routes: <code>main.py</code></li>
+<li>FastAPI POST routes: <code>routers/</code>
+<ul>
+<li>User authentication endpoints: <code>auth.py</code></li>
+<li>User profile management endpoints: <code>user.py</code></li>
+<li>Organization management endpoints: <code>organization.py</code></li>
+<li>Role management endpoints: <code>role.py</code></li>
+</ul></li>
+<li>Jinja2 templates: <code>templates/</code></li>
+<li>Static assets: <code>static/</code></li>
+<li>Unit tests: <code>tests/</code></li>
+<li>Test database configuration: <code>docker-compose.yml</code></li>
+<li>Helper functions: <code>utils/</code>
+<ul>
+<li>Auth helpers: <code>auth.py</code></li>
+<li>Database helpers: <code>db.py</code></li>
+<li>Database models: <code>models.py</code></li>
+</ul></li>
+<li>Environment variables: <code>.env</code></li>
+<li>CI/CD configuration: <code>.github/</code></li>
+<li>Project configuration: <code>pyproject.toml</code></li>
+<li>Quarto documentation:
+<ul>
+<li>Source: <code>index.qmd</code> + <code>docs/</code></li>
+<li>Configuration: <code>_quarto.yml</code></li>
+</ul></li>
+</ul>
+<p>Most everything else is auto-generated and should not be manually modified.</p>
+</section>
+<section id="defining-a-web-backend-with-fastapi" class="level3">
+<h3 class="anchored" data-anchor-id="defining-a-web-backend-with-fastapi">Defining a web backend with FastAPI</h3>
+<p>We use FastAPI to define the “API endpoints” of our application. An API endpoint is simply a URL that accepts user requests and returns responses. When a user visits a page, their browser sends what’s called a “GET” request to an endpoint, and the server processes it (often querying a database), and returns a response (typically HTML). The browser renders the HTML, displaying the page.</p>
+<p>We also create POST endpoints, which accept form submissions so the user can create, update, and delete data in the database. This template follows the Post-Redirect-Get (PRG) pattern to handle POST requests. When a form is submitted, the server processes the data and then returns a “redirect” response, which sends the user to a GET endpoint to re-render the page with the updated data. (See <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html">Architecture</a> for more details.)</p>
+<section id="routing-patterns-in-this-template" class="level4">
+<h4 class="anchored" data-anchor-id="routing-patterns-in-this-template">Routing patterns in this template</h4>
+<p>In this template, GET routes are defined in the main entry point for the application, <code>main.py</code>. POST routes are organized into separate modules within the <code>routers/</code> directory. We name our GET routes using the convention <code>read_&lt;name&gt;</code>, where <code>&lt;name&gt;</code> is the name of the page, to indicate that they are read-only endpoints that do not modify the database.</p>
+<p>We divide our GET routes into authenticated and unauthenticated routes, using commented section headers in our code that look like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># -- Authenticated Routes --</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Some of our routes take request parameters, which we pass as keyword arguments to the route handler. These parameters should be type annotated for validation purposes. Some parameters are shared across all authenticated or unauthenticated routes, so we define them in the <code>common_authenticated_parameters</code> and <code>common_unauthenticated_parameters</code> dependencies defined in <code>main.py</code>.</p>
+</section>
+</section>
+<section id="html-templating-with-jinja2" class="level3">
+<h3 class="anchored" data-anchor-id="html-templating-with-jinja2">HTML templating with Jinja2</h3>
+<p>To generate the HTML pages to be returned from our GET routes, we use Jinja2 templates. Jinja2’s hierarchical templates allow creating a base template (<code>templates/base.html</code>) that defines the overall layout of our web pages (e.g., where the header, body, and footer should go). Individual pages can then extend this base template. We can also template reusable components that can be injected into our layout or page templates.</p>
+<p>With Jinja2, we can use the <code>{% block %}</code> tag to define content blocks, and the <code>{% extends %}</code> tag to extend a base template. We can also use the <code>{% include %}</code> tag to include a component in a parent template. See the <a href="https://jinja.palletsprojects.com/en/stable/templates/#template-inheritance">Jinja2 documentation on template inheritance</a> for more details.</p>
+<section id="context-variables" class="level4">
+<h4 class="anchored" data-anchor-id="context-variables">Context variables</h4>
+<p>Context refers to Python variables passed to a template to populate the HTML. In a FastAPI GET route, we can pass context to a template using the <code>templates.TemplateResponse</code> method, which takes the request and any context data as arguments. For example:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.get</span>(<span class="st">"/welcome"</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> welcome(request: Request):</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> templates.TemplateResponse(</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="st">"welcome.html"</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"username"</span>: <span class="st">"Alice"</span>}</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In this example, the <code>welcome.html</code> template will receive two pieces of context: the user’s <code>request</code>, which is always passed automatically by FastAPI, and a <code>username</code> variable, which we specify as “Alice”. We can then use the <code>{ username }</code> syntax in the <code>welcome.html</code> template (or any of its parent or child templates) to insert the value into the HTML.</p>
+</section>
+</section>
+<section id="writing-type-annotated-code" class="level3">
+<h3 class="anchored" data-anchor-id="writing-type-annotated-code">Writing type annotated code</h3>
+<p>Pydantic is used for data validation and serialization. It ensures that the data received in requests meets the expected format and constraints. Pydantic models are used to define the structure of request and response data, making it easy to validate and parse JSON payloads.</p>
+<p>If a user-submitted form contains data that has the wrong number, names, or types of fields, Pydantic will raise a <code>RequestValidationError</code>, which is caught by middleware and converted into an HTTP 422 error response.</p>
+<p>For other, custom validation logic, we add Pydantic <code>@field_validator</code> methods to our Pydantic request models and then add the models as dependencies in the signatures of corresponding POST routes. FastAPI’s dependency injection system ensures that dependency logic is executed before the body of the route handler.</p>
+<section id="defining-request-models-and-custom-validators" class="level4">
+<h4 class="anchored" data-anchor-id="defining-request-models-and-custom-validators">Defining request models and custom validators</h4>
+<p>For example, in the <code>UserRegister</code> request model in <code>routers/authentication.py</code>, we add a custom validation method to ensure that the <code>confirm_password</code> field matches the <code>password</code> field. If not, it raises a custom <code>PasswordMismatchError</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PasswordMismatchError(HTTPException):</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, field: <span class="bu">str</span> <span class="op">=</span> <span class="st">"confirm_password"</span>):</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>            status_code<span class="op">=</span><span class="dv">422</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>            detail<span class="op">=</span>{</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                <span class="st">"field"</span>: field,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                <span class="st">"message"</span>: <span class="st">"The passwords you entered do not match"</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> UserRegister(BaseModel):</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    name: <span class="bu">str</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    email: EmailStr</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    password: <span class="bu">str</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    confirm_password: <span class="bu">str</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Custom validators are added as class attributes</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">@field_validator</span>(<span class="st">"confirm_password"</span>, check_fields<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> validate_passwords_match(cls, v: <span class="bu">str</span>, values: <span class="bu">dict</span>[<span class="bu">str</span>, Any]) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> v <span class="op">!=</span> values[<span class="st">"password"</span>]:</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> PasswordMismatchError()</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> v</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ...</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>We then add this request model as a dependency in the signature of our POST route:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.post</span>(<span class="st">"/register"</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> register(request: UserRegister <span class="op">=</span> Depends()):</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ...</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>When the user submits the form, Pydantic will first check that all expected fields are present and match the expected types. If not, it raises a <code>RequestValidationError</code>. Then, it runs our custom <code>field_validator</code>, <code>validate_passwords_match</code>. If it finds that the <code>confirm_password</code> field does not match the <code>password</code> field, it raises a <code>PasswordMismatchError</code>. These exceptions can then be caught and handled by our middleware.</p>
+<p>(Note that these examples are simplified versions of the actual code.)</p>
+</section>
+<section id="converting-form-data-to-request-models" class="level4">
+<h4 class="anchored" data-anchor-id="converting-form-data-to-request-models">Converting form data to request models</h4>
+<p>In addition to custom validation logic, we also need to define a method on our request models that converts form data into the request model. Here’s what that looks like in the <code>UserRegister</code> request model from the previous example:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> UserRegister(BaseModel):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ...</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">@classmethod</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> as_form(</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        cls,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        name: <span class="bu">str</span> <span class="op">=</span> Form(...),</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        email: EmailStr <span class="op">=</span> Form(...),</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        password: <span class="bu">str</span> <span class="op">=</span> Form(...),</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        confirm_password: <span class="bu">str</span> <span class="op">=</span> Form(...)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    ):</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> cls(</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>            name<span class="op">=</span>name,</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>            email<span class="op">=</span>email,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>            password<span class="op">=</span>password,</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>            confirm_password<span class="op">=</span>confirm_password</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="middleware-exception-handling" class="level4">
+<h4 class="anchored" data-anchor-id="middleware-exception-handling">Middleware exception handling</h4>
+<p>Middlewares—which process requests before they reach the route handlers and responses before they are sent back to the client—are defined in <code>main.py</code>. They are commonly used in web development for tasks such as error handling, authentication token validation, logging, and modifying request/response objects.</p>
+<p>This template uses middlewares exclusively for global exception handling; they only affect requests that raise an exception. This allows for consistent error responses and centralized error logging. Middleware can catch exceptions raised during request processing and return appropriate HTTP responses.</p>
+<p>Middleware functions are decorated with <code>@app.exception_handler(ExceptionType)</code> and are executed in the order they are defined in <code>main.py</code>, from most to least specific.</p>
+<p>Here’s a middleware for handling the <code>PasswordMismatchError</code> exception from the previous example, which renders the <code>errors/validation_error.html</code> template with the error details:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.exception_handler</span>(PasswordMismatchError)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> password_mismatch_exception_handler(request: Request, exc: PasswordMismatchError):</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> templates.TemplateResponse(</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        request,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"errors/validation_error.html"</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        {</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>            <span class="st">"status_code"</span>: <span class="dv">422</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>            <span class="st">"errors"</span>: {<span class="st">"error"</span>: exc.detail}</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        },</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>        status_code<span class="op">=</span><span class="dv">422</span>,</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="database-configuration-and-access-with-sqlmodel" class="level3">
+<h3 class="anchored" data-anchor-id="database-configuration-and-access-with-sqlmodel">Database configuration and access with SQLModel</h3>
+<p>SQLModel is an Object-Relational Mapping (ORM) library that allows us to interact with our PostgreSQL database using Python classes instead of writing raw SQL. It combines the features of SQLAlchemy (a powerful database toolkit) with Pydantic’s data validation.</p>
+<section id="models-and-relationships" class="level4">
+<h4 class="anchored" data-anchor-id="models-and-relationships">Models and relationships</h4>
+<p>Our database models are defined in <code>utils/models.py</code>. Each model is a Python class that inherits from <code>SQLModel</code> and represents a database table. The key models are:</p>
+<ul>
+<li><code>Organization</code>: Represents a company or team</li>
+<li><code>User</code>: Represents a user account</li>
+<li><code>Role</code>: Represents a discrete set of user permissions within an organization</li>
+<li><code>Permission</code>: Represents specific actions a user can perform</li>
+<li><code>RolePermissionLink</code>: Maps roles to their allowed permissions</li>
+<li><code>PasswordResetToken</code>: Manages password reset functionality</li>
+</ul>
+<p>Models can have relationships with other models using SQLModel’s <code>Relationship</code> field. For example:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> User(SQLModel, table<span class="op">=</span><span class="va">True</span>):</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ... other fields ...</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    organization: Optional[<span class="st">"Organization"</span>] <span class="op">=</span> Relationship(back_populates<span class="op">=</span><span class="st">"users"</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    role: Optional[<span class="st">"Role"</span>] <span class="op">=</span> Relationship(back_populates<span class="op">=</span><span class="st">"users"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>This creates a many-to-one relationship between users and organizations, and between users and roles.</p>
+</section>
+<section id="database-operations" class="level4">
+<h4 class="anchored" data-anchor-id="database-operations">Database operations</h4>
+<p>Database operations are handled by helper functions in <code>utils/db.py</code>. Key functions include:</p>
+<ul>
+<li><code>set_up_db()</code>: Initializes the database schema and default data (which we do on every application start in <code>main.py</code>)</li>
+<li><code>get_connection_url()</code>: Creates a database connection URL from environment variables in <code>.env</code></li>
+<li><code>get_session()</code>: Provides a database session for performing operations</li>
+</ul>
+<p>To perform database operations in route handlers, inject the database session as a dependency:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.get</span>(<span class="st">"/users"</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> get_users(session: Session <span class="op">=</span> Depends(get_session)):</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    users <span class="op">=</span> session.<span class="bu">exec</span>(select(User)).<span class="bu">all</span>()</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> users</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The session automatically handles transaction management, ensuring that database operations are atomic and consistent.</p>
 
 
+</section>
+</section>
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
