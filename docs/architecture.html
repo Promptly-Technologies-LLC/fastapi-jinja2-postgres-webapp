@@ -208,65 +208,143 @@ ul.task-list li input[type="checkbox"] {
 <h3 class="anchored" data-anchor-id="approaches">Approaches</h3>
 <p>The best solution, I think, is to use really robust client-side form validation to prevent invalid inputs from being sent to the server in the first place. That makes it less important what we do on the server side, although we still need to handle the server-side error case as a backup in the event that something slips past our validation on the client side.</p>
 <p>Here are some patterns we’ve considered for server-side error handling:</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 6%">
-<col style="width: 12%">
-<col style="width: 22%">
-<col style="width: 22%">
-<col style="width: 21%">
-<col style="width: 14%">
-</colgroup>
+<style>
+.styled-table, .styled-table th, .styled-table td {
+  border: 1px solid black;
+  padding: 8px;
+  border-collapse: collapse;
+}
+
+.styled-table th:nth-child(1) { width: 5%; }
+.styled-table th:nth-child(2) { width: 50%; }
+.styled-table th:nth-child(3), 
+.styled-table th:nth-child(4),
+.styled-table th:nth-child(5) { width: 15%; }
+.styled-table th:nth-child(6) { width: 10%; }
+</style>
+<table class="styled-table">
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>Approach</th>
-<th>Returns to same page</th>
-<th>Preserves form inputs</th>
-<th>Follows PRG pattern</th>
-<th>Complexity</th>
+<tr>
+<th>
+ID
+</th>
+<th>
+Approach
+</th>
+<th>
+Returns to same page
+</th>
+<th>
+Preserves form inputs
+</th>
+<th>
+Follows PRG pattern
+</th>
+<th>
+Complexity
+</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td>1</td>
-<td>Validate with Pydantic dependency, catch and redirect from middleware (with exception message as context) to an error page with “go back” button</td>
-<td>No</td>
-<td>Yes</td>
-<td>Yes</td>
-<td>Low</td>
+<tr>
+<td>
+1
+</td>
+<td>
+Validate with Pydantic dependency, catch and redirect from middleware (with exception message as context) to an error page with “go back” button
+</td>
+<td>
+No
+</td>
+<td>
+Yes
+</td>
+<td>
+Yes
+</td>
+<td>
+Low
+</td>
 </tr>
-<tr class="even">
-<td>2</td>
-<td>Validate in FastAPI endpoint function body, redirect to origin page with error message query param</td>
-<td>Yes</td>
-<td>No</td>
-<td>Yes</td>
-<td>Medium</td>
+<tr>
+<td>
+2
+</td>
+<td>
+Validate in FastAPI endpoint function body, redirect to origin page with error message query param
+</td>
+<td>
+Yes
+</td>
+<td>
+No
+</td>
+<td>
+Yes
+</td>
+<td>
+Medium
+</td>
 </tr>
-<tr class="odd">
-<td>3</td>
-<td>Validate in FastAPI endpoint function body, redirect to origin page with error message query param and form inputs as context</td>
-<td>Yes</td>
-<td>Yes</td>
-<td>Yes</td>
-<td>High</td>
+<tr>
+<td>
+3
+</td>
+<td>
+Validate in FastAPI endpoint function body, redirect to origin page with error message query param and form inputs as context so we can re-render page with original form inputs
+</td>
+<td>
+Yes
+</td>
+<td>
+Yes
+</td>
+<td>
+Yes
+</td>
+<td>
+High
+</td>
 </tr>
-<tr class="even">
-<td>4</td>
-<td>Validate with Pydantic dependency, use session context to get form inputs from request, redirect to origin page from middleware with exception message and form inputs as context so we can re-render page with original form inputs</td>
-<td>Yes</td>
-<td>Yes</td>
-<td>Yes</td>
-<td>High</td>
+<tr>
+<td>
+4
+</td>
+<td>
+Validate with Pydantic dependency, use session context to get form inputs from request, redirect to origin page from middleware with exception message and form inputs as context so we can re-render page with original form inputs
+</td>
+<td>
+Yes
+</td>
+<td>
+Yes
+</td>
+<td>
+Yes
+</td>
+<td>
+High
+</td>
 </tr>
-<tr class="odd">
-<td>5</td>
-<td>Validate in either Pydantic dependency or function endpoint body and directly return error message in JSON, then mount it with HTMX or some simple layout-level Javascript</td>
-<td>Yes</td>
-<td>Yes</td>
-<td>No</td>
-<td>Low</td>
+<tr>
+<td>
+5
+</td>
+<td>
+Validate in either Pydantic dependency or function endpoint body and directly return error message or error toast HTML partial in JSON, then mount error toast with HTMX or some simple layout-level Javascript
+</td>
+<td>
+Yes
+</td>
+<td>
+Yes
+</td>
+<td>
+No
+</td>
+<td>
+Low
+</td>
 </tr>
 </tbody>
 </table>
