@@ -140,6 +140,12 @@ ul.task-list li input[type="checkbox"] {
    
   <ul>
   <li><a href="#data-flow" id="toc-data-flow" class="nav-link active" data-scroll-target="#data-flow">Data flow</a></li>
+  <li><a href="#form-validation-flow" id="toc-form-validation-flow" class="nav-link" data-scroll-target="#form-validation-flow">Form validation flow</a>
+  <ul class="collapse">
+  <li><a href="#objectives" id="toc-objectives" class="nav-link" data-scroll-target="#objectives">Objectives</a></li>
+  <li><a href="#obstacles" id="toc-obstacles" class="nav-link" data-scroll-target="#obstacles">Obstacles</a></li>
+  <li><a href="#approaches" id="toc-approaches" class="nav-link" data-scroll-target="#approaches">Approaches</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -175,8 +181,99 @@ ul.task-list li input[type="checkbox"] {
 </figure>
 </div>
 <p>The advantage of the PRG pattern is that it is very straightforward to implement and keeps most of the rendering logic on the server side. The disadvantage is that it requires an extra round trip to the database to fetch the updated data, and re-rendering the entire page template may be less efficient than a partial page update on the client side.</p>
+</section>
+<section id="form-validation-flow" class="level2">
+<h2 class="anchored" data-anchor-id="form-validation-flow">Form validation flow</h2>
+<p>We’ve experimented with several approaches to validating form inputs in the FastAPI endpoints.</p>
+<section id="objectives" class="level3">
+<h3 class="anchored" data-anchor-id="objectives">Objectives</h3>
+<p>Ideally, on an invalid input, we would redirect the user back to the form, preserving their inputs and displaying an error message about which input was invalid.</p>
+<p>This would keep the error handling consistent with the PRG pattern described in the <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture">Architecture</a> section of this documentation.</p>
+<p>To keep the code DRY, we’d also like to handle such validation with Pydantic dependencies, Python exceptions, and exception-handling middleware as much as possible.</p>
+</section>
+<section id="obstacles" class="level3">
+<h3 class="anchored" data-anchor-id="obstacles">Obstacles</h3>
+<p>One challenge is that if we redirect back to the page with the form, the page is re-rendered with empty form fields.</p>
+<p>This can be overcome by passing the inputs from the request as context variables to the template.</p>
+<p>But that’s a bit clunky, because then we have to support form-specific context variables in every form page and corresponding GET endpoint.</p>
+<p>Also, we have to:</p>
+<ol type="1">
+<li>access the request object (which is not by default available to our middleware), and</li>
+<li>extract the form inputs (at least one of which is invalid in this error case), and</li>
+<li>pass the form inputs to the template (which is a bit challenging to do in a DRY way since there are different sets of form inputs for different forms).</li>
+</ol>
+<p>Solving these challenges is possible, but gets high-complexity pretty quickly.</p>
+</section>
+<section id="approaches" class="level3">
+<h3 class="anchored" data-anchor-id="approaches">Approaches</h3>
+<p>The best solution, I think, is to use really robust client-side form validation to prevent invalid inputs from being sent to the server in the first place. That makes it less important what we do on the server side, although we still need to handle the server-side error case as a backup in the event that something slips past our validation on the client side.</p>
+<p>Here are some patterns we’ve considered for server-side error handling:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 12%">
+<col style="width: 22%">
+<col style="width: 22%">
+<col style="width: 21%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>ID</th>
+<th>Approach</th>
+<th>Returns to same page</th>
+<th>Preserves form inputs</th>
+<th>Follows PRG pattern</th>
+<th>Complexity</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>Validate with Pydantic dependency, catch and redirect from middleware (with exception message as context) to an error page with “go back” button</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Low</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Validate in FastAPI endpoint function body, redirect to origin page with error message query param</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>Medium</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>Validate in FastAPI endpoint function body, redirect to origin page with error message query param and form inputs as context</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>High</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Validate with Pydantic dependency, use session context to get form inputs from request, redirect to origin page from middleware with exception message and form inputs as context so we can re-render page with original form inputs</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>High</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>Validate in either Pydantic dependency or function endpoint body and directly return error message in JSON, then mount it with HTMX or some simple layout-level Javascript</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>Low</td>
+</tr>
+</tbody>
+</table>
+<p>Presently this template primarily uses option 1 but also supports option 2. Ultimately, I think option 5 will be preferable; support for that <a href="https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/issues/5">is planned</a> for a future update or fork of this template.</p>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
