@@ -314,6 +314,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>In this example, the <code>welcome.html</code> template will receive two pieces of context: the user’s <code>request</code>, which is always passed automatically by FastAPI, and a <code>username</code> variable, which we specify as “Alice”. We can then use the <code>{ username }</code> syntax in the <code>welcome.html</code> template (or any of its parent or child templates) to insert the value into the HTML.</p>
 </section>
+<section id="form-validation-strategy" class="level4">
+<h4 class="anchored" data-anchor-id="form-validation-strategy">Form validation strategy</h4>
+<p>While this template includes comprehensive server-side validation through Pydantic models and custom validators, it’s important to note that server-side validation should be treated as a fallback security measure. If users ever see the <code>validation_error.html</code> template, it indicates that our client-side validation has failed to catch invalid input before it reaches the server.</p>
+<p>Best practices dictate implementing thorough client-side validation via JavaScript and/or HTML <code>input</code> element <code>pattern</code> attributes to: - Provide immediate feedback to users - Reduce server load - Improve user experience by avoiding round-trips to the server - Prevent malformed data from ever reaching the backend</p>
+<p>Server-side validation remains essential as a security measure against malicious requests that bypass client-side validation, but it should rarely be encountered during normal user interaction. See <code>templates/authentication/register.html</code> for a client-side form validation example involving both JavaScript and HTML regex <code>pattern</code> matching.</p>
+</section>
 </section>
 <section id="writing-type-annotated-code" class="level3">
 <h3 class="anchored" data-anchor-id="writing-type-annotated-code">Writing type annotated code</h3>
@@ -407,12 +413,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><code>RolePermissionLink</code>: Maps roles to their allowed permissions</li>
 <li><code>PasswordResetToken</code>: Manages password reset functionality</li>
 </ul>
-<p>Models can have relationships with other models using SQLModel’s <code>Relationship</code> field. For example:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> User(SQLModel, table<span class="op">=</span><span class="va">True</span>):</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ... other fields ...</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    organization: Optional[<span class="st">"Organization"</span>] <span class="op">=</span> Relationship(back_populates<span class="op">=</span><span class="st">"users"</span>)</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    role: Optional[<span class="st">"Role"</span>] <span class="op">=</span> Relationship(back_populates<span class="op">=</span><span class="st">"users"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>This creates a many-to-one relationship between users and organizations, and between users and roles.</p>
+<p>Here’s an entity-relationship diagram (ERD) of the current database schema, automatically generated from our SQLModel definitions:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="static/schema.png" class="img-fluid figure-img"></p>
+<figcaption>Database Schema</figcaption>
+</figure>
+</div>
 </section>
 <section id="database-operations" class="level4">
 <h4 class="anchored" data-anchor-id="database-operations">Database operations</h4>
@@ -423,10 +430,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><code>get_session()</code>: Provides a database session for performing operations</li>
 </ul>
 <p>To perform database operations in route handlers, inject the database session as a dependency:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.get</span>(<span class="st">"/users"</span>)</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> get_users(session: Session <span class="op">=</span> Depends(get_session)):</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    users <span class="op">=</span> session.<span class="bu">exec</span>(select(User)).<span class="bu">all</span>()</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> users</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.get</span>(<span class="st">"/users"</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> get_users(session: Session <span class="op">=</span> Depends(get_session)):</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    users <span class="op">=</span> session.<span class="bu">exec</span>(select(User)).<span class="bu">all</span>()</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> users</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The session automatically handles transaction management, ensuring that database operations are atomic and consistent.</p>
 
 
