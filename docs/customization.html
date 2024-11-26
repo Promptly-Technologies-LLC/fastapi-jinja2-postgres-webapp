@@ -178,6 +178,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#dependency-management-with-poetry" id="toc-dependency-management-with-poetry" class="nav-link" data-scroll-target="#dependency-management-with-poetry">Dependency management with Poetry</a></li>
   <li><a href="#testing" id="toc-testing" class="nav-link" data-scroll-target="#testing">Testing</a></li>
   <li><a href="#type-checking-with-mypy" id="toc-type-checking-with-mypy" class="nav-link" data-scroll-target="#type-checking-with-mypy">Type checking with mypy</a></li>
+  <li><a href="#developing-with-llms" id="toc-developing-with-llms" class="nav-link" data-scroll-target="#developing-with-llms">Developing with LLMs</a></li>
   </ul></li>
   <li><a href="#project-structure" id="toc-project-structure" class="nav-link" data-scroll-target="#project-structure">Project structure</a>
   <ul class="collapse">
@@ -251,6 +252,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>The project uses type annotations and mypy for static type checking. To run mypy, use this command from the root directory:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">mypy</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>We find that mypy is an enormous time-saver, catching many errors early and greatly reducing time spent debugging unit tests. However, note that mypy requires you type annotate every variable, function, and method in your code base, so taking advantage of it is a lifestyle change!</p>
+</section>
+<section id="developing-with-llms" class="level3">
+<h3 class="anchored" data-anchor-id="developing-with-llms">Developing with LLMs</h3>
+<p>In line with the <a href="https://llmstxt.org/">llms.txt standard</a>, we have exposed the full Markdown-formatted project documentation as a <a href="https://promptlytechnologies.com/docs/static/llms.txt">single text file</a> to make it more usable by LLM agents.</p>
 </section>
 </section>
 <section id="project-structure" class="level2">
