@@ -236,7 +236,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><code>set_up_database</code>: Sets up the test database before running the test suite by dropping all tables and recreating them to ensure a clean state.</li>
 <li><code>session</code>: Provides a session for database operations in tests.</li>
 <li><code>clean_db</code>: Cleans up the database tables before each test by deleting all entries in the <code>PasswordResetToken</code> and <code>User</code> tables.</li>
-<li><code>client</code>: Provides a <code>TestClient</code> instance with the session fixture, overriding the <code>get_session</code> dependency to use the test session.</li>
+<li><code>auth_client</code>: Provides a <code>TestClient</code> instance with access and refresh token cookies set, overriding the <code>get_session</code> dependency to use the <code>session</code> fixture.</li>
+<li><code>unauth_client</code>: Provides a <code>TestClient</code> instance without authentication cookies set, overriding the <code>get_session</code> dependency to use the <code>session</code> fixture.</li>
 <li><code>test_user</code>: Creates a test user in the database with a predefined name, email, and hashed password.</li>
 </ul>
 <p>To run the tests, use these commands:</p>
@@ -250,12 +251,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="type-checking-with-mypy" class="level3">
 <h3 class="anchored" data-anchor-id="type-checking-with-mypy">Type checking with mypy</h3>
 <p>The project uses type annotations and mypy for static type checking. To run mypy, use this command from the root directory:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">mypy</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>We find that mypy is an enormous time-saver, catching many errors early and greatly reducing time spent debugging unit tests. However, note that mypy requires you type annotate every variable, function, and method in your code base, so taking advantage of it is a lifestyle change!</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">mypy</span> .</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>We find that mypy is an enormous time-saver, catching many errors early and greatly reducing time spent debugging unit tests. However, note that mypy requires you type annotate every variable, function, and method in your code base, so taking advantage of it requires a lifestyle change!</p>
 </section>
 <section id="developing-with-llms" class="level3">
 <h3 class="anchored" data-anchor-id="developing-with-llms">Developing with LLMs</h3>
-<p>In line with the <a href="https://llmstxt.org/">llms.txt standard</a>, we have exposed the full Markdown-formatted project documentation as a <a href="https://promptlytechnologies.com/docs/static/llms.txt">single text file</a> to make it more usable by LLM agents.</p>
+<p>In line with the <a href="https://llmstxt.org/">llms.txt standard</a>, we have provided a Markdown-formatted prompt—designed to help LLM agents understand how to work with this template—as a <a href="https://promptlytechnologies.com/docs/static/llms.txt">text file</a>. One use case for this file is to rename it to <code>.cursorrules</code> and place it in your project directory is using the Cursor IDE (see the <a href="https://docs.cursor.com/context/rules-for-ai">Cursor docs</a> on this for more information).</p>
+<p>We have also exposed the full Markdown-formatted project documentation as a <a href="https://promptlytechnologies.com/docs/static/documentation.txt">single text file</a> for easy downloading and embedding.</p>
 </section>
 </section>
 <section id="project-structure" class="level2">
@@ -298,10 +300,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>We also create POST endpoints, which accept form submissions so the user can create, update, and delete data in the database. This template follows the Post-Redirect-Get (PRG) pattern to handle POST requests. When a form is submitted, the server processes the data and then returns a “redirect” response, which sends the user to a GET endpoint to re-render the page with the updated data. (See <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html">Architecture</a> for more details.)</p>
 <section id="routing-patterns-in-this-template" class="level4">
 <h4 class="anchored" data-anchor-id="routing-patterns-in-this-template">Routing patterns in this template</h4>
-<p>In this template, GET routes are defined in the main entry point for the application, <code>main.py</code>. POST routes are organized into separate modules within the <code>routers/</code> directory. We name our GET routes using the convention <code>read_&lt;name&gt;</code>, where <code>&lt;name&gt;</code> is the name of the page, to indicate that they are read-only endpoints that do not modify the database.</p>
+<p>In this template, GET routes are defined in the main entry point for the application, <code>main.py</code>. POST routes are organized into separate modules within the <code>routers/</code> directory.</p>
+<p>We name our GET routes using the convention <code>read_&lt;name&gt;</code>, where <code>&lt;name&gt;</code> is the name of the page, to indicate that they are read-only endpoints that do not modify the database.</p>
 <p>We divide our GET routes into authenticated and unauthenticated routes, using commented section headers in our code that look like this:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># -- Authenticated Routes --</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Some of our routes take request parameters, which we pass as keyword arguments to the route handler. These parameters should be type annotated for validation purposes. Some parameters are shared across all authenticated or unauthenticated routes, so we define them in the <code>common_authenticated_parameters</code> and <code>common_unauthenticated_parameters</code> dependencies defined in <code>main.py</code>.</p>
+<p>Some of our routes take request parameters, which we pass as keyword arguments to the route handler. These parameters should be type annotated for validation purposes.</p>
+<p>Some parameters are shared across all authenticated or unauthenticated routes, so we define them in the <code>common_authenticated_parameters</code> and <code>common_unauthenticated_parameters</code> dependencies defined in <code>main.py</code>.</p>
 </section>
 </section>
 <section id="html-templating-with-jinja2" class="level3">
@@ -317,7 +321,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="st">"welcome.html"</span>,</span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"username"</span>: <span class="st">"Alice"</span>}</span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>In this example, the <code>welcome.html</code> template will receive two pieces of context: the user’s <code>request</code>, which is always passed automatically by FastAPI, and a <code>username</code> variable, which we specify as “Alice”. We can then use the <code>{ username }</code> syntax in the <code>welcome.html</code> template (or any of its parent or child templates) to insert the value into the HTML.</p>
+<p>In this example, the <code>welcome.html</code> template will receive two pieces of context: the user’s <code>request</code>, which is always passed automatically by FastAPI, and a <code>username</code> variable, which we specify as “Alice”. We can then use the <code>{{ username }}</code> syntax in the <code>welcome.html</code> template (or any of its parent or child templates) to insert the value into the HTML.</p>
 </section>
 <section id="form-validation-strategy" class="level4">
 <h4 class="anchored" data-anchor-id="form-validation-strategy">Form validation strategy</h4>
@@ -426,9 +430,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </figure>
 </div>
 </section>
-<section id="database-operations" class="level4">
-<h4 class="anchored" data-anchor-id="database-operations">Database operations</h4>
-<p>Database operations are handled by helper functions in <code>utils/db.py</code>. Key functions include:</p>
+<section id="database-helpers" class="level4">
+<h4 class="anchored" data-anchor-id="database-helpers">Database helpers</h4>
+<p>Database operations are facilitated by helper functions in <code>utils/db.py</code>. Key functions include:</p>
 <ul>
 <li><code>set_up_db()</code>: Initializes the database schema and default data (which we do on every application start in <code>main.py</code>)</li>
 <li><code>get_connection_url()</code>: Creates a database connection URL from environment variables in <code>.env</code></li>
@@ -440,6 +444,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    users <span class="op">=</span> session.<span class="bu">exec</span>(select(User)).<span class="bu">all</span>()</span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> users</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The session automatically handles transaction management, ensuring that database operations are atomic and consistent.</p>
+</section>
+<section id="cascade-deletes" class="level4">
+<h4 class="anchored" data-anchor-id="cascade-deletes">Cascade deletes</h4>
+<p>Cascade deletes (in which deleting a record from one table deletes related records from another table) can be handled at either the ORM level or the database level. This template handles cascade deletes at the ORM level, via SQLModel relationships. Inside a SQLModel <code>Relationship</code>, we set:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>sa_relationship_kwargs<span class="op">=</span>{</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"cascade"</span>: <span class="st">"all, delete-orphan"</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>This tells SQLAlchemy to cascade all operations (e.g., <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>) to the related table. Since this happens through the ORM, we need to be careful to do all our database operations through the ORM using supported syntax. That generally means loading database records into Python objects and then deleting those objects rather than deleting records in the database directly.</p>
+<p>For example,</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>session.<span class="bu">exec</span>(delete(Role))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>will not trigger the cascade delete. Instead, we need to select the role objects and then delete them:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> role <span class="kw">in</span> session.<span class="bu">exec</span>(select(Role)).<span class="bu">all</span>():</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    session.delete(role)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>This is slower than deleting the records directly, but it makes <a href="https://sqlmodel.tiangolo.com/tutorial/many-to-many/create-models-with-link/#create-the-tables">many-to-many relationships</a> much easier to manage.</p>
 
 
 </section>
