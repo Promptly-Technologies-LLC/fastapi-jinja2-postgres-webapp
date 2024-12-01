@@ -1,0 +1,1049 @@
+# FastAPI, Jinja2, PostgreSQL Webapp Template
+
+![Screenshot of homepage](docs/static/Screenshot.png)
+
+## Quickstart
+
+This quickstart guide provides a high-level overview. See the full documentation for comprehensive information on [features](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/index.html), [installation](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/installation.html), [architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html), [conventions, code style, and customization](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/customization.html), [deployment to cloud platforms](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/deployment.html), and [contributing](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/contributing.html).
+
+## Features
+
+This template combines three of the most lightweight and performant open-source web development frameworks into a customizable webapp template with:
+
+- Pure Python backend
+- Minimal-Javascript frontend
+- Powerful, easy-to-manage database
+
+The template also includes full-featured secure auth with:
+
+- Token-based authentication
+- Password recovery flow
+- Role-based access control system
+
+## Design Philosophy
+
+The design philosophy of the template is to prefer low-level, best-in-class open-source frameworks that offer flexibility, scalability, and performance without vendor-lock-in. You'll find the template amazingly easy not only to understand and customize, but also to deploy to any major cloud hosting platform.
+
+## Tech Stack
+
+**Core frameworks:**
+
+- [FastAPI](https://fastapi.tiangolo.com/): scalable, high-performance, type-annotated Python web backend framework
+- [PostgreSQL](https://www.postgresql.org/): the world's most advanced open-source database engine
+- [Jinja2](https://jinja.palletsprojects.com/en/3.1.x/): frontend HTML templating engine
+- [SQLModel](https://sqlmodel.tiangolo.com/): easy-to-use Python ORM
+
+**Additional technologies:**
+
+- [Poetry](https://python-poetry.org/): Python dependency manager
+- [Pytest](https://docs.pytest.org/en/7.4.x/): testing framework
+- [Docker](https://www.docker.com/): development containerization
+- [Github Actions](https://docs.github.com/en/actions): CI/CD pipeline
+- [Quarto](https://quarto.org/docs/): simple documentation website renderer
+- [MyPy](https://mypy.readthedocs.io/en/stable/): static type checker for Python
+- [Bootstrap](https://getbootstrap.com/): HTML/CSS styler
+- [Resend](https://resend.com/): zero- or low-cost email service used for password recovery
+
+## Installation
+
+For comprehensive installation instructions, see the [installation page](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/installation.html).
+
+### Python and Docker
+
+- [Python 3.12 or higher](https://www.python.org/downloads/)
+- [Docker and Docker Compose](https://docs.docker.com/get-docker/)
+
+### PostgreSQL headers
+
+For Ubuntu/Debian:
+
+``` bash
+sudo apt update && sudo apt install -y python3-dev libpq-dev
+```
+
+For macOS:
+
+``` bash
+brew install postgresql
+```
+
+For Windows:
+
+- No installation required
+
+### Python dependencies
+
+1.  Install Poetry
+
+``` bash
+pipx install poetry
+```
+
+2.  Install project dependencies
+
+``` bash
+poetry install
+```
+
+3.  Activate shell
+
+``` bash
+poetry shell
+```
+
+(Note: You will need to activate the shell every time you open a new terminal session. Alternatively, you can use the `poetry run` prefix before other commands to run them without activating the shell.)
+
+### Set environment variables
+
+Copy .env.example to .env with `cp .env.example .env`.
+
+Generate a 256 bit secret key with `openssl rand -base64 32` and paste it into the .env file.
+
+Set your desired database name, username, and password in the .env file.
+
+To use password recovery, register a [Resend](https://resend.com/) account, verify a domain, get an API key, and paste the API key into the .env file.
+
+### Start development database
+
+To start the development database, run the following command in your terminal from the root directory:
+
+``` bash
+docker compose up -d
+```
+
+### Run the development server
+
+Make sure the development database is running and tables and default permissions/roles are created first.
+
+``` bash
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Navigate to http://localhost:8000/
+
+### Lint types with mypy
+
+``` bash
+mypy .
+```
+
+## Developing with LLMs
+
+In line with the [llms.txt standard](https://llmstxt.org/), we have provided a Markdown-formatted prompt—designed to help LLM agents understand how to work with this template—as a [text file](https://promptlytechnologies.com/docs/static/llms.txt). One use case for this file is to rename it to `.cursorrules` and place it in your project directory is using the Cursor IDE (see the [Cursor docs](https://docs.cursor.com/context/rules-for-ai) on this for more information).
+
+We have also exposed the full Markdown-formatted project documentation as a [single text file](https://promptlytechnologies.com/docs/static/documentation.txt) for easy downloading and embedding.
+
+``` {python}
+#| echo: false
+#| include: false
+import re
+from pathlib import Path
+
+
+def extract_file_paths(quarto_yml_path):
+    """
+    Extract href paths from _quarto.yml file.
+    Returns a list of .qmd file paths.
+    """
+    with open(quarto_yml_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    # Find all href entries that point to .qmd files
+    pattern = r'^\s*-\s*href:\s*(.*?\.qmd)\s*$'
+    matches = re.findall(pattern, content, re.MULTILINE)
+    return matches
+
+
+def process_qmd_content(file_path):
+    """
+    Process a .qmd file by converting YAML frontmatter to markdown heading.
+    Returns the processed content as a string.
+    """
+    with open(file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    # Replace YAML frontmatter with markdown heading
+    pattern = r'^---\s*\ntitle:\s*"([^"]+)"\s*\n---'
+    processed_content = re.sub(pattern, r'# \1', content)
+    return processed_content
+
+
+# Get the current working directory
+base_dir = Path.cwd()
+quarto_yml_path = base_dir / '_quarto.yml'
+
+# Extract file paths from _quarto.yml
+qmd_files = extract_file_paths(quarto_yml_path)
+
+# Process each .qmd file and collect contents
+processed_contents = []
+for qmd_file in qmd_files:
+    file_path = base_dir / qmd_file
+    if file_path.exists():
+        processed_content = process_qmd_content(file_path)
+        processed_contents.append(processed_content)
+
+# Concatenate all contents with double newline separator
+final_content = '\n\n'.join(processed_contents)
+
+# Ensure the output directory exists
+output_dir = base_dir / 'docs' / 'static'
+output_dir.mkdir(parents=True, exist_ok=True)
+
+# Write the concatenated content to the output file
+output_path = output_dir / 'llms.txt'
+with open(output_path, 'w', encoding='utf-8') as f:
+    f.write(final_content)
+```
+
+## Contributing
+
+Your contributions are welcome! See the [issues page](https://github.com/promptly-technologies-llc/fastapi-jinja2-postgres-webapp/issues) for ideas. Fork the repository, create a new branch, make your changes, and submit a pull request.
+
+## License
+
+This project is created and maintained by [Promptly Technologies, LLC](https://promptlytechnologies.com/) and licensed under the MIT License. See the LICENSE file for more details.
+
+
+# Architecture
+
+## Data flow
+
+This application uses a Post-Redirect-Get (PRG) pattern. The user submits a form, which sends a POST request to a FastAPI endpoint on the server. The database is updated, and the user is redirected to a GET endpoint, which fetches the updated data and re-renders the Jinja2 page template with the new data.
+
+``` {python}
+#| echo: false
+#| include: false
+from graphviz import Digraph
+
+dot = Digraph()
+dot.attr(rankdir='TB')
+dot.attr('node', shape='box', style='rounded')
+
+# Create client subgraph at top
+with dot.subgraph(name='cluster_client') as client:
+    client.attr(label='Client')
+    client.attr(rank='topmost')
+    client.node('A', 'User submits form', fillcolor='lightblue', style='rounded,filled')
+    client.node('B', 'HTML/JS form validation', fillcolor='lightblue', style='rounded,filled')
+
+# Create server subgraph below
+with dot.subgraph(name='cluster_server') as server:
+    server.attr(label='Server')
+    server.node('C', 'Convert to Pydantic model', fillcolor='lightgreen', style='rounded,filled')
+    server.node('D', 'Optional custom validation', fillcolor='lightgreen', style='rounded,filled')
+    server.node('E', 'Update database', fillcolor='lightgreen', style='rounded,filled')
+    server.node('F', 'Middleware error handler', fillcolor='lightgreen', style='rounded,filled')
+    server.node('G', 'Render error template', fillcolor='lightgreen', style='rounded,filled')
+    server.node('H', 'Redirect to GET endpoint', fillcolor='lightgreen', style='rounded,filled')
+    server.node('I', 'Fetch updated data', fillcolor='lightgreen', style='rounded,filled')
+    server.node('K', 'Re-render Jinja2 page template', fillcolor='lightgreen', style='rounded,filled')
+
+with dot.subgraph(name='cluster_client_post') as client_post:
+    client_post.attr(label='Client')
+    client_post.attr(rank='bottommost')
+    client_post.node('J', 'Display rendered page', fillcolor='lightblue', style='rounded,filled')
+
+# Add visible edges
+dot.edge('A', 'B')
+dot.edge('B', 'A')
+dot.edge('B', 'C', label='POST Request to FastAPI endpoint')
+dot.edge('C', 'D')
+dot.edge('C', 'F', label='RequestValidationError')
+dot.edge('D', 'E', label='Valid data')
+dot.edge('D', 'F', label='Custom Validation Error')
+dot.edge('E', 'H', label='Data updated')
+dot.edge('H', 'I')
+dot.edge('I', 'K')
+dot.edge('K', 'J', label='Return HTML')
+dot.edge('F', 'G')
+dot.edge('G', 'J', label='Return HTML')
+
+dot.render('static/data_flow', format='png', cleanup=True)
+```
+
+![Data flow diagram](static/data_flow.png)
+
+The advantage of the PRG pattern is that it is very straightforward to implement and keeps most of the rendering logic on the server side. The disadvantage is that it requires an extra round trip to the database to fetch the updated data, and re-rendering the entire page template may be less efficient than a partial page update on the client side.
+
+## Form validation flow
+
+We've experimented with several approaches to validating form inputs in the FastAPI endpoints.
+
+### Objectives
+
+Ideally, on an invalid input, we would redirect the user back to the form, preserving their inputs and displaying an error message about which input was invalid.
+
+This would keep the error handling consistent with the PRG pattern described in the [Architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture) section of this documentation.
+
+To keep the code DRY, we'd also like to handle such validation with Pydantic dependencies, Python exceptions, and exception-handling middleware as much as possible.
+
+### Obstacles
+
+One challenge is that if we redirect back to the page with the form, the page is re-rendered with empty form fields. 
+
+This can be overcome by passing the inputs from the request as context variables to the template. 
+
+But that's a bit clunky, because then we have to support form-specific context variables in every form page and corresponding GET endpoint.
+
+Also, we have to:
+
+1. access the request object (which is not by default available to our middleware), and 
+2. extract the form inputs (at least one of which is invalid in this error case), and 
+3. pass the form inputs to the template (which is a bit challenging to do in a DRY way since there are different sets of form inputs for different forms).
+
+Solving these challenges is possible, but gets high-complexity pretty quickly.
+
+### Approaches
+
+The best solution, I think, is to use really robust client-side form validation to prevent invalid inputs from being sent to the server in the first place. That makes it less important what we do on the server side, although we still need to handle the server-side error case as a backup in the event that something slips past our validation on the client side.
+
+Here are some patterns we've considered for server-side error handling:
+
+<style>
+.styled-table, .styled-table th, .styled-table td {
+  border: 1px solid black;
+  padding: 8px;
+  border-collapse: collapse;
+}
+
+.styled-table th:nth-child(1) { width: 5%; }
+.styled-table th:nth-child(2) { width: 50%; }
+.styled-table th:nth-child(3), 
+.styled-table th:nth-child(4),
+.styled-table th:nth-child(5) { width: 15%; }
+.styled-table th:nth-child(6) { width: 10%; }
+</style>
+
+<table class="styled-table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Approach</th>
+      <th>Returns to same page</th>
+      <th>Preserves form inputs</th>
+      <th>Follows PRG pattern</th>
+      <th>Complexity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>Validate with Pydantic dependency, catch and redirect from middleware (with exception message as context) to an error page with "go back" button</td>
+      <td>No</td>
+      <td>Yes</td>
+      <td>Yes</td>
+      <td>Low</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Validate in FastAPI endpoint function body, redirect to origin page with error message query param</td>
+      <td>Yes</td>
+      <td>No</td>
+      <td>Yes</td>
+      <td>Medium</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Validate in FastAPI endpoint function body, redirect to origin page with error message query param and form inputs as context so we can re-render page with original form inputs</td>
+      <td>Yes</td>
+      <td>Yes</td>
+      <td>Yes</td>
+      <td>High</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Validate with Pydantic dependency, use session context to get form inputs from request, redirect to origin page from middleware with exception message and form inputs as context so we can re-render page with original form inputs</td>
+      <td>Yes</td>
+      <td>Yes</td>
+      <td>Yes</td>
+      <td>High</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Validate in either Pydantic dependency or function endpoint body and directly return error message or error toast HTML partial in JSON, then mount error toast with HTMX or some simple layout-level Javascript</td>
+      <td>Yes</td>
+      <td>Yes</td>
+      <td>No</td>
+      <td>Low</td>
+    </tr>
+  </tbody>
+</table>
+
+Presently this template primarily uses option 1 but also supports option 2. Ultimately, I think option 5 will be preferable; support for that [is planned](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/issues/5) for a future update or fork of this template.
+
+# Authentication
+
+## Security features
+
+This template implements a comprehensive authentication system with security best practices:
+
+1. **Token Security**:
+   - JWT-based with separate access/refresh tokens
+   - Strict expiry times (30 min access, 30 day refresh)
+   - Token type validation
+   - HTTP-only cookies
+   - Secure flag enabled
+   - SameSite=strict restriction
+
+2. **Password Security**:
+   - Strong password requirements enforced
+   - Bcrypt hashing with random salt
+   - Password reset tokens are single-use
+   - Reset tokens have expiration
+
+3. **Cookie Security**:
+   - HTTP-only prevents JavaScript access
+   - Secure flag ensures HTTPS only
+   - Strict SameSite prevents CSRF
+
+4. **Error Handling**:
+   - Validation errors properly handled
+   - Security-related errors don't leak information
+   - Comprehensive error logging
+   
+The diagrams below show the main authentication flows.
+
+## Registration and login flow
+
+``` {python}
+#| echo: false
+#| include: false
+from graphviz import Digraph
+
+# Create graph for registration/login
+auth = Digraph(name='auth_flow')
+auth.attr(rankdir='TB')
+auth.attr('node', shape='box', style='rounded')
+
+# Client-side nodes
+with auth.subgraph(name='cluster_client') as client:
+    client.attr(label='Client')
+    client.node('register_form', 'Submit registration', fillcolor='lightblue', style='rounded,filled')
+    client.node('login_form', 'Submit login', fillcolor='lightblue', style='rounded,filled')
+    client.node('store_cookies', 'Store secure cookies', fillcolor='lightblue', style='rounded,filled')
+
+# Server-side nodes
+with auth.subgraph(name='cluster_server') as server:
+    server.attr(label='Server')
+    # Registration path
+    server.node('validate_register', 'Validate registration data', fillcolor='lightgreen', style='rounded,filled')
+    server.node('hash_new', 'Hash new password', fillcolor='lightgreen', style='rounded,filled')
+    server.node('store_user', 'Store user in database', fillcolor='lightgreen', style='rounded,filled')
+    
+    # Login path
+    server.node('validate_login', 'Validate login data', fillcolor='lightgreen', style='rounded,filled')
+    server.node('verify_password', 'Verify password hash', fillcolor='lightgreen', style='rounded,filled')
+    server.node('fetch_user', 'Fetch user from database', fillcolor='lightgreen', style='rounded,filled')
+    
+    # Common path
+    server.node('generate_tokens', 'Generate JWT tokens', fillcolor='lightgreen', style='rounded,filled')
+
+# Registration path
+auth.edge('register_form', 'validate_register', 'POST /register')
+auth.edge('validate_register', 'hash_new')
+auth.edge('hash_new', 'store_user')
+auth.edge('store_user', 'generate_tokens', 'Success')
+
+# Login path
+auth.edge('login_form', 'validate_login', 'POST /login')
+auth.edge('validate_login', 'fetch_user')
+auth.edge('fetch_user', 'verify_password')
+auth.edge('verify_password', 'generate_tokens', 'Success')
+
+# Common path
+auth.edge('generate_tokens', 'store_cookies', 'Set-Cookie')
+
+auth.render('static/auth_flow', format='png', cleanup=True)
+```
+
+![Registration and login flow](static/auth_flow.png)
+
+## Password reset flow
+
+``` {python}
+#| echo: false
+#| include: false
+from graphviz import Digraph
+
+# Create graph for password reset
+reset = Digraph(name='reset_flow')
+reset.attr(rankdir='TB')
+reset.attr('node', shape='box', style='rounded')
+
+# Client-side nodes - using light blue fill
+reset.node('forgot', 'User submits forgot password form', fillcolor='lightblue', style='rounded,filled')
+reset.node('reset', 'User submits reset password form', fillcolor='lightblue', style='rounded,filled')
+reset.node('email_client', 'User clicks reset link', fillcolor='lightblue', style='rounded,filled')
+
+# Server-side nodes - using light green fill
+reset.node('validate', 'Validation', fillcolor='lightgreen', style='rounded,filled')
+reset.node('token_gen', 'Generate reset token', fillcolor='lightgreen', style='rounded,filled')
+reset.node('hash', 'Hash password', fillcolor='lightgreen', style='rounded,filled')
+reset.node('email_server', 'Send email with Resend', fillcolor='lightgreen', style='rounded,filled')
+reset.node('db', 'Database', shape='cylinder', fillcolor='lightgreen', style='filled')
+
+# Add edges with labels
+reset.edge('forgot', 'token_gen', 'POST')
+reset.edge('token_gen', 'db', 'Store')
+reset.edge('token_gen', 'email_server', 'Add email/token as URL parameter')
+reset.edge('email_server', 'email_client')
+reset.edge('email_client', 'reset', 'Set email/token as form input')
+reset.edge('reset', 'validate', 'POST')
+reset.edge('validate', 'hash')
+reset.edge('hash', 'db', 'Update')
+
+reset.render('static/reset_flow', format='png', cleanup=True)
+```
+
+![Password reset flow](static/reset_flow.png)
+
+
+# Installation
+
+## Install all dependencies in a VSCode Dev Container
+
+If you use VSCode with Docker to develop in a container, the following VSCode Dev Container configuration will install all dependencies:
+
+``` json
+{
+	"name": "Python 3",
+	"image": "mcr.microsoft.com/devcontainers/python:1-3.12-bullseye",
+	"postCreateCommand": "sudo apt update && sudo apt install -y python3-dev libpq-dev graphviz && pipx install poetry && poetry install && poetry shell",
+	"features": {
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+		"ghcr.io/rocker-org/devcontainer-features/quarto-cli:1": {}
+	}
+}
+```
+
+Simply create a `.devcontainer` folder in the root of the project and add a `devcontainer.json` file in the folder with the above content. VSCode may prompt you to install the Dev Container extension if you haven't already, and/or to open the project in a container. If not, you can manually select "Dev Containers: Reopen in Container" from View > Command Palette.
+
+*IMPORTANT: If using this dev container configuration, you will need to set the `DB_HOST` environment variable to "host.docker.internal" in the `.env` file.*
+
+## Install development dependencies manually
+
+### Python and Docker
+
+- [Python 3.12 or higher](https://www.python.org/downloads/)
+- [Docker and Docker Compose](https://docs.docker.com/get-docker/)
+
+### PostgreSQL headers
+
+For Ubuntu/Debian:
+
+``` bash
+sudo apt update && sudo apt install -y python3-dev libpq-dev
+```
+
+For macOS:
+
+``` bash
+brew install postgresql
+```
+
+For Windows:
+
+- No installation required
+
+### Python dependencies
+
+1.  Install Poetry
+
+``` bash
+pipx install poetry
+```
+
+2.  Install project dependencies
+
+``` bash
+poetry install
+```
+
+3.  Activate shell
+
+``` bash
+poetry shell
+```
+
+(Note: You will need to activate the shell every time you open a new terminal session. Alternatively, you can use the `poetry run` prefix before other commands to run them without activating the shell.)
+
+## Install documentation dependencies manually
+
+### Quarto CLI
+
+To render the project documentation, you will need to download and install the [Quarto CLI](https://quarto.org/docs/get-started/) for your operating system.
+
+### Graphviz
+
+Architecture diagrams in the documentation are rendered with [Graphviz](https://graphviz.org/).
+
+For macOS:
+
+``` bash
+brew install graphviz
+```
+
+For Ubuntu/Debian:
+
+``` bash
+sudo apt update && sudo apt install -y graphviz
+```
+
+For Windows:
+
+- Download and install from [Graphviz.org](https://graphviz.org/download/#windows)
+
+## Set environment variables
+
+Copy .env.example to .env with `cp .env.example .env`.
+
+Generate a 256 bit secret key with `openssl rand -base64 32` and paste it into the .env file.
+
+Set your desired database name, username, and password in the .env file.
+
+To use password recovery, register a [Resend](https://resend.com/) account, verify a domain, get an API key, and paste the API key into the .env file.
+
+If using the dev container configuration, you will need to set the `DB_HOST` environment variable to "host.docker.internal" in the .env file. Otherwise, set `DB_HOST` to "localhost" for local development. (In production, `DB_HOST` will be set to the hostname of the database server.)
+
+## Start development database
+
+To start the development database, run the following command in your terminal from the root directory:
+
+``` bash
+docker compose up -d
+```
+
+If at any point you change the environment variables in the .env file, you will need to stop the database service *and tear down the volume*:
+
+``` bash
+# Don't forget the -v flag to tear down the volume!
+docker compose down -v
+```
+
+You may also need to restart the terminal session to pick up the new environment variables. You can also add the `--force-recreate` and `--build` flags to the startup command to ensure the container is rebuilt:
+
+``` bash
+docker compose up -d --force-recreate --build
+```
+
+## Run the development server
+
+Before running the development server, make sure the development database is running and tables and default permissions/roles are created first. Then run the following command in your terminal from the root directory:
+
+``` bash
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Navigate to http://localhost:8000/
+
+## Lint types with mypy
+
+``` bash
+mypy .
+```
+
+
+# Customization
+
+## Development workflow
+
+### Dependency management with Poetry
+
+The project uses Poetry to manage dependencies:
+
+- Add new dependency: `poetry add <dependency>`
+- Add development dependency: `poetry add --dev <dependency>`
+- Remove dependency: `poetry remove <dependency>`
+- Update lock file: `poetry lock`
+- Install dependencies: `poetry install`
+- Update all dependencies: `poetry update`
+
+### Testing
+
+The project uses Pytest for unit testing. It's highly recommended to write and run tests before committing code to ensure nothing is broken!
+
+The following fixtures, defined in `tests/conftest.py`, are available in the test suite:
+
+- `engine`: Creates a new SQLModel engine for the test database.
+- `set_up_database`: Sets up the test database before running the test suite by dropping all tables and recreating them to ensure a clean state.
+- `session`: Provides a session for database operations in tests.
+- `clean_db`: Cleans up the database tables before each test by deleting all entries in the `PasswordResetToken` and `User` tables.
+- `auth_client`: Provides a `TestClient` instance with access and refresh token cookies set, overriding the `get_session` dependency to use the `session` fixture.
+- `unauth_client`: Provides a `TestClient` instance without authentication cookies set, overriding the `get_session` dependency to use the `session` fixture.
+- `test_user`: Creates a test user in the database with a predefined name, email, and hashed password.
+
+To run the tests, use these commands:
+
+- Run all tests: `pytest`
+- Run tests in debug mode (includes logs and print statements in console output): `pytest -s`
+- Run particular test files by name: `pytest <test_file_name>`
+- Run particular tests by name: `pytest -k <test_name>`
+
+### Type checking with mypy
+
+The project uses type annotations and mypy for static type checking. To run mypy, use this command from the root directory:
+
+```bash
+mypy .
+```
+
+We find that mypy is an enormous time-saver, catching many errors early and greatly reducing time spent debugging unit tests. However, note that mypy requires you type annotate every variable, function, and method in your code base, so taking advantage of it requires a lifestyle change!
+
+### Developing with LLMs
+
+In line with the [llms.txt standard](https://llmstxt.org/), we have provided a Markdown-formatted prompt—designed to help LLM agents understand how to work with this template—as a [text file](https://promptlytechnologies.com/docs/static/llms.txt). One use case for this file is to rename it to `.cursorrules` and place it in your project directory is using the Cursor IDE (see the [Cursor docs](https://docs.cursor.com/context/rules-for-ai) on this for more information).
+
+We have also exposed the full Markdown-formatted project documentation as a [single text file](https://promptlytechnologies.com/docs/static/documentation.txt) for easy downloading and embedding.
+
+## Project structure
+
+### Customizable folders and files
+
+- FastAPI application entry point and GET routes: `main.py`
+- FastAPI POST routes: `routers/`
+    - User authentication endpoints: `auth.py`
+    - User profile management endpoints: `user.py`
+    - Organization management endpoints: `organization.py`
+    - Role management endpoints: `role.py`
+- Jinja2 templates: `templates/`
+- Static assets: `static/`
+- Unit tests: `tests/`
+- Test database configuration: `docker-compose.yml`
+- Helper functions: `utils/`
+    - Auth helpers: `auth.py`
+    - Database helpers: `db.py`
+    - Database models: `models.py`
+- Environment variables: `.env`
+- CI/CD configuration: `.github/`
+- Project configuration: `pyproject.toml`
+- Quarto documentation: 
+    - Source: `index.qmd` + `docs/`
+    - Configuration: `_quarto.yml`
+
+Most everything else is auto-generated and should not be manually modified.
+
+### Defining a web backend with FastAPI
+
+We use FastAPI to define the "API endpoints" of our application. An API endpoint is simply a URL that accepts user requests and returns responses. When a user visits a page, their browser sends what's called a "GET" request to an endpoint, and the server processes it (often querying a database), and returns a response (typically HTML). The browser renders the HTML, displaying the page.
+
+We also create POST endpoints, which accept form submissions so the user can create, update, and delete data in the database. This template follows the Post-Redirect-Get (PRG) pattern to handle POST requests. When a form is submitted, the server processes the data and then returns a "redirect" response, which sends the user to a GET endpoint to re-render the page with the updated data. (See [Architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html) for more details.)
+
+#### Routing patterns in this template
+
+In this template, GET routes are defined in the main entry point for the application, `main.py`. POST routes are organized into separate modules within the `routers/` directory.
+
+We name our GET routes using the convention `read_<name>`, where `<name>` is the name of the page, to indicate that they are read-only endpoints that do not modify the database.
+
+We divide our GET routes into authenticated and unauthenticated routes, using commented section headers in our code that look like this:
+
+```python
+# -- Authenticated Routes --
+```
+
+Some of our routes take request parameters, which we pass as keyword arguments to the route handler. These parameters should be type annotated for validation purposes.
+
+Some parameters are shared across all authenticated or unauthenticated routes, so we define them in the `common_authenticated_parameters` and `common_unauthenticated_parameters` dependencies defined in `main.py`.
+
+### HTML templating with Jinja2
+
+To generate the HTML pages to be returned from our GET routes, we use Jinja2 templates. Jinja2's hierarchical templates allow creating a base template (`templates/base.html`) that defines the overall layout of our web pages (e.g., where the header, body, and footer should go). Individual pages can then extend this base template. We can also template reusable components that can be injected into our layout or page templates.
+
+With Jinja2, we can use the `{% block %}` tag to define content blocks, and the `{% extends %}` tag to extend a base template. We can also use the `{% include %}` tag to include a component in a parent template. See the [Jinja2 documentation on template inheritance](https://jinja.palletsprojects.com/en/stable/templates/#template-inheritance) for more details.
+
+#### Context variables
+
+Context refers to Python variables passed to a template to populate the HTML. In a FastAPI GET route, we can pass context to a template using the `templates.TemplateResponse` method, which takes the request and any context data as arguments. For example:
+
+```python
+@app.get("/welcome")
+async def welcome(request: Request):
+    return templates.TemplateResponse(
+        "welcome.html",
+        {"username": "Alice"}
+    )
+```
+
+In this example, the `welcome.html` template will receive two pieces of context: the user's `request`, which is always passed automatically by FastAPI, and a `username` variable, which we specify as "Alice". We can then use the `{{{ username }}}` syntax in the `welcome.html` template (or any of its parent or child templates) to insert the value into the HTML.
+
+#### Form validation strategy
+
+While this template includes comprehensive server-side validation through Pydantic models and custom validators, it's important to note that server-side validation should be treated as a fallback security measure. If users ever see the `validation_error.html` template, it indicates that our client-side validation has failed to catch invalid input before it reaches the server.
+
+Best practices dictate implementing thorough client-side validation via JavaScript and/or HTML `input` element `pattern` attributes to:
+- Provide immediate feedback to users
+- Reduce server load
+- Improve user experience by avoiding round-trips to the server
+- Prevent malformed data from ever reaching the backend
+
+Server-side validation remains essential as a security measure against malicious requests that bypass client-side validation, but it should rarely be encountered during normal user interaction. See `templates/authentication/register.html` for a client-side form validation example involving both JavaScript and HTML regex `pattern` matching.
+
+### Writing type annotated code
+
+Pydantic is used for data validation and serialization. It ensures that the data received in requests meets the expected format and constraints. Pydantic models are used to define the structure of request and response data, making it easy to validate and parse JSON payloads.
+
+If a user-submitted form contains data that has the wrong number, names, or types of fields, Pydantic will raise a `RequestValidationError`, which is caught by middleware and converted into an HTTP 422 error response.
+
+For other, custom validation logic, we add Pydantic `@field_validator` methods to our Pydantic request models and then add the models as dependencies in the signatures of corresponding POST routes. FastAPI's dependency injection system ensures that dependency logic is executed before the body of the route handler.
+
+#### Defining request models and custom validators
+
+For example, in the `UserRegister` request model in `routers/authentication.py`, we add a custom validation method to ensure that the `confirm_password` field matches the `password` field. If not, it raises a custom `PasswordMismatchError`:
+
+```python
+class PasswordMismatchError(HTTPException):
+    def __init__(self, field: str = "confirm_password"):
+        super().__init__(
+            status_code=422,
+            detail={
+                "field": field,
+                "message": "The passwords you entered do not match"
+            }
+        )
+
+class UserRegister(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+    confirm_password: str
+
+    # Custom validators are added as class attributes
+    @field_validator("confirm_password", check_fields=False)
+    def validate_passwords_match(cls, v: str, values: dict[str, Any]) -> str:
+        if v != values["password"]:
+            raise PasswordMismatchError()
+        return v
+    # ...
+```
+
+We then add this request model as a dependency in the signature of our POST route:
+
+```python
+@app.post("/register")
+async def register(request: UserRegister = Depends()):
+    # ...
+```
+
+When the user submits the form, Pydantic will first check that all expected fields are present and match the expected types. If not, it raises a `RequestValidationError`. Then, it runs our custom `field_validator`, `validate_passwords_match`. If it finds that the `confirm_password` field does not match the `password` field, it raises a `PasswordMismatchError`. These exceptions can then be caught and handled by our middleware.
+
+(Note that these examples are simplified versions of the actual code.)
+
+#### Converting form data to request models
+
+In addition to custom validation logic, we also need to define a method on our request models that converts form data into the request model. Here's what that looks like in the `UserRegister` request model from the previous example:
+
+```python
+class UserRegister(BaseModel):
+    # ...
+
+    @classmethod
+    async def as_form(
+        cls,
+        name: str = Form(...),
+        email: EmailStr = Form(...),
+        password: str = Form(...),
+        confirm_password: str = Form(...)
+    ):
+        return cls(
+            name=name,
+            email=email,
+            password=password,
+            confirm_password=confirm_password
+        )
+``` 
+
+#### Middleware exception handling
+
+Middlewares—which process requests before they reach the route handlers and responses before they are sent back to the client—are defined in `main.py`. They are commonly used in web development for tasks such as error handling, authentication token validation, logging, and modifying request/response objects.
+
+This template uses middlewares exclusively for global exception handling; they only affect requests that raise an exception. This allows for consistent error responses and centralized error logging. Middleware can catch exceptions raised during request processing and return appropriate HTTP responses. 
+
+Middleware functions are decorated with `@app.exception_handler(ExceptionType)` and are executed in the order they are defined in `main.py`, from most to least specific.
+
+Here's a middleware for handling the `PasswordMismatchError` exception from the previous example, which renders the `errors/validation_error.html` template with the error details:
+
+```python
+@app.exception_handler(PasswordMismatchError)
+async def password_mismatch_exception_handler(request: Request, exc: PasswordMismatchError):
+    return templates.TemplateResponse(
+        request,
+        "errors/validation_error.html",
+        {
+            "status_code": 422,
+            "errors": {"error": exc.detail}
+        },
+        status_code=422,
+    )
+```
+
+### Database configuration and access with SQLModel
+
+SQLModel is an Object-Relational Mapping (ORM) library that allows us to interact with our PostgreSQL database using Python classes instead of writing raw SQL. It combines the features of SQLAlchemy (a powerful database toolkit) with Pydantic's data validation.
+
+#### Models and relationships
+
+Our database models are defined in `utils/models.py`. Each model is a Python class that inherits from `SQLModel` and represents a database table. The key models are:
+
+- `Organization`: Represents a company or team
+- `User`: Represents a user account
+- `Role`: Represents a discrete set of user permissions within an organization
+- `Permission`: Represents specific actions a user can perform
+- `RolePermissionLink`: Maps roles to their allowed permissions
+- `PasswordResetToken`: Manages password reset functionality
+
+Here's an entity-relationship diagram (ERD) of the current database schema, automatically generated from our SQLModel definitions:
+
+```{python}
+#| echo: false
+#| warning: false
+import sys
+sys.path.append("..")
+from utils.models import *
+from utils.db import engine
+from sqlalchemy import MetaData
+from sqlalchemy_schemadisplay import create_schema_graph
+
+# Create the directed graph
+graph = create_schema_graph(
+    engine=engine,
+    metadata=SQLModel.metadata,
+    show_datatypes=True,
+    show_indexes=True,
+    rankdir='TB',
+    concentrate=False
+)
+
+# Save the graph
+graph.write_png('static/schema.png')
+```
+
+![Database Schema](static/schema.png)
+
+
+#### Database helpers
+
+Database operations are facilitated by helper functions in `utils/db.py`. Key functions include:
+
+- `set_up_db()`: Initializes the database schema and default data (which we do on every application start in `main.py`)
+- `get_connection_url()`: Creates a database connection URL from environment variables in `.env`
+- `get_session()`: Provides a database session for performing operations
+
+To perform database operations in route handlers, inject the database session as a dependency:
+
+```python
+@app.get("/users")
+async def get_users(session: Session = Depends(get_session)):
+    users = session.exec(select(User)).all()
+    return users
+```
+
+The session automatically handles transaction management, ensuring that database operations are atomic and consistent.
+
+#### Cascade deletes
+
+Cascade deletes (in which deleting a record from one table deletes related records from another table) can be handled at either the ORM level or the database level. This template handles cascade deletes at the ORM level, via SQLModel relationships. Inside a SQLModel `Relationship`, we set:
+
+```python
+sa_relationship_kwargs={
+    "cascade": "all, delete-orphan"
+}
+```
+
+This tells SQLAlchemy to cascade all operations (e.g., `SELECT`, `INSERT`, `UPDATE`, `DELETE`) to the related table. Since this happens through the ORM, we need to be careful to do all our database operations through the ORM using supported syntax. That generally means loading database records into Python objects and then deleting those objects rather than deleting records in the database directly. 
+
+For example,
+
+```python
+session.exec(delete(Role))
+```
+
+will not trigger the cascade delete. Instead, we need to select the role objects and then delete them:
+
+```python
+for role in session.exec(select(Role)).all():
+    session.delete(role)
+```
+
+This is slower than deleting the records directly, but it makes [many-to-many relationships](https://sqlmodel.tiangolo.com/tutorial/many-to-many/create-models-with-link/#create-the-tables) much easier to manage.
+
+
+# Deployment
+
+## Under construction
+
+# Contributing
+
+## Contributors
+
+### Opening issues and bug reports
+
+When opening a new issue or submitting a bug report, please include:
+
+1. A clear, descriptive title
+2. For bug reports:
+   - Description of the expected behavior
+   - Description of the actual behavior
+   - Steps to reproduce the issue
+   - Version information (OS, Python version, package version)
+   - Any relevant error messages or screenshots
+3. For feature requests:
+   - Description of the proposed feature
+   - Use case or motivation for the feature
+   - Any implementation suggestions (optional)
+
+Labels help categorize issues:
+- Use `bug` for reporting problems
+- Use `enhancement` for feature requests
+- Use `documentation` for documentation improvements
+- Use `question` for general queries
+
+### Contributing code
+
+To contribute code to the project:
+
+1. Fork the repository and clone your fork locally
+2. Create a new branch from `main` with a descriptive name
+3. Review the [customization](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/customization.html), [architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/architecture.html), and [authentication](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/authentication.html) pages for guidance on design patterns and code structure and style
+4. Ensure all tests pass, including `mypy` type checking
+5. Stage, commit, and push your changes to the branch:
+   - Use clear, descriptive commit messages
+   - Keep commits focused and atomic
+6. Submit your pull request:
+   - Provide a clear description of the changes
+   - Link to any related issues
+
+### Rendering the documentation
+
+The README and documentation website are rendered with [Quarto](https://quarto.org/docs/). If you ,make changes to the `.qmd` files in the root folder and the `docs` folder, run the following commands to re-render the docs:
+
+``` bash
+# To render the documentation website
+quarto render
+# To render the README
+quarto render index.qmd --output-dir . --output README.md --to gfm
+```
+
+Due to a quirk of Quarto, an unnecessary `index.html` file is created in the root folder when the README is rendered. This file can be safely deleted.
+
+Note that even if your pull request is merged, your changes will not be reflected on the live website until a maintainer republishes the docs.
+
+## Maintainers
+
+### Git flow
+
+When creating new features,
+
+1. Open a Github issue with the label `feature` and assign it to yourself.
+2. Create a new branch from the issue sidebar.
+3. Follow the instructions in the popup to check out the branch locally and make your changes on the branch.
+4. Commit your changes and push to the branch.
+5. When you are ready to merge, open a pull request from the branch to main.
+6. Assign someone else for code review.
+
+### Publishing the documentation
+
+To publish the documentation to GitHub Pages, run the following command:
+
+``` bash
+quarto publish gh-pages
+```
