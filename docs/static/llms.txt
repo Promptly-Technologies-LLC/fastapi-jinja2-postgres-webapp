@@ -129,10 +129,6 @@ mypy .
 
 ## Developing with LLMs
 
-In line with the [llms.txt standard](https://llmstxt.org/), we have provided a Markdown-formatted prompt—designed to help LLM agents understand how to work with this template—as a [text file](https://promptlytechnologies.com/docs/static/llms.txt). One use case for this file is to rename it to `.cursorrules` and place it in your project directory is using the Cursor IDE (see the [Cursor docs](https://docs.cursor.com/context/rules-for-ai) on this for more information).
-
-We have also exposed the full Markdown-formatted project documentation as a [single text file](https://promptlytechnologies.com/docs/static/documentation.txt) for easy downloading and embedding.
-
 ``` {python}
 #| echo: false
 #| include: false
@@ -195,6 +191,10 @@ output_path = output_dir / 'llms.txt'
 with open(output_path, 'w', encoding='utf-8') as f:
     f.write(final_content)
 ```
+
+In line with the [llms.txt standard](https://llmstxt.org/), we have provided a Markdown-formatted prompt—designed to help LLM agents understand how to work with this template—as a [text file](docs/static/llms.txt). One use case for this file is to rename it to `.cursorrules` and place it in your project directory is using the Cursor IDE (see the [Cursor docs](https://docs.cursor.com/context/rules-for-ai) on this for more information).
+
+We have also exposed the full Markdown-formatted project documentation as a [single text file](docs/static/documentation.txt) for easy downloading and embedding.
 
 ## Contributing
 
@@ -692,9 +692,9 @@ We find that mypy is an enormous time-saver, catching many errors early and grea
 
 ### Developing with LLMs
 
-In line with the [llms.txt standard](https://llmstxt.org/), we have provided a Markdown-formatted prompt—designed to help LLM agents understand how to work with this template—as a [text file](https://promptlytechnologies.com/docs/static/llms.txt). One use case for this file is to rename it to `.cursorrules` and place it in your project directory is using the Cursor IDE (see the [Cursor docs](https://docs.cursor.com/context/rules-for-ai) on this for more information).
+In line with the [llms.txt standard](https://llmstxt.org/), we have provided a Markdown-formatted prompt—designed to help LLM agents understand how to work with this template—as a [text file](static/llms.txt). One use case for this file is to rename it to `.cursorrules` and place it in your project directory is using the Cursor IDE (see the [Cursor docs](https://docs.cursor.com/context/rules-for-ai) on this for more information).
 
-We have also exposed the full Markdown-formatted project documentation as a [single text file](https://promptlytechnologies.com/docs/static/documentation.txt) for easy downloading and embedding.
+We have also exposed the full Markdown-formatted project documentation as a [single text file](static/documentation.txt) for easy downloading and embedding.
 
 ## Project structure
 
