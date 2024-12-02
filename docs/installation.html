@@ -179,6 +179,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#python-and-docker" id="toc-python-and-docker" class="nav-link" data-scroll-target="#python-and-docker">Python and Docker</a></li>
   <li><a href="#postgresql-headers" id="toc-postgresql-headers" class="nav-link" data-scroll-target="#postgresql-headers">PostgreSQL headers</a></li>
   <li><a href="#python-dependencies" id="toc-python-dependencies" class="nav-link" data-scroll-target="#python-dependencies">Python dependencies</a></li>
+  <li><a href="#configure-ide" id="toc-configure-ide" class="nav-link" data-scroll-target="#configure-ide">Configure IDE</a></li>
   </ul></li>
   <li><a href="#install-documentation-dependencies-manually" id="toc-install-documentation-dependencies-manually" class="nav-link" data-scroll-target="#install-documentation-dependencies-manually">Install documentation dependencies manually</a>
   <ul class="collapse">
@@ -226,7 +227,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="dt">"ghcr.io/rocker-org/devcontainer-features/quarto-cli:1"</span><span class="fu">:</span> <span class="fu">{}</span></span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Simply create a <code>.devcontainer</code> folder in the root of the project and add a <code>devcontainer.json</code> file in the folder with the above content. VSCode may prompt you to install the Dev Container extension if you haven’t already, and/or to open the project in a container. If not, you can manually select “Dev Containers: Reopen in Container” from View &gt; Command Palette.</p>
+<p>Simply create a <code>.devcontainer</code> folder in the root of the project and add a <code>devcontainer.json</code> file in the folder with the above content. VSCode may prompt you to install the Dev Container extension if you haven’t already, and/or to open the project in a container. If not, you can manually select “Dev Containers: Reopen in Container” from <code>View &gt; Command Palette</code>.</p>
 <p><em>IMPORTANT: If using this dev container configuration, you will need to set the <code>DB_HOST</code> environment variable to “host.docker.internal” in the <code>.env</code> file.</em></p>
 </section>
 <section id="install-development-dependencies-manually" class="level2">
@@ -264,6 +265,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ol>
 <div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">poetry</span> shell</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>(Note: You will need to activate the shell every time you open a new terminal session. Alternatively, you can use the <code>poetry run</code> prefix before other commands to run them without activating the shell.)</p>
+</section>
+<section id="configure-ide" class="level3">
+<h3 class="anchored" data-anchor-id="configure-ide">Configure IDE</h3>
+<p>If you are using VSCode or Cursor as your IDE, you will need to select the Poetry-managed Python version as your interpreter for the project. To find the location of the Poetry-managed Python interpreter, run <code>poetry env info</code> and look for the <code>Path</code> field. Then, in VSCode, go to <code>View &gt; Command Palette</code>, search for <code>Python: Select Interpreter</code>, and either select Poetry’s Python version from the list (if it has been auto-detected) or “Enter interpreter path” manually.</p>
+<p>It is also recommended to install the <a href="https://marketplace.visualstudio.com/items?itemName=ms-python.python">Python</a> and <a href="https://marketplace.visualstudio.com/items?itemName=quarto.quarto">Quarto</a> IDE extensions.</p>
 </section>
 </section>
 <section id="install-documentation-dependencies-manually" class="level2">

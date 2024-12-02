@@ -519,7 +519,7 @@ If you use VSCode with Docker to develop in a container, the following VSCode De
 }
 ```
 
-Simply create a `.devcontainer` folder in the root of the project and add a `devcontainer.json` file in the folder with the above content. VSCode may prompt you to install the Dev Container extension if you haven't already, and/or to open the project in a container. If not, you can manually select "Dev Containers: Reopen in Container" from View > Command Palette.
+Simply create a `.devcontainer` folder in the root of the project and add a `devcontainer.json` file in the folder with the above content. VSCode may prompt you to install the Dev Container extension if you haven't already, and/or to open the project in a container. If not, you can manually select "Dev Containers: Reopen in Container" from `View > Command Palette`.
 
 *IMPORTANT: If using this dev container configuration, you will need to set the `DB_HOST` environment variable to "host.docker.internal" in the `.env` file.*
 
@@ -569,6 +569,12 @@ poetry shell
 ```
 
 (Note: You will need to activate the shell every time you open a new terminal session. Alternatively, you can use the `poetry run` prefix before other commands to run them without activating the shell.)
+
+### Configure IDE
+
+If you are using VSCode or Cursor as your IDE, you will need to select the Poetry-managed Python version as your interpreter for the project. To find the location of the Poetry-managed Python interpreter, run `poetry env info` and look for the `Path` field. Then, in VSCode, go to `View > Command Palette`, search for `Python: Select Interpreter`, and either select Poetry's Python version from the list (if it has been auto-detected) or "Enter interpreter path" manually.
+
+It is also recommended to install the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and [Quarto](https://marketplace.visualstudio.com/items?itemName=quarto.quarto) IDE extensions.
 
 ## Install documentation dependencies manually
 
@@ -660,6 +666,8 @@ The project uses Poetry to manage dependencies:
 - Update lock file: `poetry lock`
 - Install dependencies: `poetry install`
 - Update all dependencies: `poetry update`
+
+If you are using VSCode or Cursor as your IDE, you will need to select the Poetry-managed Python version as your interpreter for the project. To find the location of the Poetry-managed Python interpreter, run `poetry env info` and look for the `Path` field. Then, in VSCode, go to `View > Command Palette`, search for `Python: Select Interpreter`, and either select Poetry's Python version from the list (if it has been auto-detected) or "Enter interpreter path" manually.
 
 ### Testing
 

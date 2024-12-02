@@ -226,6 +226,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Install dependencies: <code>poetry install</code></li>
 <li>Update all dependencies: <code>poetry update</code></li>
 </ul>
+<p>If you are using VSCode or Cursor as your IDE, you will need to select the Poetry-managed Python version as your interpreter for the project. To find the location of the Poetry-managed Python interpreter, run <code>poetry env info</code> and look for the <code>Path</code> field. Then, in VSCode, go to <code>View &gt; Command Palette</code>, search for <code>Python: Select Interpreter</code>, and either select Poetry’s Python version from the list (if it has been auto-detected) or “Enter interpreter path” manually.</p>
 </section>
 <section id="testing" class="level3">
 <h3 class="anchored" data-anchor-id="testing">Testing</h3>
