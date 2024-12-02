@@ -790,6 +790,16 @@ Best practices dictate implementing thorough client-side validation via JavaScri
 
 Server-side validation remains essential as a security measure against malicious requests that bypass client-side validation, but it should rarely be encountered during normal user interaction. See `templates/authentication/register.html` for a client-side form validation example involving both JavaScript and HTML regex `pattern` matching.
 
+#### Email templating
+
+Password reset and other transactional emails are also handled through Jinja2 templates, located in the `templates/emails` directory. The email templates follow the same inheritance pattern as web templates, with `base_email.html` providing the common layout and styling.
+
+Here's how the default password reset email template looks:
+
+![Default Password Reset Email Template](static/reset_email.png)
+
+The email templates use inline CSS styles to ensure consistent rendering across email clients. Like web templates, they can receive context variables from the Python code (such as `reset_url` in the password reset template).
+
 ### Writing type annotated code
 
 Pydantic is used for data validation and serialization. It ensures that the data received in requests meets the expected format and constraints. Pydantic models are used to define the structure of request and response data, making it easy to validate and parse JSON payloads.

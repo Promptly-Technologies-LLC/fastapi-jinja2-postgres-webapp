@@ -331,6 +331,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Best practices dictate implementing thorough client-side validation via JavaScript and/or HTML <code>input</code> element <code>pattern</code> attributes to: - Provide immediate feedback to users - Reduce server load - Improve user experience by avoiding round-trips to the server - Prevent malformed data from ever reaching the backend</p>
 <p>Server-side validation remains essential as a security measure against malicious requests that bypass client-side validation, but it should rarely be encountered during normal user interaction. See <code>templates/authentication/register.html</code> for a client-side form validation example involving both JavaScript and HTML regex <code>pattern</code> matching.</p>
 </section>
+<section id="email-templating" class="level4">
+<h4 class="anchored" data-anchor-id="email-templating">Email templating</h4>
+<p>Password reset and other transactional emails are also handled through Jinja2 templates, located in the <code>templates/emails</code> directory. The email templates follow the same inheritance pattern as web templates, with <code>base_email.html</code> providing the common layout and styling.</p>
+<p>Here’s how the default password reset email template looks:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="static/reset_email.png" class="img-fluid figure-img"></p>
+<figcaption>Default Password Reset Email Template</figcaption>
+</figure>
+</div>
+<p>The email templates use inline CSS styles to ensure consistent rendering across email clients. Like web templates, they can receive context variables from the Python code (such as <code>reset_url</code> in the password reset template).</p>
+</section>
 </section>
 <section id="writing-type-annotated-code" class="level3">
 <h3 class="anchored" data-anchor-id="writing-type-annotated-code">Writing type annotated code</h3>
