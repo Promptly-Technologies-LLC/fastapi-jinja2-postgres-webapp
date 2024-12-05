@@ -18,8 +18,8 @@
             <p><strong>Email:</strong> {{ user.email }}</p>
             <!-- Display user avatar or silhouette if no avatar is available -->
             <div class="mb-3">
-                {% if user.avatar_url %}
-                    <img src="{{ user.avatar_url }}" alt="User Avatar" class="img-thumbnail" width="150">
+                {% if user.avatar_url or user.avatar_data %}
+                    <img src="{{ url_for('get_avatar', user_id=user.id) }}" alt="User Avatar" class="img-thumbnail" width="150">
                 {% else %}
                     {{ render_silhouette(width=150, height=150) }}
                 {% endif %}
@@ -35,7 +35,7 @@
             Edit Profile
         </div>
         <div class="card-body">
-            <form action="{{ url_for('update_profile') }}" method="post">
+            <form action="{{ url_for('update_profile') }}" method="post" enctype="multipart/form-data">
                 <div class="mb-3">
                     <label for="name" class="form-label">Name</label>
                     <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}">
@@ -45,8 +45,20 @@
                     <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}">
                 </div>
                 <div class="mb-3">
-                    <label for="avatar_url" class="form-label">Avatar URL</label>
-                    <input type="url" class="form-control" id="avatar_url" name="avatar_url" value="{{ user.avatar_url }}">
+                    <label class="form-label">Avatar</label>
+                    <div class="mb-2">
+                        <label for="avatar_type" class="form-label">Choose avatar type:</label>
+                        <select class="form-select" id="avatar_type" onchange="toggleAvatarInput()">
+                            <option value="url">URL</option>
+                            <option value="file">Upload File</option>
+                        </select>
+                    </div>
+                    <div id="url_input" class="mb-2">
+                        <input type="url" class="form-control" id="avatar_url" name="avatar_url" value="{{ user.avatar_url or '' }}">
+                    </div>
+                    <div id="file_input" class="mb-2" style="display: none;">
+                        <input type="file" class="form-control" id="avatar_file" name="avatar_file" accept="image/*">
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary">Save Changes</button>
             </form>
@@ -103,5 +115,39 @@
             editProfile.style.display = 'block';
         }
     }
+
+    // Function to toggle between URL and file upload inputs
+    function toggleAvatarInput() {
+        var avatarType = document.getElementById('avatar_type').value;
+        var urlInput = document.getElementById('url_input');
+        var fileInput = document.getElementById('file_input');
+        var urlField = document.getElementById('avatar_url');
+        
+        if (avatarType === 'url') {
+            urlInput.style.display = 'block';
+            fileInput.style.display = 'none';
+            // Clear file input
+            document.getElementById('avatar_file').value = '';
+        } else {
+            urlInput.style.display = 'none';
+            fileInput.style.display = 'block';
+            // Clear URL input
+            urlField.value = '';
+        }
+    }
+
+    // Add form submission validation
+    document.querySelector('form[action="{{ url_for("update_profile") }}"]').addEventListener('submit', function(e) {
+        var avatarType = document.getElementById('avatar_type').value;
+        var urlField = document.getElementById('avatar_url');
+        var fileField = document.getElementById('avatar_file');
+
+        // Clear the unused field before submission
+        if (avatarType === 'url') {
+            fileField.value = '';
+        } else {
+            urlField.value = '';
+        }
+    });
 </script>
 {% endblock %}
