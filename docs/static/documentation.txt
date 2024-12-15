@@ -35,7 +35,7 @@ The design philosophy of the template is to prefer low-level, best-in-class open
 
 **Additional technologies:**
 
-- [Poetry](https://python-poetry.org/): Python dependency manager
+- [uv](https://docs.astral.sh/uv/): Python dependency manager
 - [Pytest](https://docs.pytest.org/en/7.4.x/): testing framework
 - [Docker](https://www.docker.com/): development containerization
 - [Github Actions](https://docs.github.com/en/actions): CI/CD pipeline
@@ -48,10 +48,34 @@ The design philosophy of the template is to prefer low-level, best-in-class open
 
 For comprehensive installation instructions, see the [installation page](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/installation.html).
 
-### Python and Docker
+### uv
 
-- [Python 3.12 or higher](https://www.python.org/downloads/)
-- [Docker and Docker Compose](https://docs.docker.com/get-docker/)
+MacOS and Linux:
+
+``` bash
+wget -qO- https://astral.sh/uv/install.sh | sh
+```
+
+Windows:
+
+``` bash
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+See the [uv installation docs](https://docs.astral.sh/uv/getting-started/installation/) for more information.
+
+### Python
+
+Install Python 3.12 or higher from either the official [downloads page](https://www.python.org/downloads/) or using uv:
+
+``` bash
+# Installs the latest version
+uv python install
+```
+
+### Docker and Docker Compose
+
+Install Docker Desktop and Coker Compose for your operating system by following the [instructions in the documentation](https://docs.docker.com/compose/install/).
 
 ### PostgreSQL headers
 
@@ -73,27 +97,14 @@ For Windows:
 
 ### Python dependencies
 
-1.  Install Poetry
+From the root directory, run:
 
 ``` bash
-pipx install poetry
+uv venv
+uv sync
 ```
 
-2.  Install project dependencies
-
-``` bash
-poetry install
-```
-
-(Note: if `psycopg2` installation fails with a `ChefBuildError`, you just need to install the PostgreSQL headers first and then try again.)
-
-3.  Activate shell
-
-``` bash
-poetry shell
-```
-
-(Note: You will need to activate the shell every time you open a new terminal session. Alternatively, you can use the `poetry run` prefix before other commands to run them without activating the shell.)
+This will create an in-project virtual environment and install all dependencies.
 
 ### Set environment variables
 
@@ -311,18 +322,16 @@ Here are some patterns we've considered for server-side error handling:
   border-collapse: collapse;
 }
 
-.styled-table th:nth-child(1) { width: 5%; }
-.styled-table th:nth-child(2) { width: 50%; }
-.styled-table th:nth-child(3), 
-.styled-table th:nth-child(4),
-.styled-table th:nth-child(5) { width: 15%; }
-.styled-table th:nth-child(6) { width: 10%; }
+.styled-table th:nth-child(1) { width: 50%; }
+.styled-table th:nth-child(2), 
+.styled-table th:nth-child(3),
+.styled-table th:nth-child(4) { width: 15%; }
+.styled-table th:nth-child(5) { width: 10%; }
 </style>
 
 <table class="styled-table">
   <thead>
     <tr>
-      <th>ID</th>
       <th>Approach</th>
       <th>Returns to same page</th>
       <th>Preserves form inputs</th>
@@ -332,7 +341,6 @@ Here are some patterns we've considered for server-side error handling:
   </thead>
   <tbody>
     <tr>
-      <td>1</td>
       <td>Validate with Pydantic dependency, catch and redirect from middleware (with exception message as context) to an error page with "go back" button</td>
       <td>No</td>
       <td>Yes</td>
@@ -340,7 +348,6 @@ Here are some patterns we've considered for server-side error handling:
       <td>Low</td>
     </tr>
     <tr>
-      <td>2</td>
       <td>Validate in FastAPI endpoint function body, redirect to origin page with error message query param</td>
       <td>Yes</td>
       <td>No</td>
@@ -348,7 +355,6 @@ Here are some patterns we've considered for server-side error handling:
       <td>Medium</td>
     </tr>
     <tr>
-      <td>3</td>
       <td>Validate in FastAPI endpoint function body, redirect to origin page with error message query param and form inputs as context so we can re-render page with original form inputs</td>
       <td>Yes</td>
       <td>Yes</td>
@@ -356,7 +362,6 @@ Here are some patterns we've considered for server-side error handling:
       <td>High</td>
     </tr>
     <tr>
-      <td>4</td>
       <td>Validate with Pydantic dependency, use session context to get form inputs from request, redirect to origin page from middleware with exception message and form inputs as context so we can re-render page with original form inputs</td>
       <td>Yes</td>
       <td>Yes</td>
@@ -364,7 +369,6 @@ Here are some patterns we've considered for server-side error handling:
       <td>High</td>
     </tr>
     <tr>
-      <td>5</td>
       <td>Validate in either Pydantic dependency or function endpoint body and directly return error message or error toast HTML partial in JSON, then mount error toast with HTMX or some simple layout-level Javascript</td>
       <td>Yes</td>
       <td>Yes</td>
@@ -512,9 +516,12 @@ If you use VSCode with Docker to develop in a container, the following VSCode De
 ``` json
 {
 	"name": "Python 3",
-	"image": "mcr.microsoft.com/devcontainers/python:1-3.12-bullseye",
-	"postCreateCommand": "sudo apt update && sudo apt install -y python3-dev libpq-dev graphviz && pipx install poetry && poetry install && poetry shell",
+	"image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
+	"postCreateCommand": "sudo apt update && sudo apt install -y python3-dev libpq-dev graphviz && uv venv && uv sync",
 	"features": {
+		"ghcr.io/va-h/devcontainers-features/uv:1": {
+			"version": "latest"
+		},
 		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
 		"ghcr.io/rocker-org/devcontainer-features/quarto-cli:1": {}
 	}
@@ -527,10 +534,34 @@ Simply create a `.devcontainer` folder in the root of the project and add a `dev
 
 ## Install development dependencies manually
 
-### Python and Docker
+### uv
 
-- [Python 3.12 or higher](https://www.python.org/downloads/)
-- [Docker and Docker Compose](https://docs.docker.com/get-docker/)
+MacOS and Linux:
+
+``` bash
+wget -qO- https://astral.sh/uv/install.sh | sh
+```
+
+Windows:
+
+``` bash
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+See the [uv installation docs](https://docs.astral.sh/uv/getting-started/installation/) for more information.
+
+### Python
+
+Install Python 3.12 or higher from either the official [downloads page](https://www.python.org/downloads/) or using uv:
+
+``` bash
+# Installs the latest version
+uv python install
+```
+
+### Docker and Docker Compose
+
+Install Docker Desktop and Docker Compose for your operating system by following the [instructions in the documentation](https://docs.docker.com/compose/install/).
 
 ### PostgreSQL headers
 
@@ -552,31 +583,25 @@ For Windows:
 
 ### Python dependencies
 
-1.  Install Poetry
+From the root directory, run:
 
 ``` bash
-pipx install poetry
+uv venv
 ```
 
-2.  Install project dependencies
+This will create an in-project virtual environment. Then run:
 
 ``` bash
-poetry install
+uv sync
 ```
 
-(Note: if `psycopg2` installation fails with a `ChefBuildError`, you just need to install the PostgreSQL headers first and then try again.)
+This will install all dependencies.
 
-3.  Activate shell
-
-``` bash
-poetry shell
-```
-
-(Note: You will need to activate the shell every time you open a new terminal session. Alternatively, you can use the `poetry run` prefix before other commands to run them without activating the shell.)
+(Note: if `psycopg2` installation fails, you probably just need to install the PostgreSQL headers first and then try again.)
 
 ### Configure IDE
 
-If you are using VSCode or Cursor as your IDE, you will need to select the Poetry-managed Python version as your interpreter for the project. To find the location of the Poetry-managed Python interpreter, run `poetry env info` and look for the `Path` field. Then, in VSCode, go to `View > Command Palette`, search for `Python: Select Interpreter`, and either select Poetry's Python version from the list (if it has been auto-detected) or "Enter interpreter path" manually.
+If you are using VSCode or Cursor as your IDE, you will need to select the `uv`-managed Python version as your interpreter for the project. Go to `View > Command Palette`, search for `Python: Select Interpreter`, and select the Python version labeled `('.venv':venv)`.
 
 It is also recommended to install the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and [Quarto](https://marketplace.visualstudio.com/items?itemName=quarto.quarto) IDE extensions.
 
@@ -660,18 +685,23 @@ mypy .
 
 ## Development workflow
 
-### Dependency management with Poetry
+### Dependency management with `uv`
 
-The project uses Poetry to manage dependencies:
+The project uses `uv` to manage dependencies:
 
-- Add new dependency: `poetry add <dependency>`
-- Add development dependency: `poetry add --dev <dependency>`
-- Remove dependency: `poetry remove <dependency>`
-- Update lock file: `poetry lock`
-- Install dependencies: `poetry install`
-- Update all dependencies: `poetry update`
+- Add new dependency: `uv add <dependency>`
+- Add development dependency: `uv add --dev <dependency>`
+- Remove dependency: `uv remove <dependency>`
+- Update lock file: `uv lock`
+- Install all dependencies: `uv sync`
+- Install only production dependencies: `uv sync --no-dev`
+- Upgrade dependencies: `uv lock --upgrade`
 
-If you are using VSCode or Cursor as your IDE, you will need to select the Poetry-managed Python version as your interpreter for the project. To find the location of the Poetry-managed Python interpreter, run `poetry env info` and look for the `Path` field. Then, in VSCode, go to `View > Command Palette`, search for `Python: Select Interpreter`, and either select Poetry's Python version from the list (if it has been auto-detected) or "Enter interpreter path" manually.
+### IDE configuration
+
+If you are using VSCode or Cursor as your IDE, you will need to select the `uv`-managed Python version as your interpreter for the project. Go to `View > Command Palette`, search for `Python: Select Interpreter`, and select the Python version labeled `('.venv':venv)`.
+
+If your IDE does not automatically detect and display this option, you can manually select the interpreter by selecting "Enter interpreter path" and then navigating to the `.venv/bin/python` subfolder in your project directory.
 
 ### Testing
 

@@ -72,4 +72,4 @@
 - Preserve existing comments and docstrings
 - Ensure all tests pass before submitting PR
 - Update .qmd documentation files for significant changes
-- Use Poetry for dependency management
+- Use uv for dependency management

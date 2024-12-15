@@ -175,7 +175,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#development-workflow" id="toc-development-workflow" class="nav-link active" data-scroll-target="#development-workflow">Development workflow</a>
   <ul class="collapse">
-  <li><a href="#dependency-management-with-poetry" id="toc-dependency-management-with-poetry" class="nav-link" data-scroll-target="#dependency-management-with-poetry">Dependency management with Poetry</a></li>
+  <li><a href="#dependency-management-with-uv" id="toc-dependency-management-with-uv" class="nav-link" data-scroll-target="#dependency-management-with-uv">Dependency management with <code>uv</code></a></li>
+  <li><a href="#ide-configuration" id="toc-ide-configuration" class="nav-link" data-scroll-target="#ide-configuration">IDE configuration</a></li>
   <li><a href="#testing" id="toc-testing" class="nav-link" data-scroll-target="#testing">Testing</a></li>
   <li><a href="#type-checking-with-mypy" id="toc-type-checking-with-mypy" class="nav-link" data-scroll-target="#type-checking-with-mypy">Type checking with mypy</a></li>
   <li><a href="#developing-with-llms" id="toc-developing-with-llms" class="nav-link" data-scroll-target="#developing-with-llms">Developing with LLMs</a></li>
@@ -215,18 +216,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="development-workflow" class="level2">
 <h2 class="anchored" data-anchor-id="development-workflow">Development workflow</h2>
-<section id="dependency-management-with-poetry" class="level3">
-<h3 class="anchored" data-anchor-id="dependency-management-with-poetry">Dependency management with Poetry</h3>
-<p>The project uses Poetry to manage dependencies:</p>
+<section id="dependency-management-with-uv" class="level3">
+<h3 class="anchored" data-anchor-id="dependency-management-with-uv">Dependency management with <code>uv</code></h3>
+<p>The project uses <code>uv</code> to manage dependencies:</p>
 <ul>
-<li>Add new dependency: <code>poetry add &lt;dependency&gt;</code></li>
-<li>Add development dependency: <code>poetry add --dev &lt;dependency&gt;</code></li>
-<li>Remove dependency: <code>poetry remove &lt;dependency&gt;</code></li>
-<li>Update lock file: <code>poetry lock</code></li>
-<li>Install dependencies: <code>poetry install</code></li>
-<li>Update all dependencies: <code>poetry update</code></li>
+<li>Add new dependency: <code>uv add &lt;dependency&gt;</code></li>
+<li>Add development dependency: <code>uv add --dev &lt;dependency&gt;</code></li>
+<li>Remove dependency: <code>uv remove &lt;dependency&gt;</code></li>
+<li>Update lock file: <code>uv lock</code></li>
+<li>Install all dependencies: <code>uv sync</code></li>
+<li>Install only production dependencies: <code>uv sync --no-dev</code></li>
+<li>Upgrade dependencies: <code>uv lock --upgrade</code></li>
 </ul>
-<p>If you are using VSCode or Cursor as your IDE, you will need to select the Poetry-managed Python version as your interpreter for the project. To find the location of the Poetry-managed Python interpreter, run <code>poetry env info</code> and look for the <code>Path</code> field. Then, in VSCode, go to <code>View &gt; Command Palette</code>, search for <code>Python: Select Interpreter</code>, and either select Poetry’s Python version from the list (if it has been auto-detected) or “Enter interpreter path” manually.</p>
+</section>
+<section id="ide-configuration" class="level3">
+<h3 class="anchored" data-anchor-id="ide-configuration">IDE configuration</h3>
+<p>If you are using VSCode or Cursor as your IDE, you will need to select the <code>uv</code>-managed Python version as your interpreter for the project. Go to <code>View &gt; Command Palette</code>, search for <code>Python: Select Interpreter</code>, and select the Python version labeled <code>('.venv':venv)</code>.</p>
+<p>If your IDE does not automatically detect and display this option, you can manually select the interpreter by selecting “Enter interpreter path” and then navigating to the <code>.venv/bin/python</code> subfolder in your project directory.</p>
 </section>
 <section id="testing" class="level3">
 <h3 class="anchored" data-anchor-id="testing">Testing</h3>

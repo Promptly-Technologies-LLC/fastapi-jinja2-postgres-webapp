@@ -215,19 +215,15 @@ ul.task-list li input[type="checkbox"] {
   border-collapse: collapse;
 }
 
-.styled-table th:nth-child(1) { width: 5%; }
-.styled-table th:nth-child(2) { width: 50%; }
-.styled-table th:nth-child(3), 
-.styled-table th:nth-child(4),
-.styled-table th:nth-child(5) { width: 15%; }
-.styled-table th:nth-child(6) { width: 10%; }
+.styled-table th:nth-child(1) { width: 50%; }
+.styled-table th:nth-child(2), 
+.styled-table th:nth-child(3),
+.styled-table th:nth-child(4) { width: 15%; }
+.styled-table th:nth-child(5) { width: 10%; }
 </style>
 <table class="styled-table">
 <thead>
 <tr>
-<th>
-ID
-</th>
 <th>
 Approach
 </th>
@@ -248,9 +244,6 @@ Complexity
 <tbody>
 <tr>
 <td>
-1
-</td>
-<td>
 Validate with Pydantic dependency, catch and redirect from middleware (with exception message as context) to an error page with “go back” button
 </td>
 <td>
@@ -267,9 +260,6 @@ Low
 </td>
 </tr>
 <tr>
-<td>
-2
-</td>
 <td>
 Validate in FastAPI endpoint function body, redirect to origin page with error message query param
 </td>
@@ -288,9 +278,6 @@ Medium
 </tr>
 <tr>
 <td>
-3
-</td>
-<td>
 Validate in FastAPI endpoint function body, redirect to origin page with error message query param and form inputs as context so we can re-render page with original form inputs
 </td>
 <td>
@@ -308,9 +295,6 @@ High
 </tr>
 <tr>
 <td>
-4
-</td>
-<td>
 Validate with Pydantic dependency, use session context to get form inputs from request, redirect to origin page from middleware with exception message and form inputs as context so we can re-render page with original form inputs
 </td>
 <td>
@@ -327,9 +311,6 @@ High
 </td>
 </tr>
 <tr>
-<td>
-5
-</td>
 <td>
 Validate in either Pydantic dependency or function endpoint body and directly return error message or error toast HTML partial in JSON, then mount error toast with HTMX or some simple layout-level Javascript
 </td>
