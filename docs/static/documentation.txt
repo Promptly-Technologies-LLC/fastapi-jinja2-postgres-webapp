@@ -85,6 +85,8 @@ pipx install poetry
 poetry install
 ```
 
+(Note: if `psycopg2` installation fails with a `ChefBuildError`, you just need to install the PostgreSQL headers first and then try again.)
+
 3.  Activate shell
 
 ``` bash
@@ -95,7 +97,7 @@ poetry shell
 
 ### Set environment variables
 
-Copy .env.example to .env with `cp .env.example .env`.
+Copy `.env.example` to `.env` with `cp .env.example .env`.
 
 Generate a 256 bit secret key with `openssl rand -base64 32` and paste it into the .env file.
 
@@ -561,6 +563,8 @@ pipx install poetry
 ``` bash
 poetry install
 ```
+
+(Note: if `psycopg2` installation fails with a `ChefBuildError`, you just need to install the PostgreSQL headers first and then try again.)
 
 3.  Activate shell
 

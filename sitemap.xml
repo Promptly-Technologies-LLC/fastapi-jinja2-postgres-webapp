@@ -2,30 +2,30 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/index.html</loc>
-    <lastmod>2024-12-02T21:26:46.910Z</lastmod>
-  </url>
-  <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/deployment.html</loc>
-    <lastmod>2024-11-19T23:41:34.489Z</lastmod>
-  </url>
-  <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/contributing.html</loc>
-    <lastmod>2024-11-27T22:39:38.620Z</lastmod>
-  </url>
-  <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/architecture.html</loc>
-    <lastmod>2024-12-02T21:26:46.820Z</lastmod>
+    <lastmod>2024-12-15T20:32:34.088Z</lastmod>
   </url>
   <url>
     <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/authentication.html</loc>
-    <lastmod>2024-11-27T22:39:38.590Z</lastmod>
+    <lastmod>2024-12-05T02:49:55.188Z</lastmod>
   </url>
   <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/customization.html</loc>
-    <lastmod>2024-12-02T22:06:27.789Z</lastmod>
+    <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/architecture.html</loc>
+    <lastmod>2024-12-05T02:49:55.187Z</lastmod>
   </url>
   <url>
     <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/installation.html</loc>
-    <lastmod>2024-12-02T21:26:46.850Z</lastmod>
+    <lastmod>2024-12-15T20:32:34.088Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/customization.html</loc>
+    <lastmod>2024-12-15T20:32:29.863Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/contributing.html</loc>
+    <lastmod>2024-12-05T02:49:55.188Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/deployment.html</loc>
+    <lastmod>2024-12-05T02:49:55.190Z</lastmod>
   </url>
 </urlset>
