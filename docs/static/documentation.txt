@@ -82,7 +82,7 @@ Install Docker Desktop and Coker Compose for your operating system by following 
 For Ubuntu/Debian:
 
 ``` bash
-sudo apt update && sudo apt install -y python3-dev libpq-dev
+sudo apt update && sudo apt install -y python3-dev libpq-dev libwebp-dev
 ```
 
 For macOS:
@@ -509,15 +509,15 @@ reset.render('static/reset_flow', format='png', cleanup=True)
 
 # Installation
 
-## Install all dependencies in a VSCode Dev Container
+## Install all development dependencies in a VSCode Dev Container
 
-If you use VSCode with Docker to develop in a container, the following VSCode Dev Container configuration will install all dependencies:
+If you use VSCode with Docker to develop in a container, the following VSCode Dev Container configuration will install all development dependencies:
 
 ``` json
 {
 	"name": "Python 3",
 	"image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
-	"postCreateCommand": "sudo apt update && sudo apt install -y python3-dev libpq-dev graphviz && uv venv && uv sync",
+	"postCreateCommand": "sudo apt update && sudo apt install -y python3-dev libpq-dev graphviz libwebp-dev && npm install bootstrap@5.3.3 && npm install -g sass && npm install -g gulp && uv venv && uv sync",
 	"features": {
 		"ghcr.io/va-h/devcontainers-features/uv:1": {
 			"version": "latest"
@@ -568,7 +568,7 @@ Install Docker Desktop and Docker Compose for your operating system by following
 For Ubuntu/Debian:
 
 ``` bash
-sudo apt update && sudo apt install -y python3-dev libpq-dev
+sudo apt update && sudo apt install -y python3-dev libpq-dev libwebp-dev
 ```
 
 For macOS:
@@ -672,7 +672,9 @@ Before running the development server, make sure the development database is run
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Navigate to http://localhost:8000/
+Navigate to http://localhost:8000/.
+
+(Note: If startup fails with a sqlalchemy/psycopg2 connection error, make sure that Docker Desktop and the database service are running and that the environment variables in the `.env` file are correctly populated, and then try again.)
 
 ## Lint types with mypy
 
@@ -753,6 +755,7 @@ We have also exposed the full Markdown-formatted project documentation as a [sin
     - Organization management endpoints: `organization.py`
     - Role management endpoints: `role.py`
 - Jinja2 templates: `templates/`
+- Bootstrap Sass Files: `scss/`
 - Static assets: `static/`
 - Unit tests: `tests/`
 - Test database configuration: `docker-compose.yml`
@@ -797,6 +800,101 @@ To generate the HTML pages to be returned from our GET routes, we use Jinja2 tem
 
 With Jinja2, we can use the `{% block %}` tag to define content blocks, and the `{% extends %}` tag to extend a base template. We can also use the `{% include %}` tag to include a component in a parent template. See the [Jinja2 documentation on template inheritance](https://jinja.palletsprojects.com/en/stable/templates/#template-inheritance) for more details.
 
+### Custom theming with Bootstrap Sass
+
+[Install Node.js](https://nodejs.org/en/download/) on your local machine if it is not there already.
+
+Install `bootstrap`, `sass`, `gulp`, and `gulp-sass` in your project:
+
+```bash
+npm install --save-dev bootstrap sass gulp gulp-cli gulp-sass
+```
+
+This will create a `node_modules` folder, a `package-lock.json` file, and a `package.json` file in the root directory of the project.
+
+Create an `scss` folder and a basic `scss/styles.scss` file:
+
+```bash
+mkdir scss
+touch scss/styles.scss
+```
+
+Your custom styles will go in `scss/styles.scss`, along with `@import` statements to include the Bootstrap components you want. For example, the default CSS for the template was compiled from the following configuration, which imports all of Bootstrap and overrides the `$theme-colors` and `$font-family-base` variables:
+
+```scss
+// styles.scss
+
+// Include any default variable overrides here (functions won't be available)
+
+// State colors
+$primary: #7464a1;
+$secondary: #64a19d;
+$success: #67c29c;
+$info: #1cabc4;
+$warning: #e4c662;
+$danger: #a16468;
+$light: #f8f9fa;
+$dark: #343a40;
+
+// Bootstrap color map
+$theme-colors: (
+    "primary": $primary,
+    "secondary": $secondary,
+    "success": $success,
+    "info": $info,
+    "warning": $warning,
+    "danger": $danger,
+    "light": $light,
+    "dark": $dark
+);
+
+$font-family-base: (
+    "Nunito",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif,
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Segoe UI Symbol",
+    "Noto Color Emoji"
+);
+
+// Include all of Bootstrap
+
+@import "../node_modules/bootstrap/scss/bootstrap";
+```
+
+The most common use case for `styles.scss` is to define a custom color scheme and fonts, but it's also possible to other visual details such as border radius and box shadow depth. See the [Bootstrap Sass customization instructions](https://getbootstrap.com/docs/5.3/customize/sass/) and the many free templates available at [Start Bootstrap](https://startbootstrap.com) for examples.
+
+To compile the Sass files, we use `gulp`. In the project root directory, create a `gulpfile.js` file with the following content:
+
+```javascript
+   const gulp = require('gulp');
+   const sass = require('gulp-sass')(require('sass'));
+
+   // Define a task to compile Sass
+   gulp.task('sass', function() {
+       return gulp.src('scss/**/*.scss') // Source folder containing Sass files
+           .pipe(sass().on('error', sass.logError))
+           .pipe(gulp.dest('static/css')); // Destination folder for compiled CSS
+   });
+
+   // Define a default task
+   gulp.task('default', gulp.series('sass'));
+```
+
+To compile the Sass file to `static/css`, run this command:
+
+```bash
+npx gulp
+```
+
+Note that this will overwrite the existing `static/css/styles.css` file, so if you want to define any custom CSS styles, you should do so in either the `scss/styles.scss` file or in `static/css/extras.css`.
+
 #### Context variables
 
 Context refers to Python variables passed to a template to populate the HTML. In a FastAPI GET route, we can pass context to a template using the `templates.TemplateResponse` method, which takes the request and any context data as arguments. For example:
@@ -817,6 +915,7 @@ In this example, the `welcome.html` template will receive two pieces of context:
 While this template includes comprehensive server-side validation through Pydantic models and custom validators, it's important to note that server-side validation should be treated as a fallback security measure. If users ever see the `validation_error.html` template, it indicates that our client-side validation has failed to catch invalid input before it reaches the server.
 
 Best practices dictate implementing thorough client-side validation via JavaScript and/or HTML `input` element `pattern` attributes to:
+
 - Provide immediate feedback to users
 - Reduce server load
 - Improve user experience by avoiding round-trips to the server

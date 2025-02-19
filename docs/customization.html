@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.6.39">
+<meta name="generator" content="quarto-1.6.40">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -69,10 +69,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-e26003cea8cd680ca0c55a263523d882.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-549806ee2085284f45b00abea8c6df48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-ce8de41c5dcf49f81f95ec2a54f3a28e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-5c67a7444eebc356e54fdce0a63e8750.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -186,6 +186,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#customizable-folders-and-files" id="toc-customizable-folders-and-files" class="nav-link" data-scroll-target="#customizable-folders-and-files">Customizable folders and files</a></li>
   <li><a href="#defining-a-web-backend-with-fastapi" id="toc-defining-a-web-backend-with-fastapi" class="nav-link" data-scroll-target="#defining-a-web-backend-with-fastapi">Defining a web backend with FastAPI</a></li>
   <li><a href="#html-templating-with-jinja2" id="toc-html-templating-with-jinja2" class="nav-link" data-scroll-target="#html-templating-with-jinja2">HTML templating with Jinja2</a></li>
+  <li><a href="#custom-theming-with-bootstrap-sass" id="toc-custom-theming-with-bootstrap-sass" class="nav-link" data-scroll-target="#custom-theming-with-bootstrap-sass">Custom theming with Bootstrap Sass</a></li>
   <li><a href="#writing-type-annotated-code" id="toc-writing-type-annotated-code" class="nav-link" data-scroll-target="#writing-type-annotated-code">Writing type annotated code</a></li>
   <li><a href="#database-configuration-and-access-with-sqlmodel" id="toc-database-configuration-and-access-with-sqlmodel" class="nav-link" data-scroll-target="#database-configuration-and-access-with-sqlmodel">Database configuration and access with SQLModel</a></li>
   </ul></li>
@@ -282,6 +283,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Role management endpoints: <code>role.py</code></li>
 </ul></li>
 <li>Jinja2 templates: <code>templates/</code></li>
+<li>Bootstrap Sass Files: <code>scss/</code></li>
 <li>Static assets: <code>static/</code></li>
 <li>Unit tests: <code>tests/</code></li>
 <li>Test database configuration: <code>docker-compose.yml</code></li>
@@ -320,21 +322,99 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="html-templating-with-jinja2">HTML templating with Jinja2</h3>
 <p>To generate the HTML pages to be returned from our GET routes, we use Jinja2 templates. Jinja2’s hierarchical templates allow creating a base template (<code>templates/base.html</code>) that defines the overall layout of our web pages (e.g., where the header, body, and footer should go). Individual pages can then extend this base template. We can also template reusable components that can be injected into our layout or page templates.</p>
 <p>With Jinja2, we can use the <code>{% block %}</code> tag to define content blocks, and the <code>{% extends %}</code> tag to extend a base template. We can also use the <code>{% include %}</code> tag to include a component in a parent template. See the <a href="https://jinja.palletsprojects.com/en/stable/templates/#template-inheritance">Jinja2 documentation on template inheritance</a> for more details.</p>
+</section>
+<section id="custom-theming-with-bootstrap-sass" class="level3">
+<h3 class="anchored" data-anchor-id="custom-theming-with-bootstrap-sass">Custom theming with Bootstrap Sass</h3>
+<p><a href="https://nodejs.org/en/download/">Install Node.js</a> on your local machine if it is not there already.</p>
+<p>Install <code>bootstrap</code>, <code>sass</code>, <code>gulp</code>, and <code>gulp-sass</code> in your project:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install <span class="at">--save-dev</span> bootstrap sass gulp gulp-cli gulp-sass</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>This will create a <code>node_modules</code> folder, a <code>package-lock.json</code> file, and a <code>package.json</code> file in the root directory of the project.</p>
+<p>Create an <code>scss</code> folder and a basic <code>scss/styles.scss</code> file:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> scss</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> scss/styles.scss</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Your custom styles will go in <code>scss/styles.scss</code>, along with <code>@import</code> statements to include the Bootstrap components you want. For example, the default CSS for the template was compiled from the following configuration, which imports all of Bootstrap and overrides the <code>$theme-colors</code> and <code>$font-family-base</code> variables:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode scss code-with-copy"><code class="sourceCode scss"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">// styles.scss</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Include any default variable overrides here (functions won't be available)</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co">// State colors</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="va">$primary</span>: <span class="cn">#7464a1</span><span class="op">;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="va">$secondary</span>: <span class="cn">#64a19d</span><span class="op">;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="va">$success</span>: <span class="cn">#67c29c</span><span class="op">;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="va">$info</span>: <span class="cn">#1cabc4</span><span class="op">;</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="va">$warning</span>: <span class="cn">#e4c662</span><span class="op">;</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="va">$danger</span>: <span class="cn">#a16468</span><span class="op">;</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="va">$light</span>: <span class="cn">#f8f9fa</span><span class="op">;</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="va">$dark</span>: <span class="cn">#343a40</span><span class="op">;</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co">// Bootstrap color map</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="va">$theme-colors</span>: (</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">"primary"</span>: <span class="va">$primary</span><span class="op">,</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">"secondary"</span>: <span class="va">$secondary</span><span class="op">,</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">"success"</span>: <span class="va">$success</span><span class="op">,</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">"info"</span>: <span class="va">$info</span><span class="op">,</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">"warning"</span>: <span class="va">$warning</span><span class="op">,</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">"danger"</span>: <span class="va">$danger</span><span class="op">,</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">"light"</span>: <span class="va">$light</span><span class="op">,</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">"dark"</span>: <span class="va">$dark</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="va">$font-family-base</span>: (</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Nunito"</span><span class="op">,</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    -apple-system<span class="op">,</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>    BlinkMacSystemFont<span class="op">,</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Segoe UI"</span><span class="op">,</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>    Roboto<span class="op">,</span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Helvetica Neue"</span><span class="op">,</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>    Arial<span class="op">,</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>    <span class="dv">sans-serif</span><span class="op">,</span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Apple Color Emoji"</span><span class="op">,</span></span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Segoe UI Emoji"</span><span class="op">,</span></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Segoe UI Symbol"</span><span class="op">,</span></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Noto Color Emoji"</span></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a><span class="co">// Include all of Bootstrap</span></span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a><span class="im">@import</span> <span class="st">"../node_modules/bootstrap/scss/bootstrap"</span><span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The most common use case for <code>styles.scss</code> is to define a custom color scheme and fonts, but it’s also possible to other visual details such as border radius and box shadow depth. See the <a href="https://getbootstrap.com/docs/5.3/customize/sass/">Bootstrap Sass customization instructions</a> and the many free templates available at <a href="https://startbootstrap.com">Start Bootstrap</a> for examples.</p>
+<p>To compile the Sass files, we use <code>gulp</code>. In the project root directory, create a <code>gulpfile.js</code> file with the following content:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode javascript code-with-copy"><code class="sourceCode javascript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>   <span class="kw">const</span> gulp <span class="op">=</span> <span class="pp">require</span>(<span class="st">'gulp'</span>)<span class="op">;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>   <span class="kw">const</span> sass <span class="op">=</span> <span class="pp">require</span>(<span class="st">'gulp-sass'</span>)(<span class="pp">require</span>(<span class="st">'sass'</span>))<span class="op">;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>   <span class="co">// Define a task to compile Sass</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>   gulp<span class="op">.</span><span class="fu">task</span>(<span class="st">'sass'</span><span class="op">,</span> <span class="kw">function</span>() {</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>       <span class="cf">return</span> gulp<span class="op">.</span><span class="fu">src</span>(<span class="st">'scss/**/*.scss'</span>) <span class="co">// Source folder containing Sass files</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>           <span class="op">.</span><span class="fu">pipe</span>(<span class="fu">sass</span>()<span class="op">.</span><span class="fu">on</span>(<span class="st">'error'</span><span class="op">,</span> sass<span class="op">.</span><span class="at">logError</span>))</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>           <span class="op">.</span><span class="fu">pipe</span>(gulp<span class="op">.</span><span class="fu">dest</span>(<span class="st">'static/css'</span>))<span class="op">;</span> <span class="co">// Destination folder for compiled CSS</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>   })<span class="op">;</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>   <span class="co">// Define a default task</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>   gulp<span class="op">.</span><span class="fu">task</span>(<span class="st">'default'</span><span class="op">,</span> gulp<span class="op">.</span><span class="fu">series</span>(<span class="st">'sass'</span>))<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>To compile the Sass file to <code>static/css</code>, run this command:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> gulp</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Note that this will overwrite the existing <code>static/css/styles.css</code> file, so if you want to define any custom CSS styles, you should do so in either the <code>scss/styles.scss</code> file or in <code>static/css/extras.css</code>.</p>
 <section id="context-variables" class="level4">
 <h4 class="anchored" data-anchor-id="context-variables">Context variables</h4>
 <p>Context refers to Python variables passed to a template to populate the HTML. In a FastAPI GET route, we can pass context to a template using the <code>templates.TemplateResponse</code> method, which takes the request and any context data as arguments. For example:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.get</span>(<span class="st">"/welcome"</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> welcome(request: Request):</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> templates.TemplateResponse(</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="st">"welcome.html"</span>,</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"username"</span>: <span class="st">"Alice"</span>}</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.get</span>(<span class="st">"/welcome"</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> welcome(request: Request):</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> templates.TemplateResponse(</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        <span class="st">"welcome.html"</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"username"</span>: <span class="st">"Alice"</span>}</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>In this example, the <code>welcome.html</code> template will receive two pieces of context: the user’s <code>request</code>, which is always passed automatically by FastAPI, and a <code>username</code> variable, which we specify as “Alice”. We can then use the <code>{{ username }}</code> syntax in the <code>welcome.html</code> template (or any of its parent or child templates) to insert the value into the HTML.</p>
 </section>
 <section id="form-validation-strategy" class="level4">
 <h4 class="anchored" data-anchor-id="form-validation-strategy">Form validation strategy</h4>
 <p>While this template includes comprehensive server-side validation through Pydantic models and custom validators, it’s important to note that server-side validation should be treated as a fallback security measure. If users ever see the <code>validation_error.html</code> template, it indicates that our client-side validation has failed to catch invalid input before it reaches the server.</p>
-<p>Best practices dictate implementing thorough client-side validation via JavaScript and/or HTML <code>input</code> element <code>pattern</code> attributes to: - Provide immediate feedback to users - Reduce server load - Improve user experience by avoiding round-trips to the server - Prevent malformed data from ever reaching the backend</p>
+<p>Best practices dictate implementing thorough client-side validation via JavaScript and/or HTML <code>input</code> element <code>pattern</code> attributes to:</p>
+<ul>
+<li>Provide immediate feedback to users</li>
+<li>Reduce server load</li>
+<li>Improve user experience by avoiding round-trips to the server</li>
+<li>Prevent malformed data from ever reaching the backend</li>
+</ul>
 <p>Server-side validation remains essential as a security measure against malicious requests that bypass client-side validation, but it should rarely be encountered during normal user interaction. See <code>templates/authentication/register.html</code> for a client-side form validation example involving both JavaScript and HTML regex <code>pattern</code> matching.</p>
 </section>
 <section id="email-templating" class="level4">
@@ -358,56 +438,56 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="defining-request-models-and-custom-validators" class="level4">
 <h4 class="anchored" data-anchor-id="defining-request-models-and-custom-validators">Defining request models and custom validators</h4>
 <p>For example, in the <code>UserRegister</code> request model in <code>routers/authentication.py</code>, we add a custom validation method to ensure that the <code>confirm_password</code> field matches the <code>password</code> field. If not, it raises a custom <code>PasswordMismatchError</code>:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PasswordMismatchError(HTTPException):</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, field: <span class="bu">str</span> <span class="op">=</span> <span class="st">"confirm_password"</span>):</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>            status_code<span class="op">=</span><span class="dv">422</span>,</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>            detail<span class="op">=</span>{</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                <span class="st">"field"</span>: field,</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                <span class="st">"message"</span>: <span class="st">"The passwords you entered do not match"</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>            }</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> UserRegister(BaseModel):</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    name: <span class="bu">str</span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    email: EmailStr</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    password: <span class="bu">str</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    confirm_password: <span class="bu">str</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Custom validators are added as class attributes</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">@field_validator</span>(<span class="st">"confirm_password"</span>, check_fields<span class="op">=</span><span class="va">False</span>)</span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> validate_passwords_match(cls, v: <span class="bu">str</span>, values: <span class="bu">dict</span>[<span class="bu">str</span>, Any]) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> v <span class="op">!=</span> values[<span class="st">"password"</span>]:</span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> PasswordMismatchError()</span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> v</span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ...</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PasswordMismatchError(HTTPException):</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, field: <span class="bu">str</span> <span class="op">=</span> <span class="st">"confirm_password"</span>):</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>            status_code<span class="op">=</span><span class="dv">422</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>            detail<span class="op">=</span>{</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>                <span class="st">"field"</span>: field,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>                <span class="st">"message"</span>: <span class="st">"The passwords you entered do not match"</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> UserRegister(BaseModel):</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    name: <span class="bu">str</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    email: EmailStr</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    password: <span class="bu">str</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    confirm_password: <span class="bu">str</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Custom validators are added as class attributes</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">@field_validator</span>(<span class="st">"confirm_password"</span>, check_fields<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> validate_passwords_match(cls, v: <span class="bu">str</span>, values: <span class="bu">dict</span>[<span class="bu">str</span>, Any]) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> v <span class="op">!=</span> values[<span class="st">"password"</span>]:</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> PasswordMismatchError()</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> v</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ...</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>We then add this request model as a dependency in the signature of our POST route:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.post</span>(<span class="st">"/register"</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> register(request: UserRegister <span class="op">=</span> Depends()):</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ...</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.post</span>(<span class="st">"/register"</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> register(request: UserRegister <span class="op">=</span> Depends()):</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ...</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>When the user submits the form, Pydantic will first check that all expected fields are present and match the expected types. If not, it raises a <code>RequestValidationError</code>. Then, it runs our custom <code>field_validator</code>, <code>validate_passwords_match</code>. If it finds that the <code>confirm_password</code> field does not match the <code>password</code> field, it raises a <code>PasswordMismatchError</code>. These exceptions can then be caught and handled by our middleware.</p>
 <p>(Note that these examples are simplified versions of the actual code.)</p>
 </section>
 <section id="converting-form-data-to-request-models" class="level4">
 <h4 class="anchored" data-anchor-id="converting-form-data-to-request-models">Converting form data to request models</h4>
 <p>In addition to custom validation logic, we also need to define a method on our request models that converts form data into the request model. Here’s what that looks like in the <code>UserRegister</code> request model from the previous example:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> UserRegister(BaseModel):</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ...</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">@classmethod</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> as_form(</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        cls,</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        name: <span class="bu">str</span> <span class="op">=</span> Form(...),</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        email: EmailStr <span class="op">=</span> Form(...),</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        password: <span class="bu">str</span> <span class="op">=</span> Form(...),</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        confirm_password: <span class="bu">str</span> <span class="op">=</span> Form(...)</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    ):</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> cls(</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>            name<span class="op">=</span>name,</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>            email<span class="op">=</span>email,</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>            password<span class="op">=</span>password,</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>            confirm_password<span class="op">=</span>confirm_password</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> UserRegister(BaseModel):</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ...</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">@classmethod</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> as_form(</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>        cls,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>        name: <span class="bu">str</span> <span class="op">=</span> Form(...),</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>        email: EmailStr <span class="op">=</span> Form(...),</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>        password: <span class="bu">str</span> <span class="op">=</span> Form(...),</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>        confirm_password: <span class="bu">str</span> <span class="op">=</span> Form(...)</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    ):</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> cls(</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>            name<span class="op">=</span>name,</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>            email<span class="op">=</span>email,</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>            password<span class="op">=</span>password,</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>            confirm_password<span class="op">=</span>confirm_password</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>        )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="middleware-exception-handling" class="level4">
 <h4 class="anchored" data-anchor-id="middleware-exception-handling">Middleware exception handling</h4>
@@ -415,17 +495,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>This template uses middlewares exclusively for global exception handling; they only affect requests that raise an exception. This allows for consistent error responses and centralized error logging. Middleware can catch exceptions raised during request processing and return appropriate HTTP responses.</p>
 <p>Middleware functions are decorated with <code>@app.exception_handler(ExceptionType)</code> and are executed in the order they are defined in <code>main.py</code>, from most to least specific.</p>
 <p>Here’s a middleware for handling the <code>PasswordMismatchError</code> exception from the previous example, which renders the <code>errors/validation_error.html</code> template with the error details:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.exception_handler</span>(PasswordMismatchError)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> password_mismatch_exception_handler(request: Request, exc: PasswordMismatchError):</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> templates.TemplateResponse(</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        request,</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"errors/validation_error.html"</span>,</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        {</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>            <span class="st">"status_code"</span>: <span class="dv">422</span>,</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>            <span class="st">"errors"</span>: {<span class="st">"error"</span>: exc.detail}</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        },</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>        status_code<span class="op">=</span><span class="dv">422</span>,</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.exception_handler</span>(PasswordMismatchError)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> password_mismatch_exception_handler(request: Request, exc: PasswordMismatchError):</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> templates.TemplateResponse(</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>        request,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"errors/validation_error.html"</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>        {</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>            <span class="st">"status_code"</span>: <span class="dv">422</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>            <span class="st">"errors"</span>: {<span class="st">"error"</span>: exc.detail}</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>        },</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>        status_code<span class="op">=</span><span class="dv">422</span>,</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 <section id="database-configuration-and-access-with-sqlmodel" class="level3">
@@ -464,30 +544,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><code>get_session()</code>: Provides a database session for performing operations</li>
 </ul>
 <p>To perform database operations in route handlers, inject the database session as a dependency:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.get</span>(<span class="st">"/users"</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> get_users(session: Session <span class="op">=</span> Depends(get_session)):</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    users <span class="op">=</span> session.<span class="bu">exec</span>(select(User)).<span class="bu">all</span>()</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> users</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.get</span>(<span class="st">"/users"</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> get_users(session: Session <span class="op">=</span> Depends(get_session)):</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    users <span class="op">=</span> session.<span class="bu">exec</span>(select(User)).<span class="bu">all</span>()</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> users</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The session automatically handles transaction management, ensuring that database operations are atomic and consistent.</p>
 <p>There is also a helper method on the <code>User</code> model that checks if a user has a specific permission for a given organization. Its first argument must be a <code>ValidPermissions</code> enum value (from <code>utils/models.py</code>), and its second argument must be an <code>Organization</code> object or an <code>int</code> representing an organization ID:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>permission <span class="op">=</span> ValidPermissions.CREATE_ROLE</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>organization <span class="op">=</span> session.<span class="bu">exec</span>(select(Organization).where(Organization.name <span class="op">==</span> <span class="st">"Acme Inc."</span>)).first()</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>user.has_permission(permission, organization)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>permission <span class="op">=</span> ValidPermissions.CREATE_ROLE</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>organization <span class="op">=</span> session.<span class="bu">exec</span>(select(Organization).where(Organization.name <span class="op">==</span> <span class="st">"Acme Inc."</span>)).first()</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>user.has_permission(permission, organization)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>You should create custom <code>ValidPermissions</code> enum values for your application and validate that users have the necessary permissions before allowing them to modify organization data resources.</p>
 </section>
 <section id="cascade-deletes" class="level4">
 <h4 class="anchored" data-anchor-id="cascade-deletes">Cascade deletes</h4>
 <p>Cascade deletes (in which deleting a record from one table deletes related records from another table) can be handled at either the ORM level or the database level. This template handles cascade deletes at the ORM level, via SQLModel relationships. Inside a SQLModel <code>Relationship</code>, we set:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>sa_relationship_kwargs<span class="op">=</span>{</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"cascade"</span>: <span class="st">"all, delete-orphan"</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>sa_relationship_kwargs<span class="op">=</span>{</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"cascade"</span>: <span class="st">"all, delete-orphan"</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>This tells SQLAlchemy to cascade all operations (e.g., <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>) to the related table. Since this happens through the ORM, we need to be careful to do all our database operations through the ORM using supported syntax. That generally means loading database records into Python objects and then deleting those objects rather than deleting records in the database directly.</p>
 <p>For example,</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>session.<span class="bu">exec</span>(delete(Role))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>session.<span class="bu">exec</span>(delete(Role))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>will not trigger the cascade delete. Instead, we need to select the role objects and then delete them:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> role <span class="kw">in</span> session.<span class="bu">exec</span>(select(Role)).<span class="bu">all</span>():</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    session.delete(role)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> role <span class="kw">in</span> session.<span class="bu">exec</span>(select(Role)).<span class="bu">all</span>():</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    session.delete(role)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>This is slower than deleting the records directly, but it makes <a href="https://sqlmodel.tiangolo.com/tutorial/many-to-many/create-models-with-link/#create-the-tables">many-to-many relationships</a> much easier to manage.</p>
 
 
