@@ -744,18 +744,23 @@ One use case for this file, if using the Cursor IDE, is to rename it to `.cursor
 
 We have also exposed the full Markdown-formatted project documentation as a [single text file](static/documentation.txt) for easy downloading and embedding for RAG workflows.
 
-## Project structure
+## Application architecture
 
-### Customizable folders and files
+### Post-Redirect-Get pattern
+
+In this template, we use FastAPI to define the "API endpoints" of our application. An API endpoint is simply a URL that accepts user requests and returns responses. When a user visits a page, their browser sends what's called a "GET" request to an endpoint, and the server processes it (often querying a database), and returns a response (typically HTML). The browser renders the HTML, displaying the page.
+
+We also create POST endpoints, which accept form submissions so the user can create, update, and delete data in the database. This template follows the Post-Redirect-Get (PRG) pattern to handle POST requests. When a form is submitted, the server processes the data and then returns a "redirect" response, which sends the user to a GET endpoint to re-render the page with the updated data. (See [Architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html) for more details.)
+
+#### Customizable folders and files
 
 - FastAPI application entry point and GET routes: `main.py`
 - FastAPI POST routes: `routers/`
-    - User authentication endpoints: `auth.py`
+    - User authentication endpoints: `authentication.py`
     - User profile management endpoints: `user.py`
     - Organization management endpoints: `organization.py`
     - Role management endpoints: `role.py`
 - Jinja2 templates: `templates/`
-- Bootstrap Sass Files: `scss/`
 - Static assets: `static/`
 - Unit tests: `tests/`
 - Test database configuration: `docker-compose.yml`
@@ -763,7 +768,8 @@ We have also exposed the full Markdown-formatted project documentation as a [sin
     - Auth helpers: `auth.py`
     - Database helpers: `db.py`
     - Database models: `models.py`
-- Environment variables: `.env`
+    - Image helpers: `images.py`
+- Environment variables: `.env.example`
 - CI/CD configuration: `.github/`
 - Project configuration: `pyproject.toml`
 - Quarto documentation: 
@@ -772,15 +778,11 @@ We have also exposed the full Markdown-formatted project documentation as a [sin
 
 Most everything else is auto-generated and should not be manually modified.
 
-### Defining a web backend with FastAPI
+## Backend
 
-We use FastAPI to define the "API endpoints" of our application. An API endpoint is simply a URL that accepts user requests and returns responses. When a user visits a page, their browser sends what's called a "GET" request to an endpoint, and the server processes it (often querying a database), and returns a response (typically HTML). The browser renders the HTML, displaying the page.
+### Code conventions
 
-We also create POST endpoints, which accept form submissions so the user can create, update, and delete data in the database. This template follows the Post-Redirect-Get (PRG) pattern to handle POST requests. When a form is submitted, the server processes the data and then returns a "redirect" response, which sends the user to a GET endpoint to re-render the page with the updated data. (See [Architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html) for more details.)
-
-#### Routing patterns in this template
-
-In this template, GET routes are defined in the main entry point for the application, `main.py`. POST routes are organized into separate modules within the `routers/` directory.
+GET routes are defined in the main entry point for the application, `main.py`. POST routes are organized into separate modules within the `routers/` directory.
 
 We name our GET routes using the convention `read_<name>`, where `<name>` is the name of the page, to indicate that they are read-only endpoints that do not modify the database.
 
@@ -794,108 +796,7 @@ Some of our routes take request parameters, which we pass as keyword arguments t
 
 Some parameters are shared across all authenticated or unauthenticated routes, so we define them in the `common_authenticated_parameters` and `common_unauthenticated_parameters` dependencies defined in `main.py`.
 
-### HTML templating with Jinja2
-
-To generate the HTML pages to be returned from our GET routes, we use Jinja2 templates. Jinja2's hierarchical templates allow creating a base template (`templates/base.html`) that defines the overall layout of our web pages (e.g., where the header, body, and footer should go). Individual pages can then extend this base template. We can also template reusable components that can be injected into our layout or page templates.
-
-With Jinja2, we can use the `{% block %}` tag to define content blocks, and the `{% extends %}` tag to extend a base template. We can also use the `{% include %}` tag to include a component in a parent template. See the [Jinja2 documentation on template inheritance](https://jinja.palletsprojects.com/en/stable/templates/#template-inheritance) for more details.
-
-### Custom theming with Bootstrap Sass
-
-[Install Node.js](https://nodejs.org/en/download/) on your local machine if it is not there already.
-
-Install `bootstrap`, `sass`, `gulp`, and `gulp-sass` in your project:
-
-```bash
-npm install --save-dev bootstrap sass gulp gulp-cli gulp-sass
-```
-
-This will create a `node_modules` folder, a `package-lock.json` file, and a `package.json` file in the root directory of the project.
-
-Create an `scss` folder and a basic `scss/styles.scss` file:
-
-```bash
-mkdir scss
-touch scss/styles.scss
-```
-
-Your custom styles will go in `scss/styles.scss`, along with `@import` statements to include the Bootstrap components you want. For example, the default CSS for the template was compiled from the following configuration, which imports all of Bootstrap and overrides the `$theme-colors` and `$font-family-base` variables:
-
-```scss
-// styles.scss
-
-// Include any default variable overrides here (functions won't be available)
-
-// State colors
-$primary: #7464a1;
-$secondary: #64a19d;
-$success: #67c29c;
-$info: #1cabc4;
-$warning: #e4c662;
-$danger: #a16468;
-$light: #f8f9fa;
-$dark: #343a40;
-
-// Bootstrap color map
-$theme-colors: (
-    "primary": $primary,
-    "secondary": $secondary,
-    "success": $success,
-    "info": $info,
-    "warning": $warning,
-    "danger": $danger,
-    "light": $light,
-    "dark": $dark
-);
-
-$font-family-base: (
-    "Nunito",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    "Helvetica Neue",
-    Arial,
-    sans-serif,
-    "Apple Color Emoji",
-    "Segoe UI Emoji",
-    "Segoe UI Symbol",
-    "Noto Color Emoji"
-);
-
-// Include all of Bootstrap
-
-@import "../node_modules/bootstrap/scss/bootstrap";
-```
-
-The most common use case for `styles.scss` is to define a custom color scheme and fonts, but it's also possible to other visual details such as border radius and box shadow depth. See the [Bootstrap Sass customization instructions](https://getbootstrap.com/docs/5.3/customize/sass/) and the many free templates available at [Start Bootstrap](https://startbootstrap.com) for examples.
-
-To compile the Sass files, we use `gulp`. In the project root directory, create a `gulpfile.js` file with the following content:
-
-```javascript
-   const gulp = require('gulp');
-   const sass = require('gulp-sass')(require('sass'));
-
-   // Define a task to compile Sass
-   gulp.task('sass', function() {
-       return gulp.src('scss/**/*.scss') // Source folder containing Sass files
-           .pipe(sass().on('error', sass.logError))
-           .pipe(gulp.dest('static/css')); // Destination folder for compiled CSS
-   });
-
-   // Define a default task
-   gulp.task('default', gulp.series('sass'));
-```
-
-To compile the Sass file to `static/css`, run this command:
-
-```bash
-npx gulp
-```
-
-Note that this will overwrite the existing `static/css/styles.css` file, so if you want to define any custom CSS styles, you should do so in either the `scss/styles.scss` file or in `static/css/extras.css`.
-
-#### Context variables
+### Context variables
 
 Context refers to Python variables passed to a template to populate the HTML. In a FastAPI GET route, we can pass context to a template using the `templates.TemplateResponse` method, which takes the request and any context data as arguments. For example:
 
@@ -910,20 +811,7 @@ async def welcome(request: Request):
 
 In this example, the `welcome.html` template will receive two pieces of context: the user's `request`, which is always passed automatically by FastAPI, and a `username` variable, which we specify as "Alice". We can then use the `{{{ username }}}` syntax in the `welcome.html` template (or any of its parent or child templates) to insert the value into the HTML.
 
-#### Form validation strategy
-
-While this template includes comprehensive server-side validation through Pydantic models and custom validators, it's important to note that server-side validation should be treated as a fallback security measure. If users ever see the `validation_error.html` template, it indicates that our client-side validation has failed to catch invalid input before it reaches the server.
-
-Best practices dictate implementing thorough client-side validation via JavaScript and/or HTML `input` element `pattern` attributes to:
-
-- Provide immediate feedback to users
-- Reduce server load
-- Improve user experience by avoiding round-trips to the server
-- Prevent malformed data from ever reaching the backend
-
-Server-side validation remains essential as a security measure against malicious requests that bypass client-side validation, but it should rarely be encountered during normal user interaction. See `templates/authentication/register.html` for a client-side form validation example involving both JavaScript and HTML regex `pattern` matching.
-
-#### Email templating
+### Email templating
 
 Password reset and other transactional emails are also handled through Jinja2 templates, located in the `templates/emails` directory. The email templates follow the same inheritance pattern as web templates, with `base_email.html` providing the common layout and styling.
 
@@ -933,7 +821,7 @@ Here's how the default password reset email template looks:
 
 The email templates use inline CSS styles to ensure consistent rendering across email clients. Like web templates, they can receive context variables from the Python code (such as `reset_url` in the password reset template).
 
-### Writing type annotated code
+### Server-side form validation
 
 Pydantic is used for data validation and serialization. It ensures that the data received in requests meets the expected format and constraints. Pydantic models are used to define the structure of request and response data, making it easy to validate and parse JSON payloads.
 
@@ -1007,7 +895,7 @@ class UserRegister(BaseModel):
         )
 ``` 
 
-#### Middleware exception handling
+### Middleware exception handling
 
 Middlewares—which process requests before they reach the route handlers and responses before they are sent back to the client—are defined in `main.py`. They are commonly used in web development for tasks such as error handling, authentication token validation, logging, and modifying request/response objects.
 
@@ -1031,11 +919,11 @@ async def password_mismatch_exception_handler(request: Request, exc: PasswordMis
     )
 ```
 
-### Database configuration and access with SQLModel
+## Database configuration and access with SQLModel
 
 SQLModel is an Object-Relational Mapping (ORM) library that allows us to interact with our PostgreSQL database using Python classes instead of writing raw SQL. It combines the features of SQLAlchemy (a powerful database toolkit) with Pydantic's data validation.
 
-#### Models and relationships
+### Models and relationships
 
 Our database models are defined in `utils/models.py`. Each model is a Python class that inherits from `SQLModel` and represents a database table. The key models are:
 
@@ -1080,7 +968,7 @@ graph.write_png('static/schema.png')
 ![Database Schema](static/schema.png)
 
 
-#### Database helpers
+### Database helpers
 
 Database operations are facilitated by helper functions in `utils/db.py`. Key functions include:
 
@@ -1110,7 +998,7 @@ user.has_permission(permission, organization)
 
 You should create custom `ValidPermissions` enum values for your application and validate that users have the necessary permissions before allowing them to modify organization data resources.
 
-#### Cascade deletes
+### Cascade deletes
 
 Cascade deletes (in which deleting a record from one table deletes related records from another table) can be handled at either the ORM level or the database level. This template handles cascade deletes at the ORM level, via SQLModel relationships. Inside a SQLModel `Relationship`, we set:
 
@@ -1137,6 +1025,127 @@ for role in session.exec(select(Role)).all():
 
 This is slower than deleting the records directly, but it makes [many-to-many relationships](https://sqlmodel.tiangolo.com/tutorial/many-to-many/create-models-with-link/#create-the-tables) much easier to manage.
 
+## Frontend
+
+### HTML templating with Jinja2
+
+To generate the HTML pages to be returned from our GET routes, we use Jinja2 templates. Jinja2's hierarchical templates allow creating a base template (`templates/base.html`) that defines the overall layout of our web pages (e.g., where the header, body, and footer should go). Individual pages can then extend this base template. We can also template reusable components that can be injected into our layout or page templates.
+
+With Jinja2, we can use the `{% block %}` tag to define content blocks, and the `{% extends %}` tag to extend a base template. We can also use the `{% include %}` tag to include a component in a parent template. See the [Jinja2 documentation on template inheritance](https://jinja.palletsprojects.com/en/stable/templates/#template-inheritance) for more details.
+
+### Custom theming with Bootstrap
+
+[Install Node.js](https://nodejs.org/en/download/) on your local machine if it is not there already.
+
+Install `bootstrap`, `sass`, `gulp`, and `gulp-sass` in your project:
+
+```bash
+npm install --save-dev bootstrap sass gulp gulp-cli gulp-sass
+```
+
+This will create a `node_modules` folder, a `package-lock.json` file, and a `package.json` file in the root directory of the project.
+
+Create an `scss` folder and a basic `scss/styles.scss` file:
+
+```bash
+mkdir scss
+touch scss/styles.scss
+```
+
+Your custom styles will go in `scss/styles.scss`, along with `@import` statements to include the Bootstrap components you want.
+
+#### Customizing the Bootstrap SCSS
+
+The default CSS for the template was compiled from the following `scss/styles.scss` configuration, which imports all of Bootstrap and overrides the `$theme-colors` and `$font-family-base` variables:
+
+```scss
+// styles.scss
+
+// Include any default variable overrides here (functions won't be available)
+
+// State colors
+$primary: #7464a1;
+$secondary: #64a19d;
+$success: #67c29c;
+$info: #1cabc4;
+$warning: #e4c662;
+$danger: #a16468;
+$light: #f8f9fa;
+$dark: #343a40;
+
+// Bootstrap color map
+$theme-colors: (
+    "primary": $primary,
+    "secondary": $secondary,
+    "success": $success,
+    "info": $info,
+    "warning": $warning,
+    "danger": $danger,
+    "light": $light,
+    "dark": $dark
+);
+
+$font-family-base: (
+    "Nunito",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif,
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Segoe UI Symbol",
+    "Noto Color Emoji"
+);
+
+// Include all of Bootstrap
+
+@import "../node_modules/bootstrap/scss/bootstrap";
+```
+
+The most common use case for `styles.scss` is to define a custom color scheme and fonts, but it's also possible to customize some other visual details such as border radius and box shadow depth. See the [Bootstrap Sass customization documentation](https://getbootstrap.com/docs/5.3/customize/sass/) and the many free templates available at [Start Bootstrap](https://startbootstrap.com) for examples.
+
+#### Compiling the SCSS to CSS
+
+To compile the SCSS files to CSS, we use `gulp`. In the project root directory, create a `gulpfile.js` file with the following content:
+
+```javascript
+   const gulp = require('gulp');
+   const sass = require('gulp-sass')(require('sass'));
+
+   // Define a task to compile Sass
+   gulp.task('sass', function() {
+       return gulp.src('scss/**/*.scss') // Source folder containing Sass files
+           .pipe(sass().on('error', sass.logError))
+           .pipe(gulp.dest('static/css')); // Destination folder for compiled CSS
+   });
+
+   // Define a default task
+   gulp.task('default', gulp.series('sass'));
+```
+
+To compile the SCSS file to `static/css`, run this command:
+
+```bash
+npx gulp
+```
+
+Note that this will overwrite the existing `static/css/styles.css` file, so if you want to define any custom CSS styles, you should do so in either the `scss/styles.scss` file or in `static/css/extras.css`.
+
+### Client-side form validation
+
+While this template includes comprehensive server-side validation through Pydantic models and custom validators, it's important to note that server-side validation should be treated as a fallback security measure. If users ever see the `validation_error.html` template, it indicates that our client-side validation has failed to catch invalid input before it reaches the server.
+
+Best practices dictate implementing thorough client-side validation via JavaScript and/or HTML `input` element `pattern` attributes to:
+
+- Provide immediate feedback to users
+- Reduce server load
+- Improve user experience by avoiding round-trips to the server
+- Prevent malformed data from ever reaching the backend
+
+Server-side validation remains essential as a security measure against malicious requests that bypass client-side validation, but it should rarely be encountered during normal user interaction. See `templates/authentication/register.html` for a client-side form validation example involving both JavaScript and HTML regex `pattern` matching.
 
 # Deployment
 
