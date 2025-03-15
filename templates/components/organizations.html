@@ -9,7 +9,7 @@
     <div class="card-body">
         <!-- New Organization Form -->
         <div class="collapse mb-3" id="newOrgForm">
-            <form action="/organizations/create" method="post" class="border rounded p-3 bg-light">
+            <form action="{{ url_for('create_organization') }}" method="post" class="border rounded p-3 bg-light">
                 <div class="mb-3">
                     <label for="name" class="form-label">Organization Name</label>
                     <input type="text" 
@@ -28,7 +28,7 @@
         {% if organizations %}
             <div class="list-group">
                 {% for org in organizations %}
-                    <a href="/organizations/{{ org.id }}" class="list-group-item list-group-item-action">
+                    <a href="{{ url_for('read_organization', organization_id=org.id) }}" class="list-group-item list-group-item-action">
                         <div class="d-flex w-100 justify-content-between">
                             <h5 class="mb-1">{{ org.name }}</h5>
                             <small>Joined {{ org.created_at.strftime('%Y-%m-%d') }}</small>

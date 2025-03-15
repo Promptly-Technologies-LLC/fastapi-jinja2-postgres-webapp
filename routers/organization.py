@@ -1,111 +1,66 @@
 from logging import getLogger
-from fastapi import APIRouter, Depends, HTTPException, Form
+from typing import Annotated
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
-from pydantic import BaseModel, ConfigDict, field_validator
+from fastapi.templating import Jinja2Templates
+from pydantic import StringConstraints
 from sqlmodel import Session, select
-from utils.db import get_session
-from utils.auth import get_authenticated_user, get_user_with_relations, InsufficientPermissionsError
-from utils.models import Organization, User, Role, utc_time, default_roles, ValidPermissions
-from datetime import datetime
+from utils.db import get_session, default_roles
+from utils.dependencies import get_authenticated_user, get_user_with_relations
+from utils.models import Organization, User, Role, utc_time
+from utils.enums import ValidPermissions
+from exceptions.http_exceptions import OrganizationNotFoundError, OrganizationNameTakenError, InsufficientPermissionsError
 
 logger = getLogger("uvicorn.error")
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
-
-# --- Custom Exceptions ---
-
-
-class EmptyOrganizationNameError(HTTPException):
-    def __init__(self):
-        super().__init__(
-            status_code=400,
-            detail="Organization name cannot be empty"
-        )
-
-
-class OrganizationNotFoundError(HTTPException):
-    def __init__(self):
-        super().__init__(
-            status_code=404,
-            detail="Organization not found"
-        )
-
-
-class OrganizationNameTakenError(HTTPException):
-    def __init__(self):
-        super().__init__(
-            status_code=400,
-            detail="Organization name already taken"
-        )
-
-
-# --- Server Request and Response Models ---
-
-
-class OrganizationCreate(BaseModel):
-    name: str
-
-    @field_validator('name')
-    @classmethod
-    def validate_name(cls, name: str) -> str:
-        if not name.strip():
-            raise EmptyOrganizationNameError()
-        return name.strip()
-
-    @classmethod
-    async def as_form(cls, name: str = Form(...)):
-        return cls(name=name)
-
-
-class OrganizationRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    name: str
-    created_at: datetime
-    updated_at: datetime
-
-
-class OrganizationUpdate(BaseModel):
-    id: int
-    name: str
-
-    @field_validator('name')
-    @classmethod
-    def validate_name(cls, name: str) -> str:
-        if not name.strip():
-            raise EmptyOrganizationNameError()
-        return name.strip()
-
-    @classmethod
-    async def as_form(cls, id: int = Form(...), name: str = Form(...)):
-        return cls(id=id, name=name)
+templates = Jinja2Templates(directory="templates")
 
 
 # --- Routes ---
 
+
+@router.get("/{org_id}")
+async def read_organization(
+    org_id: int,
+    request: Request,
+    user: User = Depends(get_user_with_relations)
+):
+    # Get the organization only if the user is a member of it
+    org = next(
+        (org for org in user.organizations if org.id == org_id),
+        None
+    )
+    if not org:
+        raise OrganizationNotFoundError()
+
+    return templates.TemplateResponse(
+        request, "users/organization.html", {"organization": org}
+    )
+
+
 @router.post("/create", response_class=RedirectResponse)
 def create_organization(
-    org: OrganizationCreate = Depends(OrganizationCreate.as_form),
+    name: Annotated[str, StringConstraints(min_length=1, strip_whitespace=True)] = Form(...),
     user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session)
 ) -> RedirectResponse:
     # Check if organization already exists
     db_org = session.exec(select(Organization).where(
-        Organization.name == org.name)).first()
+        Organization.name == name)).first()
     if db_org:
         raise OrganizationNameTakenError()
 
     # Create organization first
-    db_org = Organization(name=org.name)
+    db_org = Organization(name=name)
     session.add(db_org)
     # This gets us the org ID without committing
     session.flush()
 
     # Create default roles with organization_id
     initial_roles = [
-        Role(name=name, organization_id=db_org.id)
-        for name in default_roles
+        Role(name=role_name, organization_id=db_org.id)
+        for role_name in default_roles
     ]
     session.add_all(initial_roles)
     session.flush()
@@ -125,13 +80,14 @@ def create_organization(
 
 @router.post("/update/{org_id}", name="update_organization", response_class=RedirectResponse)
 def update_organization(
-    org: OrganizationUpdate = Depends(OrganizationUpdate.as_form),
+    org_id: int,
+    name: Annotated[str, StringConstraints(min_length=1, strip_whitespace=True)] = Form(...),
     user: User = Depends(get_user_with_relations),
     session: Session = Depends(get_session)
 ) -> RedirectResponse:
     # This will raise appropriate exceptions if org doesn't exist or user lacks access
     organization: Organization | None = next(
-        (org for org in user.organizations if org.id == org.id), None)
+        (org_item for org_item in user.organizations if org_item.id == org_id), None)
 
     # Check if user has permission to edit organization
     if not organization or not user.has_permission(ValidPermissions.EDIT_ORGANIZATION, organization):
@@ -140,14 +96,14 @@ def update_organization(
     # Check if new name already exists for another organization
     existing_org = session.exec(
         select(Organization)
-        .where(Organization.name == org.name)
-        .where(Organization.id != org.id)
+        .where(Organization.name == name)
+        .where(Organization.id != org_id)
     ).first()
     if existing_org:
         raise OrganizationNameTakenError()
 
     # Update organization name
-    organization.name = org.name
+    organization.name = name
     organization.updated_at = utc_time()
     session.add(organization)
     session.commit()

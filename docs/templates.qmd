@@ -1,0 +1,321 @@
+---
+title: "Template Variables Documentation"
+---
+
+This file documents the required context variables for each template in the application.
+
+## Table of Contents
+
+- [authentication](#authentication)
+- [components](#components)
+- [dashboard](#dashboard)
+- [dashboard > organizations](#dashboard-organizations)
+- [dashboard > organizations > members](#dashboard-organizations-members)
+- [emails](#emails)
+- [errors](#errors)
+- [root](#root)
+- [users](#users)
+
+## authentication
+
+### forgot_password.html
+
+**Path:** `authentication/forgot_password.html`
+
+**Required Variables:**
+
+| Variable | Description |
+| --- | --- |
+| `show_form` | |
+| `url_for` | |
+
+### login.html
+
+**Path:** `authentication/login.html`
+
+**Required Variables:**
+
+| Variable | Description |
+| --- | --- |
+| `url_for` | |
+
+### register.html
+
+**Path:** `authentication/register.html`
+
+**Required Variables:**
+
+| Variable | Description |
+| --- | --- |
+| `password_pattern` | |
+| `url_for` | |
+
+### reset_password.html
+
+**Path:** `authentication/reset_password.html`
+
+**Required Variables:**
+
+| Variable | Description |
+| --- | --- |
+| `email` | |
+| `password_pattern` | |
+| `token` | |
+| `url_for` | |
+
+## components
+
+### footer.html
+
+**Path:** `components/footer.html`
+
+**Required Variables:**
+
+| Variable | Description |
+| --- | --- |
+| `url_for` | |
+
+### header.html
+
+**Path:** `components/header.html`
+
+**Required Variables:**
+
+| Variable | Description |
+| --- | --- |
+| `url_for` | |
+| `user` | |
+
+### logo.html
+
+**Path:** `components/logo.html`
+
+**No variables required**
+
+### nav.html
+
+**Path:** `components/nav.html`
+
+**Required Variables:**
+
+| Variable | Description |
+| --- | --- |
+| `url_for` | |
+
+### organizations.html
+
+**Path:** `components/organizations.html`
+
+**Required Variables:**
+
+| Variable | Description |
+| --- | --- |
+| `url_for` | |
+
+### silhouette.html
+
+**Path:** `components/silhouette.html`
+
+**No variables required**
+
+## dashboard
+
+### index.html
+
+**Path:** `dashboard/index.html`
+
+**No variables required**
+
+### organization_overview.html
+
+**Path:** `dashboard/organization_overview.html`
+
+**No variables required**
+
+## dashboard > organizations
+
+### create.html
+
+**Path:** `dashboard/organizations/create.html`
+
+**No variables required**
+
+### delete.html
+
+**Path:** `dashboard/organizations/delete.html`
+
+**No variables required**
+
+### detail.html
+
+**Path:** `dashboard/organizations/detail.html`
+
+**No variables required**
+
+### edit.html
+
+**Path:** `dashboard/organizations/edit.html`
+
+**No variables required**
+
+### members.html
+
+**Path:** `dashboard/organizations/members.html`
+
+**No variables required**
+
+## dashboard > organizations > members
+
+### delete.html
+
+**Path:** `dashboard/organizations/members/delete.html`
+
+**No variables required**
+
+### edit.html
+
+**Path:** `dashboard/organizations/members/edit.html`
+
+**No variables required**
+
+### invite.html
+
+**Path:** `dashboard/organizations/members/invite.html`
+
+**No variables required**
+
+## emails
+
+### base_email.html
+
+**Path:** `emails/base_email.html`
+
+**No variables required**
+
+### reset_email.html
+
+**Path:** `emails/reset_email.html`
+
+**Required Variables:**
+
+| Variable | Description |
+| --- | --- |
+| `reset_url` | |
+
+### update_email_email.html
+
+**Path:** `emails/update_email_email.html`
+
+**Required Variables:**
+
+| Variable | Description |
+| --- | --- |
+| `confirmation_url` | |
+| `current_email` | |
+| `new_email` | |
+
+## errors
+
+### error.html
+
+**Path:** `errors/error.html`
+
+**Required Variables:**
+
+| Variable | Description |
+| --- | --- |
+| `detail` | |
+| `status_code` | |
+| `url_for` | |
+
+### validation_error.html
+
+**Path:** `errors/validation_error.html`
+
+**Required Variables:**
+
+| Variable | Description |
+| --- | --- |
+| `errors` | |
+| `url_for` | |
+
+## root
+
+### about.html
+
+**Path:** `about.html`
+
+**No variables required**
+
+### auth_base.html
+
+**Path:** `auth_base.html`
+
+**No variables required**
+
+### base.html
+
+**Path:** `base.html`
+
+**Required Variables:**
+
+| Variable | Description |
+| --- | --- |
+| `url_for` | |
+
+### index.html
+
+**Path:** `index.html`
+
+**Required Variables:**
+
+| Variable | Description |
+| --- | --- |
+| `render_logo` | |
+| `url_for` | |
+
+### privacy_policy.html
+
+**Path:** `privacy_policy.html`
+
+**No variables required**
+
+### terms_of_service.html
+
+**Path:** `terms_of_service.html`
+
+**No variables required**
+
+## users
+
+### organization.html
+
+**Path:** `users/organization.html`
+
+**Required Variables:**
+
+| Variable | Description |
+| --- | --- |
+| `organization` | |
+| `render_silhouette` | |
+| `url_for` | |
+
+### profile.html
+
+**Path:** `users/profile.html`
+
+**Required Variables:**
+
+| Variable | Description |
+| --- | --- |
+| `allowed_formats` | |
+| `email_update_requested` | |
+| `email_updated` | |
+| `max_dimension` | |
+| `max_file_size_mb` | |
+| `min_dimension` | |
+| `render_organizations` | |
+| `render_silhouette` | |
+| `show_form` | |
+| `url_for` | |
+| `user` | |

@@ -7,7 +7,7 @@ package-mode = false
 authors = [
     {name = "Christopher Carroll Smith", email = "chriscarrollsmith@gmail.com"},
 ]
-requires-python = "<4.0,>=3.12"
+requires-python = "<4.0,>=3.13"
 dependencies = [
     "sqlmodel<1.0.0,>=0.0.22",
     "pyjwt<3.0.0,>=2.10.1",
@@ -32,4 +32,8 @@ dev = [
     "notebook<8.0.0,>=7.2.2",
     "pytest<9.0.0,>=8.3.3",
     "sqlalchemy-schemadisplay<3.0,>=2.0",
+    "perplexity-cli",
 ]
+
+[tool.uv.sources]
+perplexity-cli = { git = "https://github.com/chriscarrollsmith/perplexity-cli.git" }

@@ -71,9 +71,9 @@ We also create POST endpoints, which accept form submissions so the user can cre
 
 #### Customizable folders and files
 
-- FastAPI application entry point and GET routes: `main.py`
-- FastAPI POST routes: `routers/`
-    - User authentication endpoints: `authentication.py`
+- FastAPI application entry point: `main.py`
+- FastAPI routes: `routers/`
+    - User authentication endpoints: `account.py`
     - User profile management endpoints: `user.py`
     - Organization management endpoints: `organization.py`
     - Role management endpoints: `role.py`
@@ -84,14 +84,21 @@ We also create POST endpoints, which accept form submissions so the user can cre
 - Helper functions: `utils/`
     - Auth helpers: `auth.py`
     - Database helpers: `db.py`
+    - FastAPI dependencies: `dependencies.py`
+    - Enums: `enums.py`
     - Database models: `models.py`
     - Image helpers: `images.py`
+- Exceptions: `exceptions/`
+    - HTTP exceptions: `http_exceptions.py`
+    - Other custom exceptions: `exceptions.py`
 - Environment variables: `.env.example`
 - CI/CD configuration: `.github/`
 - Project configuration: `pyproject.toml`
 - Quarto documentation: 
-    - Source: `index.qmd` + `docs/`
+    - README source: `index.qmd`
+    - Website source: `index.qmd` + `docs/`
     - Configuration: `_quarto.yml`
+
 
 Most everything else is auto-generated and should not be manually modified.
 
@@ -99,19 +106,9 @@ Most everything else is auto-generated and should not be manually modified.
 
 ### Code conventions
 
-GET routes are defined in the main entry point for the application, `main.py`. POST routes are organized into separate modules within the `routers/` directory.
+We name our GET routes using the convention `read_<name>`, where `<name>` is the name of the page, to indicate that they are read-only endpoints that do not modify the database. In POST routes that modify the database, you can use the `get_session` dependency as an argument to get a database session.
 
-We name our GET routes using the convention `read_<name>`, where `<name>` is the name of the page, to indicate that they are read-only endpoints that do not modify the database.
-
-We divide our GET routes into authenticated and unauthenticated routes, using commented section headers in our code that look like this:
-
-```python
-# --- Authenticated Routes ---
-```
-
-Some of our routes take request parameters, which we pass as keyword arguments to the route handler. These parameters should be type annotated for validation purposes.
-
-Some parameters are shared across all authenticated or unauthenticated routes, so we define them in the `common_authenticated_parameters` and `common_unauthenticated_parameters` dependencies defined in `main.py`.
+Routes that require authentication generally take the `get_authenticated_account` dependency as an argument. Unauthenticated GET routes generally take the `get_optional_user` dependency as an argument. If a route should *only* be seen by authenticated users (i.e., a login page), you can redirect to the dashboard if `get_optional_user` returns a `User` object.
 
 ### Context variables
 
@@ -144,74 +141,6 @@ Pydantic is used for data validation and serialization. It ensures that the data
 
 If a user-submitted form contains data that has the wrong number, names, or types of fields, Pydantic will raise a `RequestValidationError`, which is caught by middleware and converted into an HTTP 422 error response.
 
-For other, custom validation logic, we add Pydantic `@field_validator` methods to our Pydantic request models and then add the models as dependencies in the signatures of corresponding POST routes. FastAPI's dependency injection system ensures that dependency logic is executed before the body of the route handler.
-
-#### Defining request models and custom validators
-
-For example, in the `UserRegister` request model in `routers/authentication.py`, we add a custom validation method to ensure that the `confirm_password` field matches the `password` field. If not, it raises a custom `PasswordMismatchError`:
-
-```python
-class PasswordMismatchError(HTTPException):
-    def __init__(self, field: str = "confirm_password"):
-        super().__init__(
-            status_code=422,
-            detail={
-                "field": field,
-                "message": "The passwords you entered do not match"
-            }
-        )
-
-class UserRegister(BaseModel):
-    name: str
-    email: EmailStr
-    password: str
-    confirm_password: str
-
-    # Custom validators are added as class attributes
-    @field_validator("confirm_password", check_fields=False)
-    def validate_passwords_match(cls, v: str, values: dict[str, Any]) -> str:
-        if v != values["password"]:
-            raise PasswordMismatchError()
-        return v
-    # ...
-```
-
-We then add this request model as a dependency in the signature of our POST route:
-
-```python
-@app.post("/register")
-async def register(request: UserRegister = Depends()):
-    # ...
-```
-
-When the user submits the form, Pydantic will first check that all expected fields are present and match the expected types. If not, it raises a `RequestValidationError`. Then, it runs our custom `field_validator`, `validate_passwords_match`. If it finds that the `confirm_password` field does not match the `password` field, it raises a `PasswordMismatchError`. These exceptions can then be caught and handled by our middleware.
-
-(Note that these examples are simplified versions of the actual code.)
-
-#### Converting form data to request models
-
-In addition to custom validation logic, we also need to define a method on our request models that converts form data into the request model. Here's what that looks like in the `UserRegister` request model from the previous example:
-
-```python
-class UserRegister(BaseModel):
-    # ...
-
-    @classmethod
-    async def as_form(
-        cls,
-        name: str = Form(...),
-        email: EmailStr = Form(...),
-        password: str = Form(...),
-        confirm_password: str = Form(...)
-    ):
-        return cls(
-            name=name,
-            email=email,
-            password=password,
-            confirm_password=confirm_password
-        )
-``` 
-
 ### Middleware exception handling
 
 Middlewares—which process requests before they reach the route handlers and responses before they are sent back to the client—are defined in `main.py`. They are commonly used in web development for tasks such as error handling, authentication token validation, logging, and modifying request/response objects.
@@ -223,8 +152,8 @@ Middleware functions are decorated with `@app.exception_handler(ExceptionType)` 
 Here's a middleware for handling the `PasswordMismatchError` exception from the previous example, which renders the `errors/validation_error.html` template with the error details:
 
 ```python
-@app.exception_handler(PasswordMismatchError)
-async def password_mismatch_exception_handler(request: Request, exc: PasswordMismatchError):
+@app.exception_handler(PasswordValidationError)
+async def password_validation_exception_handler(request: Request, exc: PasswordValidationError):
     return templates.TemplateResponse(
         request,
         "errors/validation_error.html",
@@ -244,12 +173,12 @@ SQLModel is an Object-Relational Mapping (ORM) library that allows us to interac
 
 Our database models are defined in `utils/models.py`. Each model is a Python class that inherits from `SQLModel` and represents a database table. The key models are:
 
+- `Account`: Represents a user account with email and password hash
+- `User`: Represents a user profile with name, email, and avatar
 - `Organization`: Represents a company or team
-- `User`: Represents a user account with name, email, and avatar
 - `Role`: Represents a set of permissions within an organization
 - `Permission`: Represents specific actions a user can perform (defined by ValidPermissions enum)
 - `PasswordResetToken`: Manages password reset functionality with expiration
-- `UserPassword`: Stores hashed user passwords separately from user data
 
 Two additional models are used by SQLModel to manage many-to-many relationships; you generally will not need to interact with them directly:
 

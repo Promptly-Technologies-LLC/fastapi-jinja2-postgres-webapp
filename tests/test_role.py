@@ -178,6 +178,9 @@ def test_update_role_success(auth_client, editor_user, test_organization, sessio
     )
 
     assert response.status_code == 303
+    
+    # Expire all objects in the session to force a refresh from the database
+    session.expire_all()
 
     # Check that the role was updated in the database
     updated_role = session.exec(
@@ -353,21 +356,27 @@ def test_delete_role_success(auth_client, delete_role_user, test_organization, s
     session.add(role_to_delete)
     session.commit()
     session.refresh(role_to_delete)
+    
+    # Store the role ID for later verification
+    role_id = role_to_delete.id
 
     response = auth_client.post(
         "/roles/delete",
         data={
-            "id": role_to_delete.id,
+            "id": role_id,
             "organization_id": test_organization.id
         },
         follow_redirects=False
     )
 
     assert response.status_code == 303
+    
+    # Expire all objects in the session to force a refresh from the database
+    session.expire_all()
 
     # Verify role was deleted from database
     deleted_role = session.exec(
-        select(Role).where(Role.id == role_to_delete.id)
+        select(Role).where(Role.id == role_id)
     ).first()
     assert deleted_role is None
 

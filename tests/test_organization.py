@@ -45,15 +45,31 @@ def test_create_organization_empty_name(auth_client):
     assert response.status_code == 400
     assert "Organization name cannot be empty" in response.text
 
-def test_create_organization_duplicate_name(auth_client, test_organization):
+def test_create_organization_duplicate_name(auth_client, session, test_organization):
     """Test organization creation with duplicate name"""
+    # Count organizations before the request
+    org_count_before = len(session.exec(select(Organization)).all())
+    
     response = auth_client.post(
         "/organizations/create",
-        data={"name": test_organization.name}
+        data={"name": test_organization.name},
+        follow_redirects=False
     )
     
+    # Verify the response is a 400 Bad Request
     assert response.status_code == 400
     assert "Organization name already taken" in response.text
+    
+    # Verify no new organization was created
+    org_count_after = len(session.exec(select(Organization)).all())
+    assert org_count_after == org_count_before
+    
+    # Verify there's still only one organization with this name
+    orgs_with_name = session.exec(
+        select(Organization)
+        .where(Organization.name == test_organization.name)
+    ).all()
+    assert len(orgs_with_name) == 1
 
 def test_create_organization_unauthenticated(unauth_client):
     """Test organization creation without authentication"""
@@ -86,6 +102,9 @@ def test_update_organization_success(auth_client, session, test_organization, te
     assert response.status_code == 303  # Redirect status code
     assert "/profile" in response.headers["location"]
 
+    # Expire all objects in the session to force a refresh from the database
+    session.expire_all()
+    
     # Verify database update
     updated_org = session.get(Organization, test_organization.id)
     assert updated_org.name == new_name
@@ -175,8 +194,11 @@ def test_update_organization_unauthenticated(unauth_client, test_organization):
 
 def test_delete_organization_success(auth_client, session, test_organization, test_user):
     """Test successful organization deletion"""
+    # Store the organization ID for later verification
+    org_id = test_organization.id
+    
     # Set up test user as owner with delete permission
-    owner_role = Role(name="Owner", organization_id=test_organization.id)
+    owner_role = Role(name="Owner", organization_id=org_id)
     owner_role.permissions = [
         Permission(name=ValidPermissions.DELETE_ORGANIZATION)
     ]
@@ -185,15 +207,20 @@ def test_delete_organization_success(auth_client, session, test_organization, te
     session.commit()
 
     response = auth_client.post(
-        f"/organizations/delete/{test_organization.id}",
+        f"/organizations/delete/{org_id}",
         follow_redirects=False
     )
 
     assert response.status_code == 303  # Redirect status code
     assert "/profile" in response.headers["location"]
 
-    # Verify organization was deleted
-    deleted_org = session.get(Organization, test_organization.id)
+    # Expire all objects in the session to force a refresh from the database
+    session.expire_all()
+    
+    # Verify organization was deleted by querying directly
+    deleted_org = session.exec(
+        select(Organization).where(Organization.id == org_id)
+    ).first()
     assert deleted_org is None
 
 def test_delete_organization_unauthorized(auth_client, session, test_organization, test_user):
@@ -241,30 +268,36 @@ def test_delete_organization_unauthenticated(unauth_client, test_organization):
 
 def test_delete_organization_cascade(auth_client, session, test_organization, test_user):
     """Test that deleting organization cascades to roles"""
+    # Store the organization ID for later verification
+    org_id = test_organization.id
+    
     # Set up test user as owner with delete permission
-    owner_role = Role(name="Owner", organization_id=test_organization.id)
+    owner_role = Role(name="Owner", organization_id=org_id)
     owner_role.permissions = [
         Permission(name=ValidPermissions.DELETE_ORGANIZATION)
     ]
     owner_role.users.append(test_user)
     
     # Add another role to verify cascade
-    member_role = Role(name="Member", organization_id=test_organization.id)
+    member_role = Role(name="Member", organization_id=org_id)
     
     session.add(owner_role)
     session.add(member_role)
     session.commit()
 
     response = auth_client.post(
-        f"/organizations/delete/{test_organization.id}",
+        f"/organizations/delete/{org_id}",
         follow_redirects=False
     )
 
     assert response.status_code == 303
 
+    # Expire all objects in the session to force a refresh from the database
+    session.expire_all()
+    
     # Verify roles were also deleted
     roles = session.exec(
         select(Role)
-        .where(Role.organization_id == test_organization.id)
+        .where(Role.organization_id == org_id)
     ).all()
     assert len(roles) == 0

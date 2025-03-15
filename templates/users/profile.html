@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from 'components/silhouette.html' import render_silhouette %}
-{% from 'components/organizations.html' import render_organizations %}
+{% from 'components/organizations.html' import render_organizations with context %}
 
 {% block title %}Profile{% endblock %}
 
@@ -27,7 +27,7 @@
         </div>
         <div class="card-body">
             <p><strong>Name:</strong> {{ user.name }}</p>
-            <p><strong>Email:</strong> {{ user.email }}</p>
+            <p><strong>Email:</strong> {{ user.account.email }}</p>
             <!-- Display user avatar or silhouette if no avatar is available -->
             <div class="mb-3">
                 {% if user.avatar_data %}
@@ -79,7 +79,7 @@
             <form action="{{ url_for('request_email_update') }}" method="post">
                 <div class="mb-3">
                     <label for="new_email" class="form-label">New Email Address</label>
-                    <input type="email" class="form-control" id="new_email" name="new_email" value="{{ user.email }}">
+                    <input type="email" class="form-control" id="new_email" name="new_email" value="{{ user.account.email }}">
                 </div>
                 <p class="form-text">A confirmation link will be sent to your new email address to verify the change.</p>
                 <button type="submit" class="btn btn-primary">Update Email</button>
@@ -95,7 +95,7 @@
         <div class="card-body">
             {% if show_form %}
             <form action="{{ url_for('forgot_password') }}" method="post">
-                <input type="hidden" name="email" value="{{ user.email }}">
+                <input type="hidden" name="email" value="{{ user.account.email }}">
                 <p>To change your password, please confirm your email. A password reset link will be sent to your email address.</p>
                 <button type="submit" class="btn btn-primary">Send Password Reset Email</button>
             </form>
@@ -115,10 +115,14 @@
         </div>
         <div class="card-body">
             <form action="{{ url_for('delete_account') }}" method="post">
-                <p class="text-danger">This action cannot be undone. Please confirm your password to delete your account.</p>
+                <p class="text-danger">This action cannot be undone. Please confirm your email and password to delete your account.</p>
                 <div class="mb-3">
-                    <label for="confirm_delete_password" class="form-label">Password</label>
-                    <input type="password" class="form-control" id="confirm_delete_password" name="confirm_delete_password" autocomplete="off">
+                    <label for="delete_email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="delete_email" name="email" autocomplete="off">
+                </div>
+                <div class="mb-3">
+                    <label for="delete_password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="delete_password" name="password" autocomplete="off">
                 </div>
                 <button type="submit" class="btn btn-danger">Delete Account</button>
             </form>

@@ -2,16 +2,22 @@ import os
 import logging
 from typing import Generator, Union, Sequence
 from dotenv import load_dotenv
-from fastapi import HTTPException
 from sqlalchemy.engine import URL
 from sqlmodel import create_engine, Session, SQLModel, select
-from utils.models import Role, Permission, RolePermissionLink, default_roles, ValidPermissions
+from utils.models import Role, Permission, RolePermissionLink
+from utils.enums import ValidPermissions
 
 # Load environment variables from a .env file
 load_dotenv()
 
 # Set up a logger for error reporting
 logger = logging.getLogger("uvicorn.error")
+
+
+# --- Constants ---
+
+
+default_roles = ["Owner", "Administrator", "Member"]
 
 
 # --- Database connection functions ---

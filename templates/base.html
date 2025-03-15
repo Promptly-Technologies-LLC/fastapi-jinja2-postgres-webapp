@@ -21,13 +21,6 @@
         <!-- Common header content -->
         {% include 'components/header.html' %}
     </header>
-
-    {% if error_message %}
-    <div class="alert alert-danger alert-dismissible fade show m-3 w-md-50 mx-auto" role="alert">
-        <strong>Error!</strong> {{ error_message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    {% endif %}
     
     <main class="flex-grow-1">
         {% block content %}

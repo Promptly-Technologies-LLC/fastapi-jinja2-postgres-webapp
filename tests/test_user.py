@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 from httpx import Response
 from sqlmodel import Session
 from unittest.mock import patch
+from typing import cast
 
 from main import app
 from utils.models import User
@@ -10,6 +11,34 @@ from utils.images import InvalidImageError
 # Mock data for consistent testing
 MOCK_IMAGE_DATA = b"processed fake image data"
 MOCK_CONTENT_TYPE = "image/png"
+
+
+def test_read_profile_unauthorized(unauth_client: TestClient):
+    """Test that unauthorized users cannot view profile"""
+    response = unauth_client.get(app.url_path_for(
+        "read_profile"), follow_redirects=False)
+    assert response.status_code == 303  # Redirect to login
+    assert response.headers["location"] == app.url_path_for("read_login")
+
+
+def test_read_profile_authorized(auth_client: TestClient, test_user: User):
+    """Test that authorized users can view their profile"""
+    response = auth_client.get(app.url_path_for("read_profile"))
+    assert response.status_code == 200
+    
+    # Get the response text
+    response_text = response.text
+    
+    # Verify account exists
+    assert test_user.account is not None
+    
+    # Verify email is in the response if it exists
+    if test_user.account.email is not None:
+        assert response_text.find(str(test_user.account.email)) != -1
+    
+    # Verify name is in the response if it exists
+    if test_user.name is not None:
+        assert response_text.find(str(test_user.name)) != -1
 
 
 def test_update_profile_unauthorized(unauth_client: TestClient):
@@ -91,7 +120,10 @@ def test_delete_account_wrong_password(auth_client: TestClient, test_user: User)
     """Test that account deletion fails with wrong password"""
     response: Response = auth_client.post(
         app.url_path_for("delete_account"),
-        data={"confirm_delete_password": "WrongPassword123!"},
+        data={
+            "email": test_user.account.email if test_user.account else "",
+            "password": "WrongPassword123!"
+        },
         follow_redirects=False
     )
     assert response.status_code == 422
@@ -101,17 +133,27 @@ def test_delete_account_wrong_password(auth_client: TestClient, test_user: User)
 def test_delete_account_success(auth_client: TestClient, test_user: User, session: Session):
     """Test successful account deletion"""
 
+    # Store the user ID for later verification
+    user_id = test_user.id
+
     # Delete account
     response: Response = auth_client.post(
         app.url_path_for("delete_account"),
-        data={"confirm_delete_password": "Test123!@#"},
+        data={
+            "email": test_user.account.email if test_user.account else "",
+            "password": "Test123!@#"
+        },
         follow_redirects=False
     )
     assert response.status_code == 303
     assert response.headers["location"] == app.url_path_for("logout")
 
+    # Clear the session and query for the user again to ensure we're not using a cached object
+    session.close()
+    session.expire_all()
+    
     # Verify user is deleted from database
-    user = session.get(User, test_user.id)
+    user = session.get(User, user_id)
     assert user is None
 
 
@@ -125,7 +167,7 @@ def test_get_avatar_authorized(mock_validate, auth_client: TestClient, test_user
     auth_client.post(
         app.url_path_for("update_profile"),
         data={
-            "name": test_user.name
+            "name": test_user.name or ""  # Ensure name is not None
         },
         files={
             "avatar_file": ("test_avatar.jpg", b"fake image data", "image/jpeg")

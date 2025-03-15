@@ -9,7 +9,8 @@ from utils.models import (
     ValidPermissions,
     User,
     UserRoleLink,
-    PasswordResetToken
+    PasswordResetToken,
+    Account
 )
 from .conftest import SetupError
 
@@ -139,13 +140,13 @@ def test_cascade_delete_organization(session: Session, test_user: User, test_org
     assert remaining_user.id == test_user.id
 
 
-def test_password_reset_token_cascade_delete(session: Session, test_user: User):
+def test_password_reset_token_cascade_delete(session: Session, test_account: Account):
     """
-    Test that password reset tokens are deleted when a user is deleted
+    Test that password reset tokens are deleted when an account is deleted
     """
-    # Create reset tokens for the user
-    token1 = PasswordResetToken(user_id=test_user.id)
-    token2 = PasswordResetToken(user_id=test_user.id)
+    # Create reset tokens for the account
+    token1 = PasswordResetToken(account_id=test_account.id)
+    token2 = PasswordResetToken(account_id=test_account.id)
     session.add(token1)
     session.add(token2)
     session.commit()
@@ -154,8 +155,8 @@ def test_password_reset_token_cascade_delete(session: Session, test_user: User):
     tokens = session.exec(select(PasswordResetToken)).all()
     assert len(tokens) == 2
 
-    # Delete the user
-    session.delete(test_user)
+    # Delete the account
+    session.delete(test_account)
     session.commit()
 
     # Verify tokens were cascade deleted
@@ -163,20 +164,20 @@ def test_password_reset_token_cascade_delete(session: Session, test_user: User):
     assert len(remaining_tokens) == 0
 
 
-def test_password_reset_token_is_expired(session: Session, test_user: User):
+def test_password_reset_token_is_expired(session: Session, test_account: Account):
     """
     Test that password reset token expiration is properly set and checked
     """
     # Create an expired token
     expired_token = PasswordResetToken(
-        user_id=test_user.id,
+        account_id=test_account.id,
         expires_at=datetime.now(UTC) - timedelta(hours=1)
     )
     session.add(expired_token)
 
     # Create a valid token
     valid_token = PasswordResetToken(
-        user_id=test_user.id,
+        account_id=test_account.id,
         expires_at=datetime.now(UTC) + timedelta(hours=1)
     )
     session.add(valid_token)
@@ -228,3 +229,18 @@ def test_user_has_permission(session: Session, test_user: User, test_organizatio
         ValidPermissions.EDIT_ORGANIZATION, test_organization) is True
     assert test_user.has_permission(
         ValidPermissions.INVITE_USER, test_organization) is False
+
+
+def test_cascade_delete_account_deletes_user(session: Session, test_account: Account, test_user: User):
+    """
+    Test that deleting an account cascades to delete the associated user
+    """
+    # Verify the user exists
+    assert session.exec(select(User).where(User.account_id == test_account.id)).first() is not None
+    
+    # Delete the account
+    session.delete(test_account)
+    session.commit()
+    
+    # Verify the user was cascade deleted
+    assert session.exec(select(User).where(User.account_id == test_account.id)).first() is None

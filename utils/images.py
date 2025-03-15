@@ -1,10 +1,13 @@
 # utils/images.py
-from fastapi import HTTPException
 from PIL import Image
 import io
 from typing import Tuple
+from exceptions.http_exceptions import InvalidImageError
 
-# Constants
+
+# --- Constants ---
+
+
 MAX_FILE_SIZE = 2 * 1024 * 1024  # 2MB in bytes
 ALLOWED_CONTENT_TYPES = {
     'image/jpeg': 'JPEG',
@@ -15,11 +18,7 @@ MIN_DIMENSION = 100
 MAX_DIMENSION = 2000
 
 
-class InvalidImageError(HTTPException):
-    """Raised when an invalid image is uploaded"""
-
-    def __init__(self, message: str = "Invalid image file"):
-        super().__init__(status_code=400, detail=message)
+# --- Functions ---
 
 
 def validate_and_process_image(

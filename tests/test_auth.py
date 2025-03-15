@@ -1,7 +1,7 @@
 import re
 import string
 import random
-from datetime import timedelta, UTC, datetime
+from datetime import timedelta
 from urllib.parse import urlparse, parse_qs
 from starlette.datastructures import URLPath
 from main import app
@@ -15,11 +15,10 @@ from utils.auth import (
     COMPILED_PASSWORD_PATTERN,
     convert_python_regex_to_html,
     generate_email_update_url,
-    send_email_update_confirmation,
-    get_user_from_email_update_token
+    send_email_update_confirmation
 )
 from unittest.mock import patch, MagicMock
-from utils.models import User, EmailUpdateToken
+from utils.models import EmailUpdateToken
 
 
 def test_convert_python_regex_to_html() -> None:
@@ -157,11 +156,11 @@ def test_email_update_url_generation() -> None:
     Tests that the email update confirmation URL is correctly formatted and contains
     the required query parameters.
     """
-    test_user_id = 123
+    test_account_id = 123
     test_token = "abc123"
     test_new_email = "new@example.com"
 
-    url = generate_email_update_url(test_user_id, test_token, test_new_email)
+    url = generate_email_update_url(test_account_id, test_token, test_new_email)
 
     # Parse the URL
     parsed = urlparse(url)
@@ -174,10 +173,10 @@ def test_email_update_url_generation() -> None:
     assert parsed.path == str(confirm_email_path)
 
     # Verify query parameters
-    assert "user_id" in query_params
+    assert "account_id" in query_params
     assert "token" in query_params
     assert "new_email" in query_params
-    assert query_params["user_id"][0] == str(test_user_id)
+    assert query_params["account_id"][0] == str(test_account_id)
     assert query_params["token"][0] == test_token
     assert query_params["new_email"][0] == test_new_email
 
@@ -192,13 +191,13 @@ def test_send_email_update_confirmation(mock_send: MagicMock) -> None:
     
     current_email = "current@example.com"
     new_email = "new@example.com"
-    user_id = 123
+    account_id = 123
 
     # Mock successful email send
     mock_send.return_value = {"id": "test_email_id"}
 
     # Test successful email sending
-    send_email_update_confirmation(current_email, new_email, user_id, session)
+    send_email_update_confirmation(current_email, new_email, account_id, session)
 
     # Verify session interactions
     assert session.add.called
@@ -216,35 +215,9 @@ def test_send_email_update_confirmation(mock_send: MagicMock) -> None:
     session.reset_mock()
     session.exec.return_value.first.return_value = EmailUpdateToken()  # Existing token
 
-    send_email_update_confirmation(current_email, new_email, user_id, session)
+    send_email_update_confirmation(current_email, new_email, account_id, session)
 
     # Verify no new token was created or email sent
     assert not session.add.called
     assert not session.commit.called
     assert mock_send.call_count == 1  # Still just one call from before
-
-def test_get_user_from_email_update_token() -> None:
-    """
-    Tests retrieving a user using an email update token.
-    """
-    session = MagicMock()
-
-    # Test valid token
-    mock_user = User(id=1, email="test@example.com")
-    mock_token = EmailUpdateToken(
-        user_id=1,
-        token="valid_token",
-        expires_at=datetime.now(UTC) + timedelta(hours=1),
-        used=False
-    )
-    session.exec.return_value.first.return_value = (mock_user, mock_token)
-
-    user, token = get_user_from_email_update_token(1, "valid_token", session)
-    assert user == mock_user
-    assert token == mock_token
-
-    # Test invalid token
-    session.exec.return_value.first.return_value = None
-    user, token = get_user_from_email_update_token(1, "invalid_token", session)
-    assert user is None
-    assert token is None
