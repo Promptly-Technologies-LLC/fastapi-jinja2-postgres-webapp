@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Architecture – FastAPI Webapp Template</title>
+<title>Template Variables Documentation – FastAPI Webapp Template</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -93,7 +93,7 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="../docs/architecture.html" aria-current="page"> 
+    <a class="nav-link" href="../docs/architecture.html"> 
 <span class="menu-text">Architecture</span></a>
   </li>  
   <li class="nav-item">
@@ -139,7 +139,67 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#data-flow" id="toc-data-flow" class="nav-link active" data-scroll-target="#data-flow">Data flow</a></li>
+  <li><a href="#table-of-contents" id="toc-table-of-contents" class="nav-link active" data-scroll-target="#table-of-contents">Table of Contents</a></li>
+  <li><a href="#authentication" id="toc-authentication" class="nav-link" data-scroll-target="#authentication">authentication</a>
+  <ul class="collapse">
+  <li><a href="#forgot_password.html" id="toc-forgot_password.html" class="nav-link" data-scroll-target="#forgot_password.html">forgot_password.html</a></li>
+  <li><a href="#login.html" id="toc-login.html" class="nav-link" data-scroll-target="#login.html">login.html</a></li>
+  <li><a href="#register.html" id="toc-register.html" class="nav-link" data-scroll-target="#register.html">register.html</a></li>
+  <li><a href="#reset_password.html" id="toc-reset_password.html" class="nav-link" data-scroll-target="#reset_password.html">reset_password.html</a></li>
+  </ul></li>
+  <li><a href="#components" id="toc-components" class="nav-link" data-scroll-target="#components">components</a>
+  <ul class="collapse">
+  <li><a href="#footer.html" id="toc-footer.html" class="nav-link" data-scroll-target="#footer.html">footer.html</a></li>
+  <li><a href="#header.html" id="toc-header.html" class="nav-link" data-scroll-target="#header.html">header.html</a></li>
+  <li><a href="#logo.html" id="toc-logo.html" class="nav-link" data-scroll-target="#logo.html">logo.html</a></li>
+  <li><a href="#nav.html" id="toc-nav.html" class="nav-link" data-scroll-target="#nav.html">nav.html</a></li>
+  <li><a href="#organizations.html" id="toc-organizations.html" class="nav-link" data-scroll-target="#organizations.html">organizations.html</a></li>
+  <li><a href="#silhouette.html" id="toc-silhouette.html" class="nav-link" data-scroll-target="#silhouette.html">silhouette.html</a></li>
+  </ul></li>
+  <li><a href="#dashboard" id="toc-dashboard" class="nav-link" data-scroll-target="#dashboard">dashboard</a>
+  <ul class="collapse">
+  <li><a href="#index.html" id="toc-index.html" class="nav-link" data-scroll-target="#index.html">index.html</a></li>
+  <li><a href="#organization_overview.html" id="toc-organization_overview.html" class="nav-link" data-scroll-target="#organization_overview.html">organization_overview.html</a></li>
+  </ul></li>
+  <li><a href="#dashboard-organizations" id="toc-dashboard-organizations" class="nav-link" data-scroll-target="#dashboard-organizations">dashboard &gt; organizations</a>
+  <ul class="collapse">
+  <li><a href="#create.html" id="toc-create.html" class="nav-link" data-scroll-target="#create.html">create.html</a></li>
+  <li><a href="#delete.html" id="toc-delete.html" class="nav-link" data-scroll-target="#delete.html">delete.html</a></li>
+  <li><a href="#detail.html" id="toc-detail.html" class="nav-link" data-scroll-target="#detail.html">detail.html</a></li>
+  <li><a href="#edit.html" id="toc-edit.html" class="nav-link" data-scroll-target="#edit.html">edit.html</a></li>
+  <li><a href="#members.html" id="toc-members.html" class="nav-link" data-scroll-target="#members.html">members.html</a></li>
+  </ul></li>
+  <li><a href="#dashboard-organizations-members" id="toc-dashboard-organizations-members" class="nav-link" data-scroll-target="#dashboard-organizations-members">dashboard &gt; organizations &gt; members</a>
+  <ul class="collapse">
+  <li><a href="#delete.html-1" id="toc-delete.html-1" class="nav-link" data-scroll-target="#delete.html-1">delete.html</a></li>
+  <li><a href="#edit.html-1" id="toc-edit.html-1" class="nav-link" data-scroll-target="#edit.html-1">edit.html</a></li>
+  <li><a href="#invite.html" id="toc-invite.html" class="nav-link" data-scroll-target="#invite.html">invite.html</a></li>
+  </ul></li>
+  <li><a href="#emails" id="toc-emails" class="nav-link" data-scroll-target="#emails">emails</a>
+  <ul class="collapse">
+  <li><a href="#base_email.html" id="toc-base_email.html" class="nav-link" data-scroll-target="#base_email.html">base_email.html</a></li>
+  <li><a href="#reset_email.html" id="toc-reset_email.html" class="nav-link" data-scroll-target="#reset_email.html">reset_email.html</a></li>
+  <li><a href="#update_email_email.html" id="toc-update_email_email.html" class="nav-link" data-scroll-target="#update_email_email.html">update_email_email.html</a></li>
+  </ul></li>
+  <li><a href="#errors" id="toc-errors" class="nav-link" data-scroll-target="#errors">errors</a>
+  <ul class="collapse">
+  <li><a href="#error.html" id="toc-error.html" class="nav-link" data-scroll-target="#error.html">error.html</a></li>
+  <li><a href="#validation_error.html" id="toc-validation_error.html" class="nav-link" data-scroll-target="#validation_error.html">validation_error.html</a></li>
+  </ul></li>
+  <li><a href="#root" id="toc-root" class="nav-link" data-scroll-target="#root">root</a>
+  <ul class="collapse">
+  <li><a href="#about.html" id="toc-about.html" class="nav-link" data-scroll-target="#about.html">about.html</a></li>
+  <li><a href="#auth_base.html" id="toc-auth_base.html" class="nav-link" data-scroll-target="#auth_base.html">auth_base.html</a></li>
+  <li><a href="#base.html" id="toc-base.html" class="nav-link" data-scroll-target="#base.html">base.html</a></li>
+  <li><a href="#index.html-1" id="toc-index.html-1" class="nav-link" data-scroll-target="#index.html-1">index.html</a></li>
+  <li><a href="#privacy_policy.html" id="toc-privacy_policy.html" class="nav-link" data-scroll-target="#privacy_policy.html">privacy_policy.html</a></li>
+  <li><a href="#terms_of_service.html" id="toc-terms_of_service.html" class="nav-link" data-scroll-target="#terms_of_service.html">terms_of_service.html</a></li>
+  </ul></li>
+  <li><a href="#users" id="toc-users" class="nav-link" data-scroll-target="#users">users</a>
+  <ul class="collapse">
+  <li><a href="#organization.html" id="toc-organization.html" class="nav-link" data-scroll-target="#organization.html">organization.html</a></li>
+  <li><a href="#profile.html" id="toc-profile.html" class="nav-link" data-scroll-target="#profile.html">profile.html</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -148,7 +208,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Architecture</h1>
+<h1 class="title">Template Variables Documentation</h1>
 </div>
 
 
@@ -165,19 +225,534 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="data-flow" class="level2">
-<h2 class="anchored" data-anchor-id="data-flow">Data flow</h2>
-<p>This application uses a Post-Redirect-Get (PRG) pattern. The user submits a form, which sends a POST request to a FastAPI endpoint on the server. The database is updated, and the user is redirected to a GET endpoint, which fetches the updated data and re-renders the Jinja2 page template with the new data.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="static/data_flow.png" class="img-fluid figure-img"></p>
-<figcaption>Data flow diagram</figcaption>
-</figure>
-</div>
-<p>The advantage of the PRG pattern is that it is very straightforward to implement and keeps most of the rendering logic on the server side. One disadvantage is that it requires an extra round trip to the database to fetch the updated data, and re-rendering the entire page template may be less efficient than a partial page update on the client side. Another disadvantage is that it if the user makes an invalid form submission, they will see an error page and will have to click the browser’s “back” button to get back to the form with their original form inputs.</p>
-<p>A future iteration of this application will use HTMX to update the page in place, so that on an invalid submission an error toast is displayed without a page reload (thus preserving the user’s scroll position and form inputs).</p>
+<p>This file documents the required context variables for each template in the application.</p>
+<section id="table-of-contents" class="level2">
+<h2 class="anchored" data-anchor-id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#authentication">authentication</a></li>
+<li><a href="#components">components</a></li>
+<li><a href="#dashboard">dashboard</a></li>
+<li><a href="#dashboard-organizations">dashboard &gt; organizations</a></li>
+<li><a href="#dashboard-organizations-members">dashboard &gt; organizations &gt; members</a></li>
+<li><a href="#emails">emails</a></li>
+<li><a href="#errors">errors</a></li>
+<li><a href="#root">root</a></li>
+<li><a href="#users">users</a></li>
+</ul>
+</section>
+<section id="authentication" class="level2">
+<h2 class="anchored" data-anchor-id="authentication">authentication</h2>
+<section id="forgot_password.html" class="level3">
+<h3 class="anchored" data-anchor-id="forgot_password.html">forgot_password.html</h3>
+<p><strong>Path:</strong> <code>authentication/forgot_password.html</code></p>
+<p><strong>Required Variables:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>show_form</code></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>url_for</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="login.html" class="level3">
+<h3 class="anchored" data-anchor-id="login.html">login.html</h3>
+<p><strong>Path:</strong> <code>authentication/login.html</code></p>
+<p><strong>Required Variables:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>url_for</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="register.html" class="level3">
+<h3 class="anchored" data-anchor-id="register.html">register.html</h3>
+<p><strong>Path:</strong> <code>authentication/register.html</code></p>
+<p><strong>Required Variables:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>password_pattern</code></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>url_for</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="reset_password.html" class="level3">
+<h3 class="anchored" data-anchor-id="reset_password.html">reset_password.html</h3>
+<p><strong>Path:</strong> <code>authentication/reset_password.html</code></p>
+<p><strong>Required Variables:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>email</code></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>password_pattern</code></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>token</code></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>url_for</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="components" class="level2">
+<h2 class="anchored" data-anchor-id="components">components</h2>
+<section id="footer.html" class="level3">
+<h3 class="anchored" data-anchor-id="footer.html">footer.html</h3>
+<p><strong>Path:</strong> <code>components/footer.html</code></p>
+<p><strong>Required Variables:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>url_for</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="header.html" class="level3">
+<h3 class="anchored" data-anchor-id="header.html">header.html</h3>
+<p><strong>Path:</strong> <code>components/header.html</code></p>
+<p><strong>Required Variables:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>url_for</code></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>user</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="logo.html" class="level3">
+<h3 class="anchored" data-anchor-id="logo.html">logo.html</h3>
+<p><strong>Path:</strong> <code>components/logo.html</code></p>
+<p><strong>No variables required</strong></p>
+</section>
+<section id="nav.html" class="level3">
+<h3 class="anchored" data-anchor-id="nav.html">nav.html</h3>
+<p><strong>Path:</strong> <code>components/nav.html</code></p>
+<p><strong>Required Variables:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>url_for</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="organizations.html" class="level3">
+<h3 class="anchored" data-anchor-id="organizations.html">organizations.html</h3>
+<p><strong>Path:</strong> <code>components/organizations.html</code></p>
+<p><strong>Required Variables:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>url_for</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="silhouette.html" class="level3">
+<h3 class="anchored" data-anchor-id="silhouette.html">silhouette.html</h3>
+<p><strong>Path:</strong> <code>components/silhouette.html</code></p>
+<p><strong>No variables required</strong></p>
+</section>
+</section>
+<section id="dashboard" class="level2">
+<h2 class="anchored" data-anchor-id="dashboard">dashboard</h2>
+<section id="index.html" class="level3">
+<h3 class="anchored" data-anchor-id="index.html">index.html</h3>
+<p><strong>Path:</strong> <code>dashboard/index.html</code></p>
+<p><strong>No variables required</strong></p>
+</section>
+<section id="organization_overview.html" class="level3">
+<h3 class="anchored" data-anchor-id="organization_overview.html">organization_overview.html</h3>
+<p><strong>Path:</strong> <code>dashboard/organization_overview.html</code></p>
+<p><strong>No variables required</strong></p>
+</section>
+</section>
+<section id="dashboard-organizations" class="level2">
+<h2 class="anchored" data-anchor-id="dashboard-organizations">dashboard &gt; organizations</h2>
+<section id="create.html" class="level3">
+<h3 class="anchored" data-anchor-id="create.html">create.html</h3>
+<p><strong>Path:</strong> <code>dashboard/organizations/create.html</code></p>
+<p><strong>No variables required</strong></p>
+</section>
+<section id="delete.html" class="level3">
+<h3 class="anchored" data-anchor-id="delete.html">delete.html</h3>
+<p><strong>Path:</strong> <code>dashboard/organizations/delete.html</code></p>
+<p><strong>No variables required</strong></p>
+</section>
+<section id="detail.html" class="level3">
+<h3 class="anchored" data-anchor-id="detail.html">detail.html</h3>
+<p><strong>Path:</strong> <code>dashboard/organizations/detail.html</code></p>
+<p><strong>No variables required</strong></p>
+</section>
+<section id="edit.html" class="level3">
+<h3 class="anchored" data-anchor-id="edit.html">edit.html</h3>
+<p><strong>Path:</strong> <code>dashboard/organizations/edit.html</code></p>
+<p><strong>No variables required</strong></p>
+</section>
+<section id="members.html" class="level3">
+<h3 class="anchored" data-anchor-id="members.html">members.html</h3>
+<p><strong>Path:</strong> <code>dashboard/organizations/members.html</code></p>
+<p><strong>No variables required</strong></p>
+</section>
+</section>
+<section id="dashboard-organizations-members" class="level2">
+<h2 class="anchored" data-anchor-id="dashboard-organizations-members">dashboard &gt; organizations &gt; members</h2>
+<section id="delete.html-1" class="level3">
+<h3 class="anchored" data-anchor-id="delete.html-1">delete.html</h3>
+<p><strong>Path:</strong> <code>dashboard/organizations/members/delete.html</code></p>
+<p><strong>No variables required</strong></p>
+</section>
+<section id="edit.html-1" class="level3">
+<h3 class="anchored" data-anchor-id="edit.html-1">edit.html</h3>
+<p><strong>Path:</strong> <code>dashboard/organizations/members/edit.html</code></p>
+<p><strong>No variables required</strong></p>
+</section>
+<section id="invite.html" class="level3">
+<h3 class="anchored" data-anchor-id="invite.html">invite.html</h3>
+<p><strong>Path:</strong> <code>dashboard/organizations/members/invite.html</code></p>
+<p><strong>No variables required</strong></p>
+</section>
+</section>
+<section id="emails" class="level2">
+<h2 class="anchored" data-anchor-id="emails">emails</h2>
+<section id="base_email.html" class="level3">
+<h3 class="anchored" data-anchor-id="base_email.html">base_email.html</h3>
+<p><strong>Path:</strong> <code>emails/base_email.html</code></p>
+<p><strong>No variables required</strong></p>
+</section>
+<section id="reset_email.html" class="level3">
+<h3 class="anchored" data-anchor-id="reset_email.html">reset_email.html</h3>
+<p><strong>Path:</strong> <code>emails/reset_email.html</code></p>
+<p><strong>Required Variables:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>reset_url</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="update_email_email.html" class="level3">
+<h3 class="anchored" data-anchor-id="update_email_email.html">update_email_email.html</h3>
+<p><strong>Path:</strong> <code>emails/update_email_email.html</code></p>
+<p><strong>Required Variables:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>confirmation_url</code></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>current_email</code></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>new_email</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="errors" class="level2">
+<h2 class="anchored" data-anchor-id="errors">errors</h2>
+<section id="error.html" class="level3">
+<h3 class="anchored" data-anchor-id="error.html">error.html</h3>
+<p><strong>Path:</strong> <code>errors/error.html</code></p>
+<p><strong>Required Variables:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>detail</code></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>status_code</code></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>url_for</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="validation_error.html" class="level3">
+<h3 class="anchored" data-anchor-id="validation_error.html">validation_error.html</h3>
+<p><strong>Path:</strong> <code>errors/validation_error.html</code></p>
+<p><strong>Required Variables:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>errors</code></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>url_for</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="root" class="level2">
+<h2 class="anchored" data-anchor-id="root">root</h2>
+<section id="about.html" class="level3">
+<h3 class="anchored" data-anchor-id="about.html">about.html</h3>
+<p><strong>Path:</strong> <code>about.html</code></p>
+<p><strong>No variables required</strong></p>
+</section>
+<section id="auth_base.html" class="level3">
+<h3 class="anchored" data-anchor-id="auth_base.html">auth_base.html</h3>
+<p><strong>Path:</strong> <code>auth_base.html</code></p>
+<p><strong>No variables required</strong></p>
+</section>
+<section id="base.html" class="level3">
+<h3 class="anchored" data-anchor-id="base.html">base.html</h3>
+<p><strong>Path:</strong> <code>base.html</code></p>
+<p><strong>Required Variables:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>url_for</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="index.html-1" class="level3">
+<h3 class="anchored" data-anchor-id="index.html-1">index.html</h3>
+<p><strong>Path:</strong> <code>index.html</code></p>
+<p><strong>Required Variables:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>render_logo</code></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>url_for</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="privacy_policy.html" class="level3">
+<h3 class="anchored" data-anchor-id="privacy_policy.html">privacy_policy.html</h3>
+<p><strong>Path:</strong> <code>privacy_policy.html</code></p>
+<p><strong>No variables required</strong></p>
+</section>
+<section id="terms_of_service.html" class="level3">
+<h3 class="anchored" data-anchor-id="terms_of_service.html">terms_of_service.html</h3>
+<p><strong>Path:</strong> <code>terms_of_service.html</code></p>
+<p><strong>No variables required</strong></p>
+</section>
+</section>
+<section id="users" class="level2">
+<h2 class="anchored" data-anchor-id="users">users</h2>
+<section id="organization.html" class="level3">
+<h3 class="anchored" data-anchor-id="organization.html">organization.html</h3>
+<p><strong>Path:</strong> <code>users/organization.html</code></p>
+<p><strong>Required Variables:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>organization</code></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>render_silhouette</code></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>url_for</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="profile.html" class="level3">
+<h3 class="anchored" data-anchor-id="profile.html">profile.html</h3>
+<p><strong>Path:</strong> <code>users/profile.html</code></p>
+<p><strong>Required Variables:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>allowed_formats</code></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>email_update_requested</code></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>email_updated</code></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>max_dimension</code></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>max_file_size_mb</code></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>min_dimension</code></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>render_organizations</code></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>render_silhouette</code></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>show_form</code></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>url_for</code></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>user</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->

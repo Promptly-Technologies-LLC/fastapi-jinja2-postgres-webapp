@@ -129,7 +129,7 @@ docker compose up -d
 Make sure the development database is running and tables and default permissions/roles are created first.
 
 ``` bash
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 Navigate to http://localhost:8000/
@@ -137,7 +137,7 @@ Navigate to http://localhost:8000/
 ### Lint types with mypy
 
 ``` bash
-mypy .
+uv run mypy .
 ```
 
 ## Developing with LLMs
@@ -245,8 +245,8 @@ with dot.subgraph(name='cluster_client') as client:
 # Create server subgraph below
 with dot.subgraph(name='cluster_server') as server:
     server.attr(label='Server')
-    server.node('C', 'Convert to Pydantic model', fillcolor='lightgreen', style='rounded,filled')
-    server.node('D', 'Optional custom validation', fillcolor='lightgreen', style='rounded,filled')
+    server.node('C', 'FastAPI request validation in route signature', fillcolor='lightgreen', style='rounded,filled')
+    server.node('D', 'Business logic validation in route function body', fillcolor='lightgreen', style='rounded,filled')
     server.node('E', 'Update database', fillcolor='lightgreen', style='rounded,filled')
     server.node('F', 'Middleware error handler', fillcolor='lightgreen', style='rounded,filled')
     server.node('G', 'Render error template', fillcolor='lightgreen', style='rounded,filled')
@@ -279,106 +279,9 @@ dot.render('static/data_flow', format='png', cleanup=True)
 
 ![Data flow diagram](static/data_flow.png)
 
-The advantage of the PRG pattern is that it is very straightforward to implement and keeps most of the rendering logic on the server side. The disadvantage is that it requires an extra round trip to the database to fetch the updated data, and re-rendering the entire page template may be less efficient than a partial page update on the client side.
+The advantage of the PRG pattern is that it is very straightforward to implement and keeps most of the rendering logic on the server side. One disadvantage is that it requires an extra round trip to the database to fetch the updated data, and re-rendering the entire page template may be less efficient than a partial page update on the client side. Another disadvantage is that it if the user makes an invalid form submission, they will see an error page and will have to click the browser's "back" button to get back to the form with their original form inputs.
 
-## Form validation flow
-
-We've experimented with several approaches to validating form inputs in the FastAPI endpoints.
-
-### Objectives
-
-Ideally, on an invalid input, we would redirect the user back to the form, preserving their inputs and displaying an error message about which input was invalid.
-
-This would keep the error handling consistent with the PRG pattern described in the [Architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture) section of this documentation.
-
-To keep the code DRY, we'd also like to handle such validation with Pydantic dependencies, Python exceptions, and exception-handling middleware as much as possible.
-
-### Obstacles
-
-One challenge is that if we redirect back to the page with the form, the page is re-rendered with empty form fields. 
-
-This can be overcome by passing the inputs from the request as context variables to the template. 
-
-But that's a bit clunky, because then we have to support form-specific context variables in every form page and corresponding GET endpoint.
-
-Also, we have to:
-
-1. access the request object (which is not by default available to our middleware), and 
-2. extract the form inputs (at least one of which is invalid in this error case), and 
-3. pass the form inputs to the template (which is a bit challenging to do in a DRY way since there are different sets of form inputs for different forms).
-
-Solving these challenges is possible, but gets high-complexity pretty quickly.
-
-### Approaches
-
-The best solution, I think, is to use really robust client-side form validation to prevent invalid inputs from being sent to the server in the first place. That makes it less important what we do on the server side, although we still need to handle the server-side error case as a backup in the event that something slips past our validation on the client side.
-
-Here are some patterns we've considered for server-side error handling:
-
-<style>
-.styled-table, .styled-table th, .styled-table td {
-  border: 1px solid black;
-  padding: 8px;
-  border-collapse: collapse;
-}
-
-.styled-table th:nth-child(1) { width: 50%; }
-.styled-table th:nth-child(2), 
-.styled-table th:nth-child(3),
-.styled-table th:nth-child(4) { width: 15%; }
-.styled-table th:nth-child(5) { width: 10%; }
-</style>
-
-<table class="styled-table">
-  <thead>
-    <tr>
-      <th>Approach</th>
-      <th>Returns to same page</th>
-      <th>Preserves form inputs</th>
-      <th>Follows PRG pattern</th>
-      <th>Complexity</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Validate with Pydantic dependency, catch and redirect from middleware (with exception message as context) to an error page with "go back" button</td>
-      <td>No</td>
-      <td>Yes</td>
-      <td>Yes</td>
-      <td>Low</td>
-    </tr>
-    <tr>
-      <td>Validate in FastAPI endpoint function body, redirect to origin page with error message query param</td>
-      <td>Yes</td>
-      <td>No</td>
-      <td>Yes</td>
-      <td>Medium</td>
-    </tr>
-    <tr>
-      <td>Validate in FastAPI endpoint function body, redirect to origin page with error message query param and form inputs as context so we can re-render page with original form inputs</td>
-      <td>Yes</td>
-      <td>Yes</td>
-      <td>Yes</td>
-      <td>High</td>
-    </tr>
-    <tr>
-      <td>Validate with Pydantic dependency, use session context to get form inputs from request, redirect to origin page from middleware with exception message and form inputs as context so we can re-render page with original form inputs</td>
-      <td>Yes</td>
-      <td>Yes</td>
-      <td>Yes</td>
-      <td>High</td>
-    </tr>
-    <tr>
-      <td>Validate in either Pydantic dependency or function endpoint body and directly return error message or error toast HTML partial in JSON, then mount error toast with HTMX or some simple layout-level Javascript</td>
-      <td>Yes</td>
-      <td>Yes</td>
-      <td>No</td>
-      <td>Low</td>
-    </tr>
-  </tbody>
-</table>
-
-Presently this template primarily uses option 1 but also supports option 2. Ultimately, I think option 5 will be preferable; support for that [is planned](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/issues/5) for a future update or fork of this template.
+A future iteration of this application will use HTMX to update the page in place, so that on an invalid submission an error toast is displayed without a page reload (thus preserving the user's scroll position and form inputs).
 
 # Authentication
 
@@ -714,17 +617,19 @@ The following fixtures, defined in `tests/conftest.py`, are available in the tes
 - `engine`: Creates a new SQLModel engine for the test database.
 - `set_up_database`: Sets up the test database before running the test suite by dropping all tables and recreating them to ensure a clean state.
 - `session`: Provides a session for database operations in tests.
-- `clean_db`: Cleans up the database tables before each test by deleting all entries in the `PasswordResetToken` and `User` tables.
+- `clean_db`: Cleans up the database tables before each test by deleting all entries in the `PasswordResetToken`, `EmailUpdateToken`, `User`, `Role`, `Organization`, and `Account` tables.
+- `test_account`: Creates a test account with a predefined email and hashed password.
+- `test_user`: Creates a test user in the database linked to the test account.
 - `auth_client`: Provides a `TestClient` instance with access and refresh token cookies set, overriding the `get_session` dependency to use the `session` fixture.
 - `unauth_client`: Provides a `TestClient` instance without authentication cookies set, overriding the `get_session` dependency to use the `session` fixture.
-- `test_user`: Creates a test user in the database with a predefined name, email, and hashed password.
+- `test_organization`: Creates a test organization for use in tests.
 
 To run the tests, use these commands:
 
-- Run all tests: `pytest`
-- Run tests in debug mode (includes logs and print statements in console output): `pytest -s`
-- Run particular test files by name: `pytest <test_file_name>`
-- Run particular tests by name: `pytest -k <test_name>`
+- Run all tests: `uv run pytest`
+- Run tests in debug mode (includes logs and print statements in console output): `uv run pytest -s`
+- Run particular test files by name: `uv run pytest <test_file_name>`
+- Run particular tests by name: `uv run pytest -k <test_name>`
 
 ### Type checking with mypy
 
@@ -754,12 +659,14 @@ We also create POST endpoints, which accept form submissions so the user can cre
 
 #### Customizable folders and files
 
-- FastAPI application entry point and GET routes: `main.py`
-- FastAPI POST routes: `routers/`
-    - User authentication endpoints: `authentication.py`
+- FastAPI application entry point and homepage GET route: `main.py`
+- FastAPI routes: `routers/`
+    - Account and authentication endpoints: `account.py`
     - User profile management endpoints: `user.py`
     - Organization management endpoints: `organization.py`
     - Role management endpoints: `role.py`
+    - Dashboard page: `dashboard.py`
+    - Static pages (e.g., about, privacy policy, terms of service): `static_pages.py`
 - Jinja2 templates: `templates/`
 - Static assets: `static/`
 - Unit tests: `tests/`
@@ -767,13 +674,19 @@ We also create POST endpoints, which accept form submissions so the user can cre
 - Helper functions: `utils/`
     - Auth helpers: `auth.py`
     - Database helpers: `db.py`
-    - Database models: `models.py`
+    - FastAPI dependencies: `dependencies.py`
+    - Enums: `enums.py`
     - Image helpers: `images.py`
+    - Database models: `models.py`
+- Exceptions: `exceptions/`
+    - HTTP exceptions: `http_exceptions.py`
+    - Other custom exceptions: `exceptions.py`
 - Environment variables: `.env.example`
 - CI/CD configuration: `.github/`
 - Project configuration: `pyproject.toml`
 - Quarto documentation: 
-    - Source: `index.qmd` + `docs/`
+    - README source: `index.qmd`
+    - Website source: `index.qmd` + `docs/`
     - Configuration: `_quarto.yml`
 
 Most everything else is auto-generated and should not be manually modified.
@@ -782,19 +695,11 @@ Most everything else is auto-generated and should not be manually modified.
 
 ### Code conventions
 
-GET routes are defined in the main entry point for the application, `main.py`. POST routes are organized into separate modules within the `routers/` directory.
+The GET route for the homepage is defined in the main entry point for the application, `main.py`. The entrypoint imports router modules from the `routers/` directory, which contain the other GET and POST routes for the application. In CRUD style, the router modules are named after the resource they manage, e.g., `account.py` for account management.
 
-We name our GET routes using the convention `read_<name>`, where `<name>` is the name of the page, to indicate that they are read-only endpoints that do not modify the database.
+We name our GET routes using the convention `read_<name>`, where `<name>` is the name of the resource, to indicate that they are read-only endpoints that do not modify the database. In POST routes that modify the database, you can use the `get_session` dependency as an argument to get a database session.
 
-We divide our GET routes into authenticated and unauthenticated routes, using commented section headers in our code that look like this:
-
-```python
-# --- Authenticated Routes ---
-```
-
-Some of our routes take request parameters, which we pass as keyword arguments to the route handler. These parameters should be type annotated for validation purposes.
-
-Some parameters are shared across all authenticated or unauthenticated routes, so we define them in the `common_authenticated_parameters` and `common_unauthenticated_parameters` dependencies defined in `main.py`.
+Routes that require authentication generally take the `get_authenticated_account` dependency as an argument. Unauthenticated GET routes generally take the `get_optional_user` dependency as an argument. If a route should *only* be seen by authenticated users (i.e., a login page), you can redirect to the dashboard if `get_optional_user` returns a `User` object.
 
 ### Context variables
 
@@ -804,6 +709,7 @@ Context refers to Python variables passed to a template to populate the HTML. In
 @app.get("/welcome")
 async def welcome(request: Request):
     return templates.TemplateResponse(
+        request,
         "welcome.html",
         {"username": "Alice"}
     )
@@ -827,74 +733,6 @@ Pydantic is used for data validation and serialization. It ensures that the data
 
 If a user-submitted form contains data that has the wrong number, names, or types of fields, Pydantic will raise a `RequestValidationError`, which is caught by middleware and converted into an HTTP 422 error response.
 
-For other, custom validation logic, we add Pydantic `@field_validator` methods to our Pydantic request models and then add the models as dependencies in the signatures of corresponding POST routes. FastAPI's dependency injection system ensures that dependency logic is executed before the body of the route handler.
-
-#### Defining request models and custom validators
-
-For example, in the `UserRegister` request model in `routers/authentication.py`, we add a custom validation method to ensure that the `confirm_password` field matches the `password` field. If not, it raises a custom `PasswordMismatchError`:
-
-```python
-class PasswordMismatchError(HTTPException):
-    def __init__(self, field: str = "confirm_password"):
-        super().__init__(
-            status_code=422,
-            detail={
-                "field": field,
-                "message": "The passwords you entered do not match"
-            }
-        )
-
-class UserRegister(BaseModel):
-    name: str
-    email: EmailStr
-    password: str
-    confirm_password: str
-
-    # Custom validators are added as class attributes
-    @field_validator("confirm_password", check_fields=False)
-    def validate_passwords_match(cls, v: str, values: dict[str, Any]) -> str:
-        if v != values["password"]:
-            raise PasswordMismatchError()
-        return v
-    # ...
-```
-
-We then add this request model as a dependency in the signature of our POST route:
-
-```python
-@app.post("/register")
-async def register(request: UserRegister = Depends()):
-    # ...
-```
-
-When the user submits the form, Pydantic will first check that all expected fields are present and match the expected types. If not, it raises a `RequestValidationError`. Then, it runs our custom `field_validator`, `validate_passwords_match`. If it finds that the `confirm_password` field does not match the `password` field, it raises a `PasswordMismatchError`. These exceptions can then be caught and handled by our middleware.
-
-(Note that these examples are simplified versions of the actual code.)
-
-#### Converting form data to request models
-
-In addition to custom validation logic, we also need to define a method on our request models that converts form data into the request model. Here's what that looks like in the `UserRegister` request model from the previous example:
-
-```python
-class UserRegister(BaseModel):
-    # ...
-
-    @classmethod
-    async def as_form(
-        cls,
-        name: str = Form(...),
-        email: EmailStr = Form(...),
-        password: str = Form(...),
-        confirm_password: str = Form(...)
-    ):
-        return cls(
-            name=name,
-            email=email,
-            password=password,
-            confirm_password=confirm_password
-        )
-``` 
-
 ### Middleware exception handling
 
 Middlewares—which process requests before they reach the route handlers and responses before they are sent back to the client—are defined in `main.py`. They are commonly used in web development for tasks such as error handling, authentication token validation, logging, and modifying request/response objects.
@@ -906,8 +744,8 @@ Middleware functions are decorated with `@app.exception_handler(ExceptionType)` 
 Here's a middleware for handling the `PasswordMismatchError` exception from the previous example, which renders the `errors/validation_error.html` template with the error details:
 
 ```python
-@app.exception_handler(PasswordMismatchError)
-async def password_mismatch_exception_handler(request: Request, exc: PasswordMismatchError):
+@app.exception_handler(PasswordValidationError)
+async def password_validation_exception_handler(request: Request, exc: PasswordValidationError):
     return templates.TemplateResponse(
         request,
         "errors/validation_error.html",
@@ -927,12 +765,13 @@ SQLModel is an Object-Relational Mapping (ORM) library that allows us to interac
 
 Our database models are defined in `utils/models.py`. Each model is a Python class that inherits from `SQLModel` and represents a database table. The key models are:
 
+- `Account`: Represents a user account with email and password hash
+- `User`: Represents a user profile with details like name and avatar; the email and password hash are stored in the related `Account` model
 - `Organization`: Represents a company or team
-- `User`: Represents a user account with name, email, and avatar
 - `Role`: Represents a set of permissions within an organization
 - `Permission`: Represents specific actions a user can perform (defined by ValidPermissions enum)
 - `PasswordResetToken`: Manages password reset functionality with expiration
-- `UserPassword`: Stores hashed user passwords separately from user data
+- `EmailUpdateToken`: Manages email update confirmation functionality with expiration
 
 Two additional models are used by SQLModel to manage many-to-many relationships; you generally will not need to interact with them directly:
 
@@ -1194,13 +1033,17 @@ To contribute code to the project:
 
 ### Rendering the documentation
 
-The README and documentation website are rendered with [Quarto](https://quarto.org/docs/). If you ,make changes to the `.qmd` files in the root folder and the `docs` folder, run the following commands to re-render the docs:
+The README and documentation website are rendered with [Quarto](https://quarto.org/docs/). If you make changes to the `.qmd` files in the root folder and the `docs` folder, you will need to re-render the docs with Quarto.
+
+Quarto expects environment variables to be set in a file called `_environment`, so before running Quarto render commands, you should copy your `.env` file to `_environment`.
 
 ``` bash
+# To copy the .env file to _environment
+cp .env _environment
 # To render the documentation website
-quarto render
+uv run quarto render
 # To render the README
-quarto render index.qmd --output-dir . --output README.md --to gfm
+uv run quarto render index.qmd --output-dir . --output README.md --to gfm
 ```
 
 Due to a quirk of Quarto, an unnecessary `index.html` file is created in the root folder when the README is rendered. This file can be safely deleted.
@@ -1225,5 +1068,5 @@ When creating new features,
 To publish the documentation to GitHub Pages, run the following command:
 
 ``` bash
-quarto publish gh-pages
+uv run quarto publish gh-pages
 ```

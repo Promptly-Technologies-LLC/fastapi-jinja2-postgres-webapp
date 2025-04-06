@@ -2,30 +2,34 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/deployment.html</loc>
-    <lastmod>2025-03-11T13:51:52.950Z</lastmod>
+    <lastmod>2025-04-06T17:19:18.530Z</lastmod>
   </url>
   <url>
     <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/contributing.html</loc>
-    <lastmod>2025-03-11T13:51:52.950Z</lastmod>
+    <lastmod>2025-04-06T17:19:18.530Z</lastmod>
   </url>
   <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/authentication.html</loc>
-    <lastmod>2025-03-11T13:51:52.950Z</lastmod>
-  </url>
-  <url>
-    <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/index.html</loc>
-    <lastmod>2025-03-11T13:51:52.953Z</lastmod>
+    <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/templates.html</loc>
+    <lastmod>2025-04-06T17:19:18.533Z</lastmod>
   </url>
   <url>
     <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/architecture.html</loc>
-    <lastmod>2025-03-11T13:51:52.949Z</lastmod>
+    <lastmod>2025-04-06T17:19:18.530Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/index.html</loc>
+    <lastmod>2025-04-06T17:19:18.533Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/authentication.html</loc>
+    <lastmod>2025-04-06T17:19:18.530Z</lastmod>
   </url>
   <url>
     <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/installation.html</loc>
-    <lastmod>2025-03-11T13:51:52.950Z</lastmod>
+    <lastmod>2025-04-06T17:19:18.530Z</lastmod>
   </url>
   <url>
     <loc>https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/docs/customization.html</loc>
-    <lastmod>2025-03-11T13:51:52.950Z</lastmod>
+    <lastmod>2025-04-06T17:19:18.530Z</lastmod>
   </url>
 </urlset>
