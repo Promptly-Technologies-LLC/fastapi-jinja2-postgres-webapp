@@ -21,95 +21,32 @@
     "text": "Maintainers\n\nGit flow\nWhen creating new features,\n\nOpen a Github issue with the label feature and assign it to yourself.\nCreate a new branch from the issue sidebar.\nFollow the instructions in the popup to check out the branch locally and make your changes on the branch.\nCommit your changes and push to the branch.\nWhen you are ready to merge, open a pull request from the branch to main.\nAssign someone else for code review.\n\n\n\nPublishing the documentation\nTo publish the documentation to GitHub Pages, run the following command:\nuv run quarto publish gh-pages"
   },
   {
-    "objectID": "docs/templates.html",
-    "href": "docs/templates.html",
-    "title": "Template Variables Documentation",
+    "objectID": "docs/authentication.html",
+    "href": "docs/authentication.html",
+    "title": "Authentication",
     "section": "",
-    "text": "This file documents the required context variables for each template in the application."
+    "text": "This template implements a comprehensive authentication system with security best practices:\n\nToken Security:\n\nJWT-based with separate access/refresh tokens\nStrict expiry times (30 min access, 30 day refresh)\nToken type validation\nHTTP-only cookies\nSecure flag enabled\nSameSite=strict restriction\n\nPassword Security:\n\nStrong password requirements enforced\nBcrypt hashing with random salt\nPassword reset tokens are single-use\nReset tokens have expiration\n\nCookie Security:\n\nHTTP-only prevents JavaScript access\nSecure flag ensures HTTPS only\nStrict SameSite prevents CSRF\n\nError Handling:\n\nValidation errors properly handled\nSecurity-related errors don’t leak information\nComprehensive error logging\n\n\nThe diagrams below show the main authentication flows."
   },
   {
-    "objectID": "docs/templates.html#table-of-contents",
-    "href": "docs/templates.html#table-of-contents",
-    "title": "Template Variables Documentation",
-    "section": "Table of Contents",
-    "text": "Table of Contents\n\nauthentication\ncomponents\ndashboard\ndashboard &gt; organizations\ndashboard &gt; organizations &gt; members\nemails\nerrors\nroot\nusers"
-  },
-  {
-    "objectID": "docs/templates.html#authentication",
-    "href": "docs/templates.html#authentication",
-    "title": "Template Variables Documentation",
-    "section": "authentication",
-    "text": "authentication\n\nforgot_password.html\nPath: authentication/forgot_password.html\nRequired Variables:\n\n\n\nVariable\nDescription\n\n\n\n\nshow_form\n\n\n\nurl_for\n\n\n\n\n\n\nlogin.html\nPath: authentication/login.html\nRequired Variables:\n\n\n\nVariable\nDescription\n\n\n\n\nurl_for\n\n\n\n\n\n\nregister.html\nPath: authentication/register.html\nRequired Variables:\n\n\n\nVariable\nDescription\n\n\n\n\npassword_pattern\n\n\n\nurl_for\n\n\n\n\n\n\nreset_password.html\nPath: authentication/reset_password.html\nRequired Variables:\n\n\n\nVariable\nDescription\n\n\n\n\nemail\n\n\n\npassword_pattern\n\n\n\ntoken\n\n\n\nurl_for"
-  },
-  {
-    "objectID": "docs/templates.html#components",
-    "href": "docs/templates.html#components",
-    "title": "Template Variables Documentation",
-    "section": "components",
-    "text": "components\n\nfooter.html\nPath: components/footer.html\nRequired Variables:\n\n\n\nVariable\nDescription\n\n\n\n\nurl_for\n\n\n\n\n\n\nheader.html\nPath: components/header.html\nRequired Variables:\n\n\n\nVariable\nDescription\n\n\n\n\nurl_for\n\n\n\nuser\n\n\n\n\n\n\nlogo.html\nPath: components/logo.html\nNo variables required\n\n\nnav.html\nPath: components/nav.html\nRequired Variables:\n\n\n\nVariable\nDescription\n\n\n\n\nurl_for\n\n\n\n\n\n\norganizations.html\nPath: components/organizations.html\nRequired Variables:\n\n\n\nVariable\nDescription\n\n\n\n\nurl_for\n\n\n\n\n\n\nsilhouette.html\nPath: components/silhouette.html\nNo variables required"
-  },
-  {
-    "objectID": "docs/templates.html#dashboard",
-    "href": "docs/templates.html#dashboard",
-    "title": "Template Variables Documentation",
-    "section": "dashboard",
-    "text": "dashboard\n\nindex.html\nPath: dashboard/index.html\nNo variables required\n\n\norganization_overview.html\nPath: dashboard/organization_overview.html\nNo variables required"
-  },
-  {
-    "objectID": "docs/templates.html#dashboard-organizations",
-    "href": "docs/templates.html#dashboard-organizations",
-    "title": "Template Variables Documentation",
-    "section": "dashboard > organizations",
-    "text": "dashboard &gt; organizations\n\ncreate.html\nPath: dashboard/organizations/create.html\nNo variables required\n\n\ndelete.html\nPath: dashboard/organizations/delete.html\nNo variables required\n\n\ndetail.html\nPath: dashboard/organizations/detail.html\nNo variables required\n\n\nedit.html\nPath: dashboard/organizations/edit.html\nNo variables required\n\n\nmembers.html\nPath: dashboard/organizations/members.html\nNo variables required"
-  },
-  {
-    "objectID": "docs/templates.html#dashboard-organizations-members",
-    "href": "docs/templates.html#dashboard-organizations-members",
-    "title": "Template Variables Documentation",
-    "section": "dashboard > organizations > members",
-    "text": "dashboard &gt; organizations &gt; members\n\ndelete.html\nPath: dashboard/organizations/members/delete.html\nNo variables required\n\n\nedit.html\nPath: dashboard/organizations/members/edit.html\nNo variables required\n\n\ninvite.html\nPath: dashboard/organizations/members/invite.html\nNo variables required"
-  },
-  {
-    "objectID": "docs/templates.html#emails",
-    "href": "docs/templates.html#emails",
-    "title": "Template Variables Documentation",
-    "section": "emails",
-    "text": "emails\n\nbase_email.html\nPath: emails/base_email.html\nNo variables required\n\n\nreset_email.html\nPath: emails/reset_email.html\nRequired Variables:\n\n\n\nVariable\nDescription\n\n\n\n\nreset_url\n\n\n\n\n\n\nupdate_email_email.html\nPath: emails/update_email_email.html\nRequired Variables:\n\n\n\nVariable\nDescription\n\n\n\n\nconfirmation_url\n\n\n\ncurrent_email\n\n\n\nnew_email"
-  },
-  {
-    "objectID": "docs/templates.html#errors",
-    "href": "docs/templates.html#errors",
-    "title": "Template Variables Documentation",
-    "section": "errors",
-    "text": "errors\n\nerror.html\nPath: errors/error.html\nRequired Variables:\n\n\n\nVariable\nDescription\n\n\n\n\ndetail\n\n\n\nstatus_code\n\n\n\nurl_for\n\n\n\n\n\n\nvalidation_error.html\nPath: errors/validation_error.html\nRequired Variables:\n\n\n\nVariable\nDescription\n\n\n\n\nerrors\n\n\n\nurl_for"
-  },
-  {
-    "objectID": "docs/templates.html#root",
-    "href": "docs/templates.html#root",
-    "title": "Template Variables Documentation",
-    "section": "root",
-    "text": "root\n\nabout.html\nPath: about.html\nNo variables required\n\n\nauth_base.html\nPath: auth_base.html\nNo variables required\n\n\nbase.html\nPath: base.html\nRequired Variables:\n\n\n\nVariable\nDescription\n\n\n\n\nurl_for\n\n\n\n\n\n\nindex.html\nPath: index.html\nRequired Variables:\n\n\n\nVariable\nDescription\n\n\n\n\nrender_logo\n\n\n\nurl_for\n\n\n\n\n\n\nprivacy_policy.html\nPath: privacy_policy.html\nNo variables required\n\n\nterms_of_service.html\nPath: terms_of_service.html\nNo variables required"
-  },
-  {
-    "objectID": "docs/templates.html#users",
-    "href": "docs/templates.html#users",
-    "title": "Template Variables Documentation",
-    "section": "users",
-    "text": "users\n\norganization.html\nPath: users/organization.html\nRequired Variables:\n\n\n\nVariable\nDescription\n\n\n\n\norganization\n\n\n\nrender_silhouette\n\n\n\nurl_for\n\n\n\n\n\n\nprofile.html\nPath: users/profile.html\nRequired Variables:\n\n\n\nVariable\nDescription\n\n\n\n\nallowed_formats\n\n\n\nemail_update_requested\n\n\n\nemail_updated\n\n\n\nmax_dimension\n\n\n\nmax_file_size_mb\n\n\n\nmin_dimension\n\n\n\nrender_organizations\n\n\n\nrender_silhouette\n\n\n\nshow_form\n\n\n\nurl_for\n\n\n\nuser"
-  },
-  {
-    "objectID": "docs/architecture.html",
-    "href": "docs/architecture.html",
-    "title": "Architecture",
+    "objectID": "docs/authentication.html#security-features",
+    "href": "docs/authentication.html#security-features",
+    "title": "Authentication",
     "section": "",
-    "text": "This application uses a Post-Redirect-Get (PRG) pattern. The user submits a form, which sends a POST request to a FastAPI endpoint on the server. The database is updated, and the user is redirected to a GET endpoint, which fetches the updated data and re-renders the Jinja2 page template with the new data.\n\n\n\nData flow diagram\n\n\nThe advantage of the PRG pattern is that it is very straightforward to implement and keeps most of the rendering logic on the server side. One disadvantage is that it requires an extra round trip to the database to fetch the updated data, and re-rendering the entire page template may be less efficient than a partial page update on the client side. Another disadvantage is that it if the user makes an invalid form submission, they will see an error page and will have to click the browser’s “back” button to get back to the form with their original form inputs.\nA future iteration of this application will use HTMX to update the page in place, so that on an invalid submission an error toast is displayed without a page reload (thus preserving the user’s scroll position and form inputs)."
+    "text": "This template implements a comprehensive authentication system with security best practices:\n\nToken Security:\n\nJWT-based with separate access/refresh tokens\nStrict expiry times (30 min access, 30 day refresh)\nToken type validation\nHTTP-only cookies\nSecure flag enabled\nSameSite=strict restriction\n\nPassword Security:\n\nStrong password requirements enforced\nBcrypt hashing with random salt\nPassword reset tokens are single-use\nReset tokens have expiration\n\nCookie Security:\n\nHTTP-only prevents JavaScript access\nSecure flag ensures HTTPS only\nStrict SameSite prevents CSRF\n\nError Handling:\n\nValidation errors properly handled\nSecurity-related errors don’t leak information\nComprehensive error logging\n\n\nThe diagrams below show the main authentication flows."
   },
   {
-    "objectID": "docs/architecture.html#data-flow",
-    "href": "docs/architecture.html#data-flow",
-    "title": "Architecture",
-    "section": "",
-    "text": "This application uses a Post-Redirect-Get (PRG) pattern. The user submits a form, which sends a POST request to a FastAPI endpoint on the server. The database is updated, and the user is redirected to a GET endpoint, which fetches the updated data and re-renders the Jinja2 page template with the new data.\n\n\n\nData flow diagram\n\n\nThe advantage of the PRG pattern is that it is very straightforward to implement and keeps most of the rendering logic on the server side. One disadvantage is that it requires an extra round trip to the database to fetch the updated data, and re-rendering the entire page template may be less efficient than a partial page update on the client side. Another disadvantage is that it if the user makes an invalid form submission, they will see an error page and will have to click the browser’s “back” button to get back to the form with their original form inputs.\nA future iteration of this application will use HTMX to update the page in place, so that on an invalid submission an error toast is displayed without a page reload (thus preserving the user’s scroll position and form inputs)."
+    "objectID": "docs/authentication.html#registration-and-login-flow",
+    "href": "docs/authentication.html#registration-and-login-flow",
+    "title": "Authentication",
+    "section": "Registration and login flow",
+    "text": "Registration and login flow\n\n\n\nRegistration and login flow"
+  },
+  {
+    "objectID": "docs/authentication.html#password-reset-flow",
+    "href": "docs/authentication.html#password-reset-flow",
+    "title": "Authentication",
+    "section": "Password reset flow",
+    "text": "Password reset flow\n\n\n\nPassword reset flow"
   },
   {
     "objectID": "index.html",
@@ -151,7 +88,7 @@
     "href": "index.html#installation",
     "title": "FastAPI, Jinja2, PostgreSQL Webapp Template",
     "section": "Installation",
-    "text": "Installation\nFor comprehensive installation instructions, see the installation page.\n\nuv\nMacOS and Linux:\nwget -qO- https://astral.sh/uv/install.sh | sh\nWindows:\npowershell -ExecutionPolicy ByPass -c \"irm https://astral.sh/uv/install.ps1 | iex\"\nSee the uv installation docs for more information.\n\n\nPython\nInstall Python 3.12 or higher from either the official downloads page or using uv:\n# Installs the latest version\nuv python install\n\n\nDocker and Docker Compose\nInstall Docker Desktop and Coker Compose for your operating system by following the instructions in the documentation.\n\n\nPostgreSQL headers\nFor Ubuntu/Debian:\nsudo apt update && sudo apt install -y python3-dev libpq-dev libwebp-dev\nFor macOS:\nbrew install postgresql\nFor Windows:\n\nNo installation required\n\n\n\nPython dependencies\nFrom the root directory, run:\nuv venv\nuv sync\nThis will create an in-project virtual environment and install all dependencies.\n\n\nSet environment variables\nCopy .env.example to .env with cp .env.example .env.\nGenerate a 256 bit secret key with openssl rand -base64 32 and paste it into the .env file.\nSet your desired database name, username, and password in the .env file.\nTo use password recovery, register a Resend account, verify a domain, get an API key, and paste the API key into the .env file.\n\n\nStart development database\nTo start the development database, run the following command in your terminal from the root directory:\ndocker compose up -d\n\n\nRun the development server\nMake sure the development database is running and tables and default permissions/roles are created first.\nuv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload\nNavigate to http://localhost:8000/\n\n\nLint types with mypy\nuv run mypy ."
+    "text": "Installation\nFor comprehensive installation instructions, see the installation page.\n\nuv\nMacOS and Linux:\nwget -qO- https://astral.sh/uv/install.sh | sh\nWindows:\npowershell -ExecutionPolicy ByPass -c \"irm https://astral.sh/uv/install.ps1 | iex\"\nSee the uv installation docs for more information.\n\n\nPython\nInstall Python 3.12 or higher from either the official downloads page or using uv:\n# Installs the latest version\nuv python install\n\n\nDocker and Docker Compose\nInstall Docker Desktop and Coker Compose for your operating system by following the instructions in the documentation.\n\n\nPostgreSQL headers\nFor Ubuntu/Debian:\nsudo apt update && sudo apt install -y python3-dev libpq-dev libwebp-dev\nFor macOS:\nbrew install postgresql\nFor Windows:\n\nNo installation required\n\n\n\nPython dependencies\nFrom the root directory, run:\nuv venv\nuv sync\nThis will create an in-project virtual environment and install all dependencies.\n\n\nSet environment variables\nCopy .env.example to .env with cp .env.example .env.\nGenerate a 256 bit secret key with openssl rand -base64 32 and paste it into the .env file.\nSet your desired database name, username, and password in the .env file.\nTo use password recovery, register a Resend account, verify a domain, get an API key, and paste the API key into the .env file.\n\n\nStart development database\nTo start the development database, run the following command in your terminal from the root directory:\ndocker compose up -d\n\n\nRun the development server\nMake sure the development database is running and tables and default permissions/roles are created first.\nuv run python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload\nNavigate to http://localhost:8000/\n\n\nLint types with mypy\nuv run mypy ."
   },
   {
     "objectID": "index.html#developing-with-llms",
@@ -175,32 +112,18 @@
     "text": "License\nThis project is created and maintained by Promptly Technologies, LLC and licensed under the MIT License. See the LICENSE file for more details."
   },
   {
-    "objectID": "docs/authentication.html",
-    "href": "docs/authentication.html",
-    "title": "Authentication",
+    "objectID": "docs/architecture.html",
+    "href": "docs/architecture.html",
+    "title": "Architecture",
     "section": "",
-    "text": "This template implements a comprehensive authentication system with security best practices:\n\nToken Security:\n\nJWT-based with separate access/refresh tokens\nStrict expiry times (30 min access, 30 day refresh)\nToken type validation\nHTTP-only cookies\nSecure flag enabled\nSameSite=strict restriction\n\nPassword Security:\n\nStrong password requirements enforced\nBcrypt hashing with random salt\nPassword reset tokens are single-use\nReset tokens have expiration\n\nCookie Security:\n\nHTTP-only prevents JavaScript access\nSecure flag ensures HTTPS only\nStrict SameSite prevents CSRF\n\nError Handling:\n\nValidation errors properly handled\nSecurity-related errors don’t leak information\nComprehensive error logging\n\n\nThe diagrams below show the main authentication flows."
+    "text": "This application uses a Post-Redirect-Get (PRG) pattern. The user submits a form, which sends a POST request to a FastAPI endpoint on the server. The database is updated, and the user is redirected to a GET endpoint, which fetches the updated data and re-renders the Jinja2 page template with the new data.\n\n\n\nData flow diagram\n\n\nThe advantage of the PRG pattern is that it is very straightforward to implement and keeps most of the rendering logic on the server side. One disadvantage is that it requires an extra round trip to the database to fetch the updated data, and re-rendering the entire page template may be less efficient than a partial page update on the client side. Another disadvantage is that it if the user makes an invalid form submission, they will see an error page and will have to click the browser’s “back” button to get back to the form with their original form inputs.\nA future iteration of this application will use HTMX to update the page in place, so that on an invalid submission an error toast is displayed without a page reload (thus preserving the user’s scroll position and form inputs)."
   },
   {
-    "objectID": "docs/authentication.html#security-features",
-    "href": "docs/authentication.html#security-features",
-    "title": "Authentication",
+    "objectID": "docs/architecture.html#data-flow",
+    "href": "docs/architecture.html#data-flow",
+    "title": "Architecture",
     "section": "",
-    "text": "This template implements a comprehensive authentication system with security best practices:\n\nToken Security:\n\nJWT-based with separate access/refresh tokens\nStrict expiry times (30 min access, 30 day refresh)\nToken type validation\nHTTP-only cookies\nSecure flag enabled\nSameSite=strict restriction\n\nPassword Security:\n\nStrong password requirements enforced\nBcrypt hashing with random salt\nPassword reset tokens are single-use\nReset tokens have expiration\n\nCookie Security:\n\nHTTP-only prevents JavaScript access\nSecure flag ensures HTTPS only\nStrict SameSite prevents CSRF\n\nError Handling:\n\nValidation errors properly handled\nSecurity-related errors don’t leak information\nComprehensive error logging\n\n\nThe diagrams below show the main authentication flows."
-  },
-  {
-    "objectID": "docs/authentication.html#registration-and-login-flow",
-    "href": "docs/authentication.html#registration-and-login-flow",
-    "title": "Authentication",
-    "section": "Registration and login flow",
-    "text": "Registration and login flow\n\n\n\nRegistration and login flow"
-  },
-  {
-    "objectID": "docs/authentication.html#password-reset-flow",
-    "href": "docs/authentication.html#password-reset-flow",
-    "title": "Authentication",
-    "section": "Password reset flow",
-    "text": "Password reset flow\n\n\n\nPassword reset flow"
+    "text": "This application uses a Post-Redirect-Get (PRG) pattern. The user submits a form, which sends a POST request to a FastAPI endpoint on the server. The database is updated, and the user is redirected to a GET endpoint, which fetches the updated data and re-renders the Jinja2 page template with the new data.\n\n\n\nData flow diagram\n\n\nThe advantage of the PRG pattern is that it is very straightforward to implement and keeps most of the rendering logic on the server side. One disadvantage is that it requires an extra round trip to the database to fetch the updated data, and re-rendering the entire page template may be less efficient than a partial page update on the client side. Another disadvantage is that it if the user makes an invalid form submission, they will see an error page and will have to click the browser’s “back” button to get back to the form with their original form inputs.\nA future iteration of this application will use HTMX to update the page in place, so that on an invalid submission an error toast is displayed without a page reload (thus preserving the user’s scroll position and form inputs)."
   },
   {
     "objectID": "docs/installation.html",
