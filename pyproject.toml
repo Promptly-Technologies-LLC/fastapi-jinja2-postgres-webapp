@@ -21,6 +21,7 @@ dependencies = [
     "bcrypt<5.0.0,>=4.2.0",
     "fastapi<1.0.0,>=0.115.5",
     "pillow>=11.0.0",
+    "modal>=0.73.162",
 ]
 
 [dependency-groups]
