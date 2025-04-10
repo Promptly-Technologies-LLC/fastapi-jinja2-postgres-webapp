@@ -232,10 +232,6 @@ def invite_member(
     
     if not organization:
         raise OrganizationNotFoundError()
-
-    # Log organization and roles state
-    org_identity = session.identity_key(instance=organization)
-    role_info = [(r.id, r.name, session.identity_key(instance=r)) for r in organization.roles]
     
     # Find the account and associated user by email
     account = session.exec(
@@ -250,7 +246,6 @@ def invite_member(
         raise UserNotFoundError()
     
     invited_user = account.user
-    user_identity = session.identity_key(instance=invited_user)
     
     # Check if user is already a member of this organization
     is_already_member = False

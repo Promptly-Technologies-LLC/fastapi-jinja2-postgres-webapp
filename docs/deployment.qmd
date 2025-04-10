@@ -69,7 +69,7 @@ doctl databases firewalls append <database-cluster-id> --rule <type>:<value>
 
 where `<type>` is `ip_addr` and `<value>` is the IP address of the application server. See the [DigitalOcean documentation](https://docs.digitalocean.com/reference/doctl/reference/databases/firewalls/append/) for more details.
 
-**Note:** You can only complete this step after you have deployed your application layer and obtained the IP address of the application server.
+**Note:** You can only complete this step after you have deployed your application layer and obtained a static IP address for the application server.
 
 ## Deploying and Configuring the FastAPI App
 
@@ -80,8 +80,9 @@ The big advantages of deploying on Modal.com are:
 2. that it's a very user-friendly platform.
 
 The disadvantages are:
-1. that Modal is a Python-only platform and cannot run the database layer, so you'll have to deploy that somewhere else, and
-2. that you'll need to make some modest changes to the codebase to get it to work on Modal.
+1. that Modal is a Python-only platform and cannot run the database layer, so you'll have to deploy that somewhere else,
+2. that you'll need to make some modest changes to the codebase to get it to work on Modal, and
+3. that Modal offers a [static IP address for the application server](https://modal.com/docs/guide/proxy-ips) only if you pay for a higher-tier plan starting at $250/year, which makes securing the database layer with a firewall rule cost prohibitive.
 
 #### Getting Started
 

@@ -123,7 +123,7 @@ def test_password_pattern() -> None:
                     password += random.choice(required_elements[other_element])
             # Randomize the order of the characters in the string
             password = ''.join(random.sample(password, len(password)))
-        assert re.match(COMPILED_PASSWORD_PATTERN, password) is not None, f"Password {password} does not match the pattern"
+            assert re.match(COMPILED_PASSWORD_PATTERN, password) is not None, f"Password {password} does not match the pattern"
 
     # Invalid password tests
 
@@ -213,7 +213,7 @@ def test_send_email_update_confirmation(mock_send: MagicMock) -> None:
 
     # Test existing token case
     session.reset_mock()
-    session.exec.return_value.first.return_value = EmailUpdateToken()  # Existing token
+    session.exec.return_value.first.return_value = EmailUpdateToken(account_id=account_id)
 
     send_email_update_confirmation(current_email, new_email, account_id, session)
 
