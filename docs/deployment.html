@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -139,7 +173,14 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#under-construction" id="toc-under-construction" class="nav-link active" data-scroll-target="#under-construction">Under construction</a></li>
+  <li><a href="#deploying-and-configuring-the-postgresql-database" id="toc-deploying-and-configuring-the-postgresql-database" class="nav-link active" data-scroll-target="#deploying-and-configuring-the-postgresql-database">Deploying and Configuring the PostgreSQL Database</a>
+  <ul class="collapse">
+  <li><a href="#on-digital-ocean" id="toc-on-digital-ocean" class="nav-link" data-scroll-target="#on-digital-ocean">On Digital Ocean</a></li>
+  </ul></li>
+  <li><a href="#deploying-and-configuring-the-fastapi-app" id="toc-deploying-and-configuring-the-fastapi-app" class="nav-link" data-scroll-target="#deploying-and-configuring-the-fastapi-app">Deploying and Configuring the FastAPI App</a>
+  <ul class="collapse">
+  <li><a href="#on-modal.com" id="toc-on-modal.com" class="nav-link" data-scroll-target="#on-modal.com">On Modal.com</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -165,10 +206,163 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="under-construction" class="level2">
-<h2 class="anchored" data-anchor-id="under-construction">Under construction</h2>
+<p>This application requires two services to be deployed and connected to each other:</p>
+<ol type="1">
+<li>A PostgreSQL database (the storage layer)</li>
+<li>A FastAPI app (the application layer)</li>
+</ol>
+<p>There are <em>many</em> hosting options available for each of these services; this guide will cover only a few of them.</p>
+<section id="deploying-and-configuring-the-postgresql-database" class="level2">
+<h2 class="anchored" data-anchor-id="deploying-and-configuring-the-postgresql-database">Deploying and Configuring the PostgreSQL Database</h2>
+<section id="on-digital-ocean" class="level3">
+<h3 class="anchored" data-anchor-id="on-digital-ocean">On Digital Ocean</h3>
+<section id="getting-started" class="level4">
+<h4 class="anchored" data-anchor-id="getting-started">Getting Started</h4>
+<ul>
+<li>Create a <a href="mdc:https:/www.digitalocean.com">DigitalOcean</a> account</li>
+<li>Install the <a href="mdc:https:/docs.digitalocean.com/reference/doctl"><code>doctl</code> CLI tool</a> and authenticate with <code>doctl auth init</code></li>
+<li>Install the <a href="mdc:https:/www.postgresql.org/download"><code>psql</code> client</a></li>
+</ul>
+</section>
+<section id="create-a-project" class="level4">
+<h4 class="anchored" data-anchor-id="create-a-project">Create a Project</h4>
+<p>Create a new project to organize your resources:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># List existing projects</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">doctl</span> projects list</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a new project</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">doctl</span> projects create <span class="at">--name</span> <span class="st">"YOUR-PROJECT-NAME"</span> <span class="at">--purpose</span> <span class="st">"YOUR-PROJECT-PURPOSE"</span> <span class="at">--environment</span> <span class="st">"Production"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="set-up-a-managed-postgresql-database" class="level4">
+<h4 class="anchored" data-anchor-id="set-up-a-managed-postgresql-database">Set Up a Managed PostgreSQL Database</h4>
+<p>Create a managed, serverless PostgreSQL database instance:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">doctl</span> databases create your-db-name <span class="at">--engine</span> pg <span class="at">--version</span> 17 <span class="at">--size</span> db-s-1vcpu-1gb <span class="at">--num-nodes</span> 1 <span class="at">--wait</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Get the database ID from the output of the create command and use it to retrieve the database connection details:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get the database connection details</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">doctl</span> databases connection <span class="st">"your-database-id"</span> <span class="at">--format</span> Host,Port,User,Password,Database</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Store these details securely in a <code>.env.production</code> file (you will need to set them later in application deployment as production secrets):</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Database connection parameters</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="va">DB_HOST</span><span class="op">=</span>your-host</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="va">DB_PORT</span><span class="op">=</span>your-port</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="va">DB_USER</span><span class="op">=</span>your-user</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="va">DB_PASS</span><span class="op">=</span>your-password</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="va">DB_NAME</span><span class="op">=</span>your-database</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>You may also want to save your database id, although you can always find it again later by listing your databases with <code>doctl databases list</code>.</p>
+</section>
+<section id="setting-up-a-firewall-rule-after-deploying-your-application-layer" class="level4">
+<h4 class="anchored" data-anchor-id="setting-up-a-firewall-rule-after-deploying-your-application-layer">Setting Up a Firewall Rule (after Deploying Your Application Layer)</h4>
+<p>Note that by default your database is publicly accessible from the Internet, so you should create a firewall rule to restrict access to only your application’s IP address once you have deployed the application. The command to do this is:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">doctl</span> databases firewalls append <span class="op">&lt;</span>database-cluster-id<span class="op">&gt;</span> --rule <span class="op">&lt;</span>type<span class="op">&gt;</span>:<span class="op">&lt;</span>value<span class="op">&gt;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>where <code>&lt;type&gt;</code> is <code>ip_addr</code> and <code>&lt;value&gt;</code> is the IP address of the application server. See the <a href="https://docs.digitalocean.com/reference/doctl/reference/databases/firewalls/append/">DigitalOcean documentation</a> for more details.</p>
+<p><strong>Note:</strong> You can only complete this step after you have deployed your application layer and obtained a static IP address for the application server.</p>
+</section>
+</section>
+</section>
+<section id="deploying-and-configuring-the-fastapi-app" class="level2">
+<h2 class="anchored" data-anchor-id="deploying-and-configuring-the-fastapi-app">Deploying and Configuring the FastAPI App</h2>
+<section id="on-modal.com" class="level3">
+<h3 class="anchored" data-anchor-id="on-modal.com">On Modal.com</h3>
+<p>The big advantages of deploying on Modal.com are: 1. that they offer $30/month of free credits for each user, plus generous additional free credit allotments for startups and researchers, and 2. that it’s a very user-friendly platform.</p>
+<p>The disadvantages are: 1. that Modal is a Python-only platform and cannot run the database layer, so you’ll have to deploy that somewhere else, 2. that you’ll need to make some modest changes to the codebase to get it to work on Modal, and 3. that Modal offers a <a href="https://modal.com/docs/guide/proxy-ips">static IP address for the application server</a> only if you pay for a higher-tier plan starting at $250/year, which makes securing the database layer with a firewall rule cost prohibitive.</p>
+<section id="getting-started-1" class="level4">
+<h4 class="anchored" data-anchor-id="getting-started-1">Getting Started</h4>
+<ul>
+<li><a href="https://modal.com/signup">Sign up for a Modal.com account</a></li>
+<li>Install modal in the project directory with <code>uv add modal</code></li>
+<li>Run <code>uv run modal setup</code> to authenticate with Modal</li>
+</ul>
+</section>
+<section id="defining-the-modal-image-and-app" class="level4">
+<h4 class="anchored" data-anchor-id="defining-the-modal-image-and-app">Defining the Modal Image and App</h4>
+<p>Create a new Python file in the root of your project, for example, <code>deploy.py</code>. This file will define the Modal Image and the ASGI app deployment.</p>
+<ol type="1">
+<li><strong>Define the Modal Image in <code>deploy.py</code>:</strong>
+<ul>
+<li>Use <code>modal.Image</code> to define the container environment. Chain methods to install dependencies and add code/files.</li>
+<li>Start with a Debian base image matching your Python version (e.g., 3.13).</li>
+<li>Install necessary system packages (<code>libpq-dev</code> for <code>psycopg2</code>, <code>libwebp-dev</code> for Pillow WebP support).</li>
+<li>Install Python dependencies using <code>run_commands</code> with <code>uv</code>.</li>
+<li>Add your local Python modules (<code>routers</code>, <code>utils</code>, <code>exceptions</code>) using <code>add_local_python_source</code>.</li>
+<li>Add the <code>static</code> and <code>templates</code> directories using <code>add_local_dir</code>. The default behaviour (copying on container startup) is usually fine for development, but consider <code>copy=True</code> for production stability if these files are large or rarely change.</li>
+</ul>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># deploy.py</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modal</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the base image</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>image <span class="op">=</span> (</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    modal.Image.debian_slim(python_version<span class="op">=</span><span class="st">"3.13"</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    .apt_install(<span class="st">"libpq-dev"</span>, <span class="st">"libwebp-dev"</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    .pip_install_from_pyproject(<span class="st">"pyproject.toml"</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    .add_local_python_source(<span class="st">"main"</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    .add_local_python_source(<span class="st">"routers"</span>)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    .add_local_python_source(<span class="st">"utils"</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    .add_local_python_source(<span class="st">"exceptions"</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    .add_local_dir(<span class="st">"static"</span>, remote_path<span class="op">=</span><span class="st">"/root/static"</span>)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    .add_local_dir(<span class="st">"templates"</span>, remote_path<span class="op">=</span><span class="st">"/root/templates"</span>)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the Modal App</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>app <span class="op">=</span> modal.App(</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="st">"your-app-name"</span>,</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    image<span class="op">=</span>image,</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    secrets<span class="op">=</span>[modal.Secret.from_name(<span class="st">"your-app-name-secret"</span>)]</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div></li>
+<li><strong>Define the ASGI App Function in <code>deploy.py</code>:</strong>
+<ul>
+<li>Create a function decorated with <code>@app.function()</code> and <code>@modal.asgi_app()</code>.</li>
+<li>Inside this function, import your FastAPI application instance from <code>main.py</code>.</li>
+<li>Return the FastAPI app instance.</li>
+<li>Use <code>@modal.concurrent()</code> to allow the container to handle multiple requests concurrently.</li>
+</ul>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># deploy.py (continued)</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the ASGI app function</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="at">@app.function</span>(</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    allow_concurrent_inputs<span class="op">=</span><span class="dv">100</span> <span class="co"># Adjust concurrency as needed</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="at">@modal.asgi_app</span>()</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fastapi_app():</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Important: Import the app *inside* the function</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># This ensures it runs within the Modal container environment</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># and has access to the installed packages and secrets.</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># It also ensures the lifespan function (db setup) runs correctly</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># with the environment variables provided by the Modal Secret.</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    <span class="im">from</span> main <span class="im">import</span> app <span class="im">as</span> web_app</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> web_app</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div></li>
+</ol>
+<p>For more information on Modal FastAPI images and applications, see <a href="https://modal.com/docs/guide/webhooks#how-do-web-endpoints-run-in-the-cloud">this guide</a>.</p>
+</section>
+<section id="deploying-the-app" class="level4">
+<h4 class="anchored" data-anchor-id="deploying-the-app">Deploying the App</h4>
+<p>From your terminal, in the root directory of your project, run:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">modal</span> deploy deploy.py</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Modal will build the image (if it hasn’t been built before or if dependencies changed) and deploy the ASGI app. It will output a public URL (e.g., <code>https://your-username--your-app-name.modal.run</code>).</p>
+</section>
+<section id="setting-up-modal-secrets" class="level4">
+<h4 class="anchored" data-anchor-id="setting-up-modal-secrets">Setting Up Modal Secrets</h4>
+<p>The application relies on environment variables stored in <code>.env</code> (like <code>SECRET_KEY</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code>, <code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_NAME</code>, <code>RESEND_API_KEY</code>, <code>BASE_URL</code>). These sensitive values should be stored securely using Modal Secrets.</p>
+<p>Create a Modal Secret either through the Modal UI or CLI. Note that the name of the secret has to match the secret name you used in the <code>deploy.py</code> file, above (e.g., <code>your-app-name-secret</code>).</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Example using CLI</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">modal</span> secret create your-app-name-secret <span class="dt">\</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    SECRET_KEY=<span class="st">'your_actual_secret_key'</span> <span class="dt">\</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    DB_USER=<span class="st">'your_db_user'</span> <span class="dt">\</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    DB_PASSWORD=<span class="st">'your_db_password'</span> <span class="dt">\</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    DB_HOST=<span class="st">'your_external_db_host'</span> <span class="dt">\</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    DB_PORT=<span class="st">'your_db_port'</span> <span class="dt">\</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    DB_NAME=<span class="st">'your_db_name'</span> <span class="dt">\</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    RESEND_API_KEY=<span class="st">'your_resend_api_key'</span> <span class="dt">\</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    BASE_URL=<span class="st">'https://your-username--your-app-name-serve.modal.run'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Important:</strong> Ensure <code>DB_HOST</code> points to your <em>cloud</em> database host address, not <code>localhost</code> or <code>host.docker.internal</code>.</p>
+</section>
+<section id="testing-the-deployment" class="level4">
+<h4 class="anchored" data-anchor-id="testing-the-deployment">Testing the Deployment</h4>
+<p>Access the provided Modal URL in your browser. Browse the site and test the registration and password reset features to ensure database and Resend connections work.</p>
 
 
+</section>
+</section>
 </section>
 
 </main> <!-- /main -->
