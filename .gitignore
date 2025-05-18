@@ -15,7 +15,6 @@ node_modules
 package-lock.json
 package.json
 .specstory
-.cursorrules
-.cursor
 repomix-output.txt
 artifacts/
+.cursorindexingignore
