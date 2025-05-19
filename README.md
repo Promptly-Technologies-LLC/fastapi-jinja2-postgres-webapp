@@ -181,20 +181,12 @@ uv run mypy .
 
 ## Developing with LLMs
 
-In line with the [llms.txt standard](https://llmstxt.org/), we have
-provided a Markdown-formatted prompt—designed to help LLM agents
-understand how to work with this template—as a text file:
-[llms.txt](docs/static/llms.txt).
-
-One use case for this file, if using the Cursor IDE, is to rename it to
-`.cursorrules` and place it in your project directory (see the [Cursor
-docs](https://docs.cursor.com/context/rules-for-ai) on this for more
-information). Alternatively, you could use it as a custom system prompt
-in the web interface for ChatGPT, Claude, or the LLM of your choice.
-
-We have also exposed the full Markdown-formatted project documentation
-as a [single text file](docs/static/documentation.txt) for easy
-downloading and embedding for RAG workflows.
+The `.cursor/rules` folder contains a set of AI rules for working on
+this codebase in the Cursor IDE. We have also provided an
+[llms.txt](static/llms.txt) system prompt file for use with other
+agentic LLM workflows and exposed the full Markdown-formatted project
+documentation as a [single text file](docs/static/documentation.txt) for
+easy downloading and embedding for RAG.
 
 ## Contributing
 
