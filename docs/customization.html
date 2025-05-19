@@ -179,6 +179,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#dependency-management-with-uv" id="toc-dependency-management-with-uv" class="nav-link" data-scroll-target="#dependency-management-with-uv">Dependency management with <code>uv</code></a></li>
   <li><a href="#ide-configuration" id="toc-ide-configuration" class="nav-link" data-scroll-target="#ide-configuration">IDE configuration</a></li>
+  <li><a href="#extending-the-template" id="toc-extending-the-template" class="nav-link" data-scroll-target="#extending-the-template">Extending the template</a></li>
   <li><a href="#testing" id="toc-testing" class="nav-link" data-scroll-target="#testing">Testing</a></li>
   <li><a href="#type-checking-with-mypy" id="toc-type-checking-with-mypy" class="nav-link" data-scroll-target="#type-checking-with-mypy">Type checking with mypy</a></li>
   <li><a href="#developing-with-llms" id="toc-developing-with-llms" class="nav-link" data-scroll-target="#developing-with-llms">Developing with LLMs</a></li>
@@ -252,6 +253,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>If you are using VSCode or Cursor as your IDE, you will need to select the <code>uv</code>-managed Python version as your interpreter for the project. Go to <code>View &gt; Command Palette</code>, search for <code>Python: Select Interpreter</code>, and select the Python version labeled <code>('.venv':venv)</code>.</p>
 <p>If your IDE does not automatically detect and display this option, you can manually select the interpreter by selecting “Enter interpreter path” and then navigating to the <code>.venv/bin/python</code> subfolder in your project directory.</p>
 </section>
+<section id="extending-the-template" class="level3">
+<h3 class="anchored" data-anchor-id="extending-the-template">Extending the template</h3>
+<p>The <code>routers/core/</code> and <code>utils/core/</code> directories contain the core backend logic for the template.</p>
+<p>Your custom Python backend code should go primarily in the <code>routers/app/</code> and <code>utils/app/</code> directories.</p>
+<p>For the frontend, you will also need to develop custom Jinja2 templates in the <code>templates/</code> folder and add custom static assets in <code>static/</code>.</p>
+</section>
 <section id="testing" class="level3">
 <h3 class="anchored" data-anchor-id="testing">Testing</h3>
 <p>The project uses Pytest for unit testing. It’s highly recommended to write and run tests before committing code to ensure nothing is broken!</p>
@@ -283,9 +290,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="developing-with-llms" class="level3">
 <h3 class="anchored" data-anchor-id="developing-with-llms">Developing with LLMs</h3>
-<p>In line with the <a href="https://llmstxt.org/">llms.txt standard</a>, we have provided a Markdown-formatted prompt—designed to help LLM agents understand how to work with this template—as a text file: <a href="static/llms.txt">llms.txt</a>.</p>
-<p>One use case for this file, if using the Cursor IDE, is to rename it to <code>.cursorrules</code> and place it in your project directory (see the <a href="https://docs.cursor.com/context/rules-for-ai">Cursor docs</a> on this for more information). Alternatively, you could use it as a custom system prompt in the web interface for ChatGPT, Claude, or the LLM of your choice.</p>
-<p>We have also exposed the full Markdown-formatted project documentation as a <a href="static/documentation.txt">single text file</a> for easy downloading and embedding for RAG workflows.</p>
+<p>The <code>.cursor/rules</code> folder contains a set of AI rules for working on this codebase in the Cursor IDE. We have also provided an <a href="static/llms.txt">llms.txt</a> system prompt file for use with other agentic LLM workflows and exposed the full Markdown-formatted project documentation as a <a href="docs/static/documentation.txt">single text file</a> for easy downloading and embedding for RAG.</p>
 </section>
 </section>
 <section id="application-architecture" class="level2">
@@ -294,11 +299,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="post-redirect-get-pattern">Post-Redirect-Get pattern</h3>
 <p>In this template, we use FastAPI to define the “API endpoints” of our application. An API endpoint is simply a URL that accepts user requests and returns responses. When a user visits a page, their browser sends what’s called a “GET” request to an endpoint, and the server processes it (often querying a database), and returns a response (typically HTML). The browser renders the HTML, displaying the page.</p>
 <p>We also create POST endpoints, which accept form submissions so the user can create, update, and delete data in the database. This template follows the Post-Redirect-Get (PRG) pattern to handle POST requests. When a form is submitted, the server processes the data and then returns a “redirect” response, which sends the user to a GET endpoint to re-render the page with the updated data. (See <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html">Architecture</a> for more details.)</p>
-<section id="customizable-folders-and-files" class="level4">
-<h4 class="anchored" data-anchor-id="customizable-folders-and-files">Customizable folders and files</h4>
+<section id="file-structure" class="level4">
+<h4 class="anchored" data-anchor-id="file-structure">File structure</h4>
 <ul>
 <li>FastAPI application entry point and homepage GET route: <code>main.py</code></li>
-<li>FastAPI routes: <code>routers/</code>
+<li>Template FastAPI routes: <code>routers/core/</code>
 <ul>
 <li>Account and authentication endpoints: <code>account.py</code></li>
 <li>User profile management endpoints: <code>user.py</code></li>
@@ -307,11 +312,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Dashboard page: <code>dashboard.py</code></li>
 <li>Static pages (e.g., about, privacy policy, terms of service): <code>static_pages.py</code></li>
 </ul></li>
+<li>Custom FastAPI routes for your app: <code>routers/app/</code></li>
 <li>Jinja2 templates: <code>templates/</code></li>
 <li>Static assets: <code>static/</code></li>
 <li>Unit tests: <code>tests/</code></li>
 <li>Test database configuration: <code>docker-compose.yml</code></li>
-<li>Helper functions: <code>utils/</code>
+<li>Template helper functions: <code>utils/core/</code>
 <ul>
 <li>Auth helpers: <code>auth.py</code></li>
 <li>Database helpers: <code>db.py</code></li>
@@ -320,20 +326,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Image helpers: <code>images.py</code></li>
 <li>Database models: <code>models.py</code></li>
 </ul></li>
+<li>Custom template helper functions for your app: <code>utils/app/</code></li>
 <li>Exceptions: <code>exceptions/</code>
 <ul>
 <li>HTTP exceptions: <code>http_exceptions.py</code></li>
 <li>Other custom exceptions: <code>exceptions.py</code></li>
 </ul></li>
-<li>Environment variables: <code>.env.example</code></li>
+<li>Environment variables: <code>.env.example</code>, <code>.env</code></li>
 <li>CI/CD configuration: <code>.github/</code></li>
 <li>Project configuration: <code>pyproject.toml</code></li>
 <li>Quarto documentation:
 <ul>
 <li>README source: <code>index.qmd</code></li>
 <li>Website source: <code>index.qmd</code> + <code>docs/</code></li>
-<li>Configuration: <code>_quarto.yml</code></li>
+<li>Configuration: <code>_quarto.yml</code> + <code>_environment</code></li>
 </ul></li>
+<li>Rules for developing with LLMs in Cursor IDE: <code>.cursor/rules/</code></li>
 </ul>
 <p>Most everything else is auto-generated and should not be manually modified.</p>
 </section>
@@ -343,7 +351,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="backend">Backend</h2>
 <section id="code-conventions" class="level3">
 <h3 class="anchored" data-anchor-id="code-conventions">Code conventions</h3>
-<p>The GET route for the homepage is defined in the main entry point for the application, <code>main.py</code>. The entrypoint imports router modules from the <code>routers/</code> directory, which contain the other GET and POST routes for the application. In CRUD style, the router modules are named after the resource they manage, e.g., <code>account.py</code> for account management.</p>
+<p>The GET route for the homepage is defined in the main entry point for the application, <code>main.py</code>. The entrypoint imports router modules from the <code>routers/core/</code> directory (for core/template logic) and <code>routers/app/</code> directory (for app-specific logic). In CRUD style, the core router modules are named after the resource they manage, e.g., <code>account.py</code> for account management. You should place your own endpoints in <code>routers/app/</code>.</p>
 <p>We name our GET routes using the convention <code>read_&lt;name&gt;</code>, where <code>&lt;name&gt;</code> is the name of the resource, to indicate that they are read-only endpoints that do not modify the database. In POST routes that modify the database, you can use the <code>get_session</code> dependency as an argument to get a database session.</p>
 <p>Routes that require authentication generally take the <code>get_authenticated_account</code> dependency as an argument. Unauthenticated GET routes generally take the <code>get_optional_user</code> dependency as an argument. If a route should <em>only</em> be seen by authenticated users (i.e., a login page), you can redirect to the dashboard if <code>get_optional_user</code> returns a <code>User</code> object.</p>
 </section>
@@ -400,7 +408,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>SQLModel is an Object-Relational Mapping (ORM) library that allows us to interact with our PostgreSQL database using Python classes instead of writing raw SQL. It combines the features of SQLAlchemy (a powerful database toolkit) with Pydantic’s data validation.</p>
 <section id="models-and-relationships" class="level3">
 <h3 class="anchored" data-anchor-id="models-and-relationships">Models and relationships</h3>
-<p>Our database models are defined in <code>utils/models.py</code>. Each model is a Python class that inherits from <code>SQLModel</code> and represents a database table. The key models are:</p>
+<p>Core database models are defined in <code>utils/core/models.py</code>. Each model is a Python class that inherits from <code>SQLModel</code> and represents a database table. The key core models are:</p>
 <ul>
 <li><code>Account</code>: Represents a user account with email and password hash</li>
 <li><code>User</code>: Represents a user profile with details like name and avatar; the email and password hash are stored in the related <code>Account</code> model</li>
@@ -415,34 +423,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><code>UserRoleLink</code>: Maps users to their roles (many-to-many relationship)</li>
 <li><code>RolePermissionLink</code>: Maps roles to their permissions (many-to-many relationship)</li>
 </ul>
-<p>Here’s an entity-relationship diagram (ERD) of the current database schema, automatically generated from our SQLModel definitions:</p>
+<p>Here’s an entity-relationship diagram (ERD) of the current core database schema, automatically generated from our SQLModel definitions:</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="static/schema.png" class="img-fluid figure-img"></p>
 <figcaption>Database Schema</figcaption>
 </figure>
 </div>
+<p>To extend the database schema, define your own models in <code>utils/app/models.py</code> and import them in <code>utils/core/db.py</code> to make sure they are included in the <code>metadata</code> object in the <code>create_all</code> function.</p>
 </section>
 <section id="database-helpers" class="level3">
 <h3 class="anchored" data-anchor-id="database-helpers">Database helpers</h3>
-<p>Database operations are facilitated by helper functions in <code>utils/db.py</code>. Key functions include:</p>
+<p>Database operations are facilitated by helper functions in <code>utils/core/db.py</code> (for core logic) and <code>utils/app/</code> (for app-specific helpers). Key functions in the core utils include:</p>
 <ul>
 <li><code>set_up_db()</code>: Initializes the database schema and default data (which we do on every application start in <code>main.py</code>)</li>
 <li><code>get_connection_url()</code>: Creates a database connection URL from environment variables in <code>.env</code></li>
 <li><code>get_session()</code>: Provides a database session for performing operations</li>
 </ul>
-<p>To perform database operations in route handlers, inject the database session as a dependency:</p>
+<p>To perform database operations in route handlers, inject the database session as a dependency (from <code>utils/core/db.py</code>):</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.get</span>(<span class="st">"/users"</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> get_users(session: Session <span class="op">=</span> Depends(get_session)):</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    users <span class="op">=</span> session.<span class="bu">exec</span>(select(User)).<span class="bu">all</span>()</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> users</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The session automatically handles transaction management, ensuring that database operations are atomic and consistent.</p>
-<p>There is also a helper method on the <code>User</code> model that checks if a user has a specific permission for a given organization. Its first argument must be a <code>ValidPermissions</code> enum value (from <code>utils/models.py</code>), and its second argument must be an <code>Organization</code> object or an <code>int</code> representing an organization ID:</p>
+<p>There is also a helper method on the <code>User</code> model that checks if a user has a specific permission for a given organization. Its first argument must be a <code>ValidPermissions</code> enum value (from <code>utils/core/models.py</code>), and its second argument must be an <code>Organization</code> object or an <code>int</code> representing an organization ID:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>permission <span class="op">=</span> ValidPermissions.CREATE_ROLE</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>organization <span class="op">=</span> session.<span class="bu">exec</span>(select(Organization).where(Organization.name <span class="op">==</span> <span class="st">"Acme Inc."</span>)).first()</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>user.has_permission(permission, organization)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>You should create custom <code>ValidPermissions</code> enum values for your application and validate that users have the necessary permissions before allowing them to modify organization data resources.</p>
+<p>You should create custom <code>AppPermissions</code> enum values for your application in <code>utils/app/</code> (if needed) and validate that users have the necessary permissions before allowing them to modify organization data resources.</p>
 </section>
 <section id="cascade-deletes" class="level3">
 <h3 class="anchored" data-anchor-id="cascade-deletes">Cascade deletes</h3>
