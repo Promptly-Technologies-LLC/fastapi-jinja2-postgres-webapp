@@ -22,6 +22,14 @@ If you are using VSCode or Cursor as your IDE, you will need to select the `uv`-
 
 If your IDE does not automatically detect and display this option, you can manually select the interpreter by selecting "Enter interpreter path" and then navigating to the `.venv/bin/python` subfolder in your project directory.
 
+### Extending the template
+
+The `routers/core/` and `utils/core/` directories contain the core backend logic for the template. 
+
+Your custom Python backend code should go primarily in the `routers/app/` and `utils/app/` directories.
+
+For the frontend, you will also need to develop custom Jinja2 templates in the `templates/` folder and add custom static assets in `static/`.
+
 ### Testing
 
 The project uses Pytest for unit testing. It's highly recommended to write and run tests before committing code to ensure nothing is broken!
