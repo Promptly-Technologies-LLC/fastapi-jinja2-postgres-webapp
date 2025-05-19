@@ -5,7 +5,7 @@ from sqlalchemy.orm import joinedload
 from urllib.parse import urlparse, parse_qs
 
 from main import app
-from utils.models import User, Account, Invitation
+from utils.core.models import User, Account, Invitation
 
 # --- Test Scenarios ---
 

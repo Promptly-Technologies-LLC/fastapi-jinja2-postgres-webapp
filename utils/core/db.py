@@ -1,11 +1,11 @@
 import os
 import logging
-from typing import Generator, Union, Sequence
+from typing import Union, Sequence
 from dotenv import load_dotenv
 from sqlalchemy.engine import URL
 from sqlmodel import create_engine, Session, SQLModel, select
-from utils.models import Role, Permission, RolePermissionLink
-from utils.enums import ValidPermissions
+from utils.core.models import Role, Permission, RolePermissionLink
+from utils.core.enums import ValidPermissions
 
 # Load environment variables from a .env file
 load_dotenv()
@@ -51,17 +51,6 @@ def get_connection_url() -> URL:
 
 # Create the database engine using the connection URL
 engine = create_engine(get_connection_url())
-
-
-def get_session() -> Generator[Session, None, None]:
-    """
-    Provides a database session for executing queries.
-
-    Yields:
-        Session: A SQLModel session object for database operations.
-    """
-    with Session(engine) as session:
-        yield session
 
 
 def assign_permissions_to_role(

@@ -1,8 +1,8 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, Request
 from fastapi.templating import Jinja2Templates
-from utils.dependencies import get_user_with_relations
-from utils.models import User
+from utils.core.dependencies import get_user_with_relations
+from utils.core.models import User
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 templates = Jinja2Templates(directory="templates")

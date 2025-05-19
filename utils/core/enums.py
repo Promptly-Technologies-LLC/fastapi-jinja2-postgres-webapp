@@ -1,6 +1,6 @@
-from enum import Enum
+from utils.app.enums import AppPermissions
 
-class ValidPermissions(Enum):
+class ValidPermissions(AppPermissions):
     DELETE_ORGANIZATION = "Delete Organization"
     EDIT_ORGANIZATION = "Edit Organization"
     INVITE_USER = "Invite User"

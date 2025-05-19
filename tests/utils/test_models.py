@@ -3,7 +3,7 @@ from typing import Optional
 from sqlmodel import select, Session
 from sqlalchemy.exc import IntegrityError
 import pytest
-from utils.models import (
+from utils.core.models import (
     Permission,
     Role,
     RolePermissionLink,

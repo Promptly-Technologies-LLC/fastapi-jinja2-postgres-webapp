@@ -1,4 +1,4 @@
-from utils.models import User
+from utils.core.models import User
 
 
 class NeedsNewTokens(Exception):

@@ -1,7 +1,7 @@
 
 from sqlmodel import Session, select, inspect
 from sqlalchemy import Engine
-from utils.db import (
+from utils.core.db import (
     get_connection_url,
     assign_permissions_to_role,
     create_default_roles,
@@ -9,7 +9,7 @@ from utils.db import (
     tear_down_db,
     set_up_db,
 )
-from utils.models import Role, Permission, Organization, RolePermissionLink, ValidPermissions
+from utils.core.models import Role, Permission, Organization, RolePermissionLink, ValidPermissions
 from tests.conftest import SetupError
 
 def test_get_connection_url():

@@ -7,10 +7,9 @@ from pydantic import EmailStr
 from sqlmodel import Session, select
 from logging import getLogger
 
-from utils.dependencies import get_authenticated_user, get_optional_user
-from utils.db import get_session
-from utils.models import User, Role, Account, Invitation, ValidPermissions, Organization
-from utils.invitations import send_invitation_email, process_invitation
+from utils.core.dependencies import get_authenticated_user, get_optional_user, get_session
+from utils.core.models import User, Role, Account, Invitation, ValidPermissions, Organization
+from utils.core.invitations import send_invitation_email, process_invitation
 from exceptions.http_exceptions import (
     UserIsAlreadyMemberError,
     ActiveInvitationExistsError,
@@ -22,8 +21,8 @@ from exceptions.http_exceptions import (
 )
 from exceptions.exceptions import EmailSendFailedError
 # Import the account router to generate URLs for login/register
-from routers.account import router as account_router
-from routers.organization import router as org_router # Already imported, check usage
+from routers.core.account import router as account_router
+from routers.core.organization import router as org_router # Already imported, check usage
 
 # Setup logger
 logger = getLogger("uvicorn.error")

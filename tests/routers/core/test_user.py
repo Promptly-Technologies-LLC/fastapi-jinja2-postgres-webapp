@@ -4,8 +4,8 @@ from sqlmodel import Session
 from unittest.mock import patch, MagicMock
 from tests.conftest import SetupError
 from main import app
-from utils.models import User, Role, Organization
-from utils.images import InvalidImageError
+from utils.core.models import User, Role, Organization
+from utils.core.images import InvalidImageError
 import re
 import pytest
 
@@ -58,7 +58,7 @@ def test_update_profile_unauthorized(unauth_client: TestClient):
     assert response.headers["location"] == app.url_path_for("read_login")
 
 
-@patch('routers.user.validate_and_process_image')
+@patch('routers.core.user.validate_and_process_image')
 def test_update_profile_authorized(
         mock_validate: MagicMock, auth_client: TestClient, test_user: User, session: Session
     ):
@@ -160,7 +160,7 @@ def test_delete_account_success(auth_client: TestClient, test_user: User, sessio
     assert user is None
 
 
-@patch('routers.user.validate_and_process_image')
+@patch('routers.core.user.validate_and_process_image')
 def test_get_avatar_authorized(
         mock_validate: MagicMock, auth_client: TestClient, test_user: User
     ):
@@ -199,7 +199,7 @@ def test_get_avatar_unauthorized(unauth_client: TestClient):
 
 
 # Add new test for invalid image
-@patch('routers.user.validate_and_process_image')
+@patch('routers.core.user.validate_and_process_image')
 def test_update_profile_invalid_image(
         mock_validate: MagicMock, auth_client: TestClient
     ):
