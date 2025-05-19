@@ -1,7 +1,7 @@
 # FastAPI, Jinja2, PostgreSQL Webapp Template
 
 
-![Screenshot of homepage](docs/static/Screenshot.png)
+![Screenshot of homepage](docs/static/screenshot.jpg)
 
 ## Quickstart
 
@@ -145,9 +145,13 @@ it into the .env file.
 
 Set your desired database name, username, and password in the .env file.
 
-To use password recovery, register a [Resend](https://resend.com/)
-account, verify a domain, get an API key, and paste the API key into the
-.env file.
+To use password recovery and other email features, register a
+[Resend](https://resend.com/) account, verify a domain, get an API key,
+and paste the API key and the email address you want to send emails from
+into the .env file. Note that you will need to [verify a domain through
+the Resend
+dashboard](https://resend.com/docs/dashboard/domains/introduction) to
+send emails from that domain.
 
 ### Start development database
 

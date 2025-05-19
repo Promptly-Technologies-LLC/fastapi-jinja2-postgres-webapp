@@ -7,6 +7,11 @@
 {% block auth_content %}
 <div class="login-form">
     <form method="POST" action="{{ url_for('login') }}" class="needs-validation" novalidate>
+        {# Add hidden input for invitation token if present #}
+        {% if invitation_token %}
+        <input type="hidden" name="invitation_token" value="{{ invitation_token }}">
+        {% endif %}
+
         <!-- Email Input -->
         <div class="mb-3">
             <label for="email" class="form-label">Email</label>

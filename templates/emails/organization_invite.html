@@ -1,0 +1,30 @@
+{% extends "emails/base_email.html" %}
+
+{% block email_title %}
+You're Invited to Join {{ organization_name }}!
+{% endblock %}
+
+{% block email_content %}
+<p>Hello,</p>
+<p>You have been invited to join the organization <strong>{{ organization_name }}</strong>.</p>
+<p>To accept this invitation and join the organization, please click the button below:</p>
+<table border="0" cellpadding="0" cellspacing="0" class="btn btn-primary">
+    <tbody>
+        <tr>
+            <td align="left">
+                <table border="0" cellpadding="0" cellspacing="0">
+                    <tbody>
+                        <tr>
+                            <td> <a href="{{ acceptance_link }}" target="_blank">Accept Invitation</a> </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<p>If you did not expect this invitation, you can safely ignore this email.</p>
+<p>This invitation link will expire in 7 days.</p>
+<p>Best regards,</p>
+<p>The Team</p>
+{% endblock %} 

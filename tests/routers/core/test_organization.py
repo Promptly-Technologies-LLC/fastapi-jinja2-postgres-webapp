@@ -1,5 +1,5 @@
-from utils.models import Organization, Role, Permission, ValidPermissions, User
-from utils.db import create_default_roles
+from utils.core.models import Organization, Role, Permission, ValidPermissions, User
+from utils.core.db import create_default_roles
 from main import app
 from sqlmodel import select
 from tests.conftest import SetupError

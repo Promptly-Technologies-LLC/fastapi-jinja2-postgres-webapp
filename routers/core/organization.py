@@ -5,10 +5,10 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from sqlalchemy.orm import selectinload
-from utils.db import get_session, create_default_roles
-from utils.dependencies import get_authenticated_user, get_user_with_relations
-from utils.models import Organization, User, Role, Account, utc_time
-from utils.enums import ValidPermissions
+from utils.core.db import create_default_roles
+from utils.core.dependencies import get_authenticated_user, get_user_with_relations, get_session
+from utils.core.models import Organization, User, Role, Account, utc_now, Invitation
+from utils.core.enums import ValidPermissions
 from exceptions.http_exceptions import (
     OrganizationNotFoundError, OrganizationNameTakenError, 
     InsufficientPermissionsError, OrganizationSetupError,
@@ -58,6 +58,9 @@ async def read_organization(
         )
     ).first()
     
+    # Fetch active invitations for the organization
+    active_invitations = Invitation.get_active_for_org(session, org_id)
+    
     # Pass all required context to the template
     return templates.TemplateResponse(
         request, 
@@ -66,7 +69,8 @@ async def read_organization(
             "organization": organization, 
             "user": user,
             "user_permissions": user_permissions,
-            "ValidPermissions": ValidPermissions
+            "ValidPermissions": ValidPermissions,
+            "active_invitations": active_invitations
         }
     )
 
@@ -176,7 +180,7 @@ def update_organization(
 
     # Update organization name
     organization.name = name
-    organization.updated_at = utc_time()
+    organization.updated_at = utc_now()
     session.add(organization)
     session.commit()
 
@@ -229,10 +233,10 @@ def invite_member(
             selectinload(Organization.roles).selectinload(Role.users)
         )
     ).first()
-    
+
     if not organization:
         raise OrganizationNotFoundError()
-    
+
     # Find the account and associated user by email
     account = session.exec(
         select(Account)
@@ -244,28 +248,28 @@ def invite_member(
     
     if not account or not account.user:
         raise UserNotFoundError()
-    
+
     invited_user = account.user
-    
+
     # Check if user is already a member of this organization
     is_already_member = False
     for role in organization.roles:
         if invited_user.id in [u.id for u in role.users]:
             is_already_member = True
             break
-    
+
     if is_already_member:
         raise UserAlreadyMemberError()
-    
+
     # Find the default "Member" role for this organization
     member_role = next(
         (role for role in organization.roles if role.name == "Member"),
         None
     )
-    
+
     if not member_role:
         raise DataIntegrityError(resource="Organization roles")
-    
+
     # Add the invited user to the Member role
     try:
         member_role.users.append(invited_user)
@@ -273,7 +277,7 @@ def invite_member(
     except Exception as e:
         session.rollback()
         raise
-    
+
     # Return to the organization page
     return RedirectResponse(
         url=router.url_path_for("read_organization", org_id=org_id),

@@ -7,6 +7,11 @@
 {% block auth_content %}
 <div class="register-form">
     <form method="POST" action="{{ url_for('register') }}" class="needs-validation" novalidate>
+        {# Add hidden input for invitation token if present #}
+        {% if invitation_token %}
+        <input type="hidden" name="invitation_token" value="{{ invitation_token }}">
+        {% endif %}
+
         <!-- Name Input -->
         <div class="mb-3">
             <label for="name" class="form-label">Name</label>
@@ -18,7 +23,8 @@
         <div class="mb-3">
             <label for="email" class="form-label">Email</label>
             <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required
-                   autocomplete="email">
+                   autocomplete="email"
+                   value="{{ email or '' }}"> {# Pre-fill email if provided #}
         </div>
 
         <!-- Password Input -->

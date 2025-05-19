@@ -5,7 +5,7 @@ from datetime import timedelta
 from urllib.parse import urlparse, parse_qs
 from starlette.datastructures import URLPath
 from main import app
-from utils.auth import (
+from utils.core.auth import (
     create_access_token,
     create_refresh_token,
     verify_password,
@@ -18,7 +18,7 @@ from utils.auth import (
     send_email_update_confirmation
 )
 from unittest.mock import patch, MagicMock
-from utils.models import EmailUpdateToken
+from utils.core.models import EmailUpdateToken
 
 
 def test_convert_python_regex_to_html() -> None:

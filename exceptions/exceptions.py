@@ -1,4 +1,4 @@
-from utils.models import User
+from utils.core.models import User
 
 
 class NeedsNewTokens(Exception):
@@ -6,3 +6,9 @@ class NeedsNewTokens(Exception):
         self.user = user
         self.access_token = access_token
         self.refresh_token = refresh_token
+
+
+# Define custom exception for email sending failure
+class EmailSendFailedError(Exception):
+    """Custom exception for email sending failures."""
+    pass

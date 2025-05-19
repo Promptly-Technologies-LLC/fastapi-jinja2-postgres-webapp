@@ -70,6 +70,7 @@ jobs:
           echo "SECRET_KEY=$(openssl rand -base64 32)" >> _environment
           echo "BASE_URL=http://localhost:8000" >> _environment
           echo "RESEND_API_KEY=resend_api_key" >> _environment
+          echo "EMAIL_FROM=noreply@promptlytechnologies.com" >> _environment
 
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@v2

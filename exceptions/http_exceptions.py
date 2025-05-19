@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from utils.enums import ValidPermissions
+from utils.core.enums import ValidPermissions
 
 class EmailAlreadyRegisteredError(HTTPException):
     def __init__(self):
@@ -145,3 +145,70 @@ class InvalidImageError(HTTPException):
 
     def __init__(self, message: str = "Invalid image file"):
         super().__init__(status_code=400, detail=message)
+
+
+# --- Invitation-specific Errors ---
+
+class UserIsAlreadyMemberError(HTTPException):
+    """Raised when trying to invite a user who is already a member of the organization."""
+    def __init__(self):
+        super().__init__(
+            status_code=409,
+            detail="This user is already a member of the organization."
+        )
+
+
+class ActiveInvitationExistsError(HTTPException):
+    """Raised when trying to invite a user for whom an active invitation already exists."""
+    def __init__(self):
+        super().__init__(
+            status_code=409,
+            detail="An active invitation already exists for this email address in this organization."
+        )
+
+
+class InvalidRoleForOrganizationError(HTTPException):
+    """Raised when a role provided does not belong to the target organization.
+    Note: If the role ID simply doesn't exist, a standard 404 RoleNotFoundError should be raised.
+    """
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            detail="The selected role does not belong to this organization."
+        )
+
+
+class InvitationEmailSendError(HTTPException):
+    """Raised when the invitation email fails to send."""
+    def __init__(self):
+        super().__init__(
+            status_code=500, # Internal Server Error seems appropriate
+            detail="Failed to send invitation email. Please try again later or contact support."
+        )
+
+
+class InvalidInvitationTokenError(HTTPException):
+    """Raised when an invitation token is invalid, expired, or not found."""
+    def __init__(self):
+        super().__init__(
+            status_code=404,
+            detail="Invitation not found or expired"
+        )
+
+
+class InvitationEmailMismatchError(HTTPException):
+    """Raised when a user attempts to accept an invitation sent to a different email address."""
+    def __init__(self):
+        super().__init__(
+            status_code=403,
+            detail="This invitation was sent to a different email address"
+        )
+
+
+class InvitationProcessingError(HTTPException):
+    """Raised when an error occurs during the processing of a valid invitation."""
+    def __init__(self, detail: str = "Failed to process invitation. Please try again later."):
+        super().__init__(
+            status_code=500, # Internal Server Error
+            detail=detail
+        )

@@ -7,8 +7,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from routers import account, dashboard, organization, role, user, static_pages
-from utils.dependencies import (
+from routers.core import account, dashboard, organization, role, user, static_pages, invitation
+from utils.core.dependencies import (
     get_optional_user
 )
 from exceptions.http_exceptions import (
@@ -18,8 +18,8 @@ from exceptions.http_exceptions import (
 from exceptions.exceptions import (
     NeedsNewTokens
 )
-from utils.db import set_up_db
-from utils.models import User
+from utils.core.db import set_up_db
+from utils.core.models import User
 
 logger = logging.getLogger("uvicorn.error")
 logger.setLevel(logging.DEBUG)
@@ -46,6 +46,7 @@ templates = Jinja2Templates(directory="templates")
 
 app.include_router(account.router)
 app.include_router(dashboard.router)
+app.include_router(invitation.router)
 app.include_router(organization.router)
 app.include_router(role.router)
 app.include_router(static_pages.router)

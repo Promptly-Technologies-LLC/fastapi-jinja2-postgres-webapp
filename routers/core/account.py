@@ -2,15 +2,15 @@
 from logging import getLogger
 from typing import Optional, Tuple
 from urllib.parse import urlparse
-from fastapi import APIRouter, Depends, BackgroundTasks, Form, Request
+from fastapi import APIRouter, Depends, BackgroundTasks, Form, Request, Query
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.datastructures import URLPath
 from pydantic import EmailStr
 from sqlmodel import Session, select
-from utils.models import User, DataIntegrityError, Account
-from utils.db import get_session
-from utils.auth import (
+from utils.core.models import User, DataIntegrityError, Account, Invitation
+from utils.core.dependencies import get_session
+from utils.core.auth import (
     HTML_PASSWORD_PATTERN,
     COMPILED_PASSWORD_PATTERN,
     oauth2_scheme_cookie,
@@ -22,7 +22,7 @@ from utils.auth import (
     send_reset_email,
     send_email_update_confirmation
 )
-from utils.dependencies import (
+from utils.core.dependencies import (
     get_authenticated_account,
     get_optional_user,
     get_account_from_reset_token,
@@ -32,10 +32,15 @@ from utils.dependencies import (
 from exceptions.http_exceptions import (
     EmailAlreadyRegisteredError,
     CredentialsError,
-    PasswordValidationError
+    PasswordValidationError,
+    InvalidInvitationTokenError,
+    InvitationEmailMismatchError,
+    InvitationProcessingError
 )
-from routers.dashboard import router as dashboard_router
-from routers.user import router as user_router
+from routers.core.dashboard import router as dashboard_router
+from routers.core.user import router as user_router
+from routers.core.organization import router as org_router
+from utils.core.invitations import process_invitation
 logger = getLogger("uvicorn.error")
 
 router = APIRouter(prefix="/account", tags=["account"])
@@ -97,7 +102,8 @@ def logout():
 async def read_login(
     request: Request,
     user: Optional[User] = Depends(get_optional_user),
-    email_updated: Optional[str] = "false"
+    email_updated: Optional[str] = Query("false"),
+    invitation_token: Optional[str] = Query(None)
 ):
     """
     Render login page or redirect to dashboard if already logged in.
@@ -106,14 +112,21 @@ async def read_login(
         return RedirectResponse(url=dashboard_router.url_path_for("read_dashboard"), status_code=302)
     return templates.TemplateResponse(
         "account/login.html",
-        {"request": request, "user": user, "email_updated": email_updated}
+        {
+            "request": request,
+            "user": user,
+            "email_updated": email_updated,
+            "invitation_token": invitation_token
+        }
     )
 
 
 @router.get("/register")
 async def read_register(
     request: Request,
-    user: Optional[User] = Depends(get_optional_user)
+    user: Optional[User] = Depends(get_optional_user),
+    email: Optional[EmailStr] = Query(None),
+    invitation_token: Optional[str] = Query(None)
 ):
     """
     Render registration page or redirect to dashboard if already logged in.
@@ -123,7 +136,13 @@ async def read_register(
 
     return templates.TemplateResponse(
         "account/register.html",
-        {"request": request, "user": user, "password_pattern": HTML_PASSWORD_PATTERN}
+        {
+            "request": request,
+            "user": user,
+            "password_pattern": HTML_PASSWORD_PATTERN,
+            "email": email,
+            "invitation_token": invitation_token
+        }
     )
 
 
@@ -204,38 +223,98 @@ async def register(
     email: EmailStr = Form(...),
     session: Session = Depends(get_session),
     _: None = Depends(validate_password_strength_and_match),
-    password: str = Form(...)
+    password: str = Form(...),
+    invitation_token: Optional[str] = Form(None)
 ) -> RedirectResponse:
     """
-    Register a new user account.
+    Register a new user account, optionally processing an invitation.
     """
     # Check if the email is already registered
-    account: Optional[Account] = session.exec(select(Account).where(
+    existing_account: Optional[Account] = session.exec(select(Account).where(
         Account.email == email)).one_or_none()
 
-    if account:
+    if existing_account:
         raise EmailAlreadyRegisteredError()
 
     # Hash the password
     hashed_password = get_password_hash(password)
 
-    # Create the account
+    # Create the account and user instances (don't commit yet)
     account = Account(email=email, hashed_password=hashed_password)
     session.add(account)
-    session.flush()  # Flush to get the account ID
-    
-    # Create the user
-    account.user = User(name=name, account_id=account.id)
-    session.add(account)
-    session.commit()
-    session.refresh(account)
+    session.flush() # Flush here to get account.id before creating User
 
-    # Create access token
-    access_token = create_access_token(data={"sub": email})
-    refresh_token = create_refresh_token(data={"sub": email})
+    # Ensure account has an ID after flush
+    if not account.id:
+        logger.error(f"Account ID not generated after flush for email {email}. Aborting registration.")
+        session.rollback() # Rollback the account add
+        raise DataIntegrityError(resource="Account ID generation")
+
+    new_user = User(name=name, account_id=account.id) # Use account.id
+    session.add(new_user)
+
+    # Default redirect target
+    redirect_url = dashboard_router.url_path_for("read_dashboard")
+
+    # Process invitation if token is provided (BEFORE final commit)
+    if invitation_token:
+        logger.info(f"Registration attempt with invitation token: {invitation_token} for email {email}")
+        # Fetch the invitation
+        statement = select(Invitation).where(Invitation.token == invitation_token)
+        invitation = session.exec(statement).first()
+
+        if not invitation or not invitation.is_active():
+            logger.warning(f"Invalid or inactive invitation token provided during registration: {invitation_token}")
+            # Consider raising a more generic error to avoid exposing token validity
+            raise InvalidInvitationTokenError()
+
+        # Verify email matches
+        if email != invitation.invitee_email:
+            logger.warning(
+                f"Invitation email mismatch for token {invitation_token} during registration. "
+                f"Account: {email}, Invitation: {invitation.invitee_email}"
+            )
+            # Consider raising a more generic error to avoid confirming email existence
+            raise InvitationEmailMismatchError()
+
+        # Process the invitation (adds changes to the session)
+        try:
+            logger.info(f"Processing invitation {invitation.id} for new user {new_user.name} ({email}) during registration.")
+            process_invitation(invitation, new_user, session)
+            # Set redirect to the organization page
+            redirect_url = org_router.url_path_for("read_organization", org_id=invitation.organization_id)
+            logger.info(f"Redirecting new user {new_user.name} to organization {invitation.organization_id} after accepting invitation {invitation.id}.")
+        except Exception as e:
+             logger.error(
+                 f"Error processing invitation {invitation.id} for new user {new_user.name} ({email}) during registration: {e}",
+                 exc_info=True
+             )
+             session.rollback()
+             raise InvitationProcessingError()
+
+    else:
+        logger.info(f"Standard registration for email {email}. Redirecting to dashboard.")
+
+    # Commit all changes (Account, User, potentially Invitation)
+    try:
+        session.commit()
+    except Exception as e:
+        logger.error(f"Error committing transaction during registration for {email}: {e}", exc_info=True)
+        session.rollback()
+        # Use DataIntegrityError for commit failure
+        raise DataIntegrityError(resource="Account/User registration")
+
+    # Refresh the account to ensure all relationships (like user) are loaded after commit
+    session.refresh(account)
+    # We might need the user object refreshed too if process_invitation modified it directly
+    # session.refresh(new_user) # Let's assume process_invitation only modifies the invitation object for now
+
+    # Create access token using the committed account's email
+    access_token = create_access_token(data={"sub": account.email, "fresh": True})
+    refresh_token = create_refresh_token(data={"sub": account.email})
     
     # Set cookie
-    response = RedirectResponse(url=dashboard_router.url_path_for("read_dashboard"), status_code=303)
+    response = RedirectResponse(url=str(redirect_url), status_code=303) # Use determined redirect_url
     response.set_cookie(
         key="access_token",
         value=access_token,
@@ -256,12 +335,63 @@ async def register(
 
 @router.post("/login", response_class=RedirectResponse)
 async def login(
-    account_and_session: Tuple[Account, Session] = Depends(get_account_from_credentials)
+    account_and_session: Tuple[Account, Session] = Depends(get_account_from_credentials),
+    invitation_token: Optional[str] = Form(None)
 ) -> RedirectResponse:
     """
-    Log in a user with valid credentials.
+    Log in a user with valid credentials and process invitation if token is provided.
     """
     account, session = account_and_session
+
+    # Default redirect target
+    redirect_url = dashboard_router.url_path_for("read_dashboard")
+
+    if invitation_token:
+        logger.info(f"Login attempt with invitation token: {invitation_token} for account {account.email}")
+        # Fetch the invitation
+        statement = select(Invitation).where(Invitation.token == invitation_token)
+        invitation = session.exec(statement).first()
+
+        if not invitation or not invitation.is_active():
+            logger.warning(f"Invalid or inactive invitation token provided during login: {invitation_token}")
+            raise InvalidInvitationTokenError()
+
+        # Verify email matches
+        if account.email != invitation.invitee_email:
+            logger.warning(
+                f"Invitation email mismatch for token {invitation_token}. "
+                f"Account: {account.email}, Invitation: {invitation.invitee_email}"
+            )
+            raise InvitationEmailMismatchError()
+
+        # Ensure user relationship is loaded for process_invitation
+        if not account.user:
+            logger.debug(f"Refreshing user relationship for account {account.id}")
+            session.refresh(account, attribute_names=["user"])
+            if not account.user:
+                 # This should not happen if the account has a valid user relationship
+                 logger.error(f"Failed to load user for account {account.id} during invitation processing.")
+                 raise DataIntegrityError(resource="User relation")
+
+        # Process the invitation
+        try:
+            logger.info(f"Processing invitation {invitation.id} for user {account.user.id} during login.")
+            process_invitation(invitation, account.user, session)
+            session.commit()
+            # Set redirect to the organization page
+            redirect_url = org_router.url_path_for("read_organization", org_id=invitation.organization_id)
+            logger.info(f"Redirecting user {account.user.id} to organization {invitation.organization_id} after accepting invitation {invitation.id}.")
+        except Exception as e:
+             logger.error(
+                 f"Error processing invitation {invitation.id} for user {account.user.id} during login: {e}",
+                 exc_info=True
+             )
+             session.rollback()
+             # Raise the specific invitation processing error
+             raise InvitationProcessingError()
+
+    else:
+        logger.info(f"Standard login for account {account.email}. Redirecting to dashboard.")
 
     # Create access token
     access_token = create_access_token(
@@ -270,7 +400,7 @@ async def login(
     refresh_token = create_refresh_token(data={"sub": account.email})
 
     # Set cookie
-    response = RedirectResponse(url=dashboard_router.url_path_for("read_dashboard"), status_code=303)
+    response = RedirectResponse(url=str(redirect_url), status_code=303)
     response.set_cookie(
         key="access_token",
         value=access_token,

@@ -1,71 +1,34 @@
 # Project Architecture
-- Keep GET routes in main.py and POST routes in routers/ directory
-- Name GET routes using read_<name> convention
+- Name GET routes using `read_<name>` convention
 - Follow Post-Redirect-Get (PRG) pattern for all form submissions
 - Use Jinja2 HTML templates for server-side rendering and minimize client-side JavaScript
 - Use forms for all POST routes
 - Validate form data comprehensively on the client side as first line of defense, with server-side Pydantic validation as fallback
+- Use middleware defined in main.py for centralized exception handling
+- Add type hints to all function signatures and variables for static type checking
 
 # File Structure
-- main.py: Application entry point and GET routes
-- routers/: POST route modules
-- templates/: Jinja2 templates
-- static/: Static assets
-- tests/: Unit tests
-- utils/: Helper functions and models
-- docker-compose.yml: Test database configuration
-- .env: Environment variables
-
-# Python/FastAPI Guidelines
-- For all POST routes, define request models in a separate section at the top of the router file
-- Implement as_form() classmethod for all form-handling request models
-- Use Pydantic for request/response models with @field_validator and custom exceptions for custom form validation
-- Use middleware defined in main.py for centralized exception handling
-- Add type hints to all function signatures and variables
-- Follow mypy type checking standards rigorously
-
-# Form Validation Strategy
-- Implement thorough client-side validation via HTML pattern attributes where possible and Javascript otherwise
-- Use Pydantic models with custom validators as server-side fallback
-- Handle validation errors through middleware exception handlers
-- Render validation_error.html template for failed server-side validation
+- `main.py`: Application entry point and GET routes
+- `routers/core`: Base webapp template API routes
+- `routers/app`: Application API routes that extend the template
+- `utils/core`, `utils/app`: Helper functions, FastAPI dependencies, database models
+- `templates/`: Jinja2 templates
+- `static/`: Static assets
+- `tests/`: Unit tests
+- `docker-compose.yml`: Test database configuration
+- `.env`: Environment variables
+- `docs/`: Quarto documentation website source files
 
 # Database Operations
 - Use SQLModel for all database interactions
-- Use get_session() from utils/db.py for database connections
-- Define database relational models explicitly in utils/models.py
-- Inject database session as dependency in route handlers
+- Use `get_session()` FastAPI dependency from `utils/core/dependencies.py` for database connections
 
 # Authentication System
-- JWT-based token authentication with separate access/refresh tokens and bcrypt for password hashing are defined in utils/auth.py
-- Password and email reset tokens with expiration and password reset email flow powered by Resend are defined in utils/auth.py
-- HTTP-only cookies are implemented with secure flag and SameSite=strict
-- Inject common_authenticated_parameters as a dependency in all authenticated GET routes
-- Inject common_unauthenticated_parameters as a dependency in all unauthenticated GET routes
-- Inject get_session as a dependency in all POST routes
-- Handle security-related errors without leaking information
-
-# Testing
-- Run mypy type checking before committing code
-- Write comprehensive unit tests using pytest
-- Test both success and error cases
-- Use test fixtures from tests/conftest.py: engine, session, client, test_user
-- set_up_database and clean_db fixtures are autoused by pytest to ensure clean database state
-
-# Error Handling
-- Use middleware for centralized exception handling
-- Define custom exception classes for specific error cases
-- Return appropriate HTTP status codes and error messages
-- Render error templates with context data
-- Log errors with "uvicorn.error" logger
-
-# Template Structure
-- Extend base.html for consistent layout
-- Use block tags for content sections
-- Include reusable components
-- Pass request object and context data to all templates
-- Keep form validation logic in corresponding templates
-- Use Bootstrap for styling
+- JWT-based token authentication with separate access/refresh tokens and bcrypt for password hashing are defined in `utils/core/auth.py`
+- Password and email reset tokens with expiration and password reset email flow powered by Resend are defined in `utils/core/auth.py`
+- HTTP-only cookies are implemented with secure flag and `SameSite=strict`
+- Inject `common_authenticated_parameters` as a dependency in all authenticated GET routes
+- Inject `common_unauthenticated_parameters` as a dependency in all unauthenticated GET routes
 
 # Contributing Guidelines
 - Follow existing code style and patterns
@@ -73,3 +36,4 @@
 - Ensure all tests pass before submitting PR
 - Update .qmd documentation files for significant changes
 - Use uv for dependency management
+- Run `uv run mypy .` to ensure code passes a static type check

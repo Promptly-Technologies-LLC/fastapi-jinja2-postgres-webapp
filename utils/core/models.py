@@ -3,10 +3,10 @@ from uuid import uuid4
 from datetime import datetime, UTC, timedelta
 from typing import Optional, List, Union
 from pydantic import EmailStr
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field, Relationship, Session, select
 from sqlalchemy import Column, Enum as SQLAlchemyEnum, LargeBinary, UniqueConstraint
 from sqlalchemy.orm import Mapped
-from utils.enums import ValidPermissions
+from utils.core.enums import ValidPermissions
 from exceptions.http_exceptions import DataIntegrityError
 
 logger = getLogger("uvicorn.error")
@@ -16,7 +16,7 @@ logger.setLevel(DEBUG)
 # --- Helper functions ---
 
 
-def utc_time():
+def utc_now():
     return datetime.now(UTC)
 
 
@@ -28,8 +28,8 @@ class Account(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     email: EmailStr = Field(index=True, unique=True)
     hashed_password: str
-    created_at: datetime = Field(default_factory=utc_time)
-    updated_at: datetime = Field(default_factory=utc_time)
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
     user: Mapped[Optional["User"]] = Relationship(
         back_populates="account",
@@ -120,8 +120,8 @@ class UserBase(SQLModel):
 # TODO: Automate change of updated_at when user is updated
 class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=utc_time)
-    updated_at: datetime = Field(default_factory=utc_time)
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
     account_id: Optional[int] = Field(foreign_key="account.id", unique=True)
     account: Mapped[Optional[Account]] = Relationship(
@@ -130,6 +130,9 @@ class User(UserBase, table=True):
     roles: Mapped[List["Role"]] = Relationship(
         back_populates="users",
         link_model=UserRoleLink
+    )
+    accepted_invitations: Mapped[List["Invitation"]] = Relationship(
+        back_populates="accepted_by"
     )
 
     @property
@@ -167,10 +170,16 @@ class User(UserBase, table=True):
 class Organization(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
-    created_at: datetime = Field(default_factory=utc_time)
-    updated_at: datetime = Field(default_factory=utc_time)
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
     roles: Mapped[List["Role"]] = Relationship(
+        back_populates="organization",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan"
+        }
+    )
+    invitations: Mapped[List["Invitation"]] = Relationship(
         back_populates="organization",
         sa_relationship_kwargs={
             "cascade": "all, delete-orphan"
@@ -208,8 +217,8 @@ class Role(SQLModel, table=True):
     name: str
     organization_id: int = Field(
         foreign_key="organization.id")
-    created_at: datetime = Field(default_factory=utc_time)
-    updated_at: datetime = Field(default_factory=utc_time)
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
     organization: Mapped[Organization] = Relationship(back_populates="roles")
     users: Mapped[List[User]] = Relationship(
@@ -219,6 +228,12 @@ class Role(SQLModel, table=True):
     permissions: Mapped[List["Permission"]] = Relationship(
         back_populates="roles",
         link_model=RolePermissionLink
+    )
+    invitations: Mapped[List["Invitation"]] = Relationship(
+        back_populates="role",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan"
+        }
     )
     
     __table_args__ = (
@@ -233,10 +248,51 @@ class Permission(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: ValidPermissions = Field(
         sa_column=Column(SQLAlchemyEnum(ValidPermissions, create_type=False)))
-    created_at: datetime = Field(default_factory=utc_time)
-    updated_at: datetime = Field(default_factory=utc_time)
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
     roles: Mapped[List[Role]] = Relationship(
         back_populates="permissions",
         link_model=RolePermissionLink
     )
+
+
+# --- New Invitation Model ---
+
+class Invitation(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    organization_id: int = Field(foreign_key="organization.id", index=True)
+    role_id: int = Field(foreign_key="role.id")
+    invitee_email: EmailStr = Field(index=True)
+
+    token: str = Field(default_factory=lambda: str(uuid4()), index=True, unique=True)
+    expires_at: datetime = Field(default_factory=lambda: utc_now() + timedelta(days=7))
+    created_at: datetime = Field(default_factory=utc_now)
+    used: bool = Field(default=False, index=True)
+    accepted_at: Optional[datetime] = Field(default=None)
+    accepted_by_user_id: Optional[int] = Field(default=None, foreign_key="user.id")
+
+    organization: "Organization" = Relationship(back_populates="invitations")
+    role: "Role" = Relationship(back_populates="invitations")
+    accepted_by: Optional["User"] = Relationship(
+        back_populates="accepted_invitations"
+    )
+
+    __table_args__ = (
+        UniqueConstraint("organization_id", "invitee_email", "used", name="uq_invitation_org_email_used"),
+    )
+
+    def is_expired(self) -> bool:
+        """Checks if the invitation has passed its expiry date."""
+        aware_expires_at = self.expires_at.replace(tzinfo=UTC) if self.expires_at.tzinfo is None else self.expires_at
+        return utc_now() > aware_expires_at
+
+    def is_active(self) -> bool:
+        """Checks if the invitation is currently valid (not used and not expired)."""
+        return not self.used and not self.is_expired()
+
+    @classmethod
+    def get_active_for_org(cls, session: Session, organization_id: int) -> list["Invitation"]:
+        statement = select(cls).where(cls.organization_id == organization_id, cls.used == False)
+        results = session.exec(statement).all()
+        return [inv for inv in results if not inv.is_expired()]

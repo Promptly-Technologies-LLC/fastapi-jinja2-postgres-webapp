@@ -72,26 +72,54 @@
             </table>
         </div>
         {% endif %}
+
+        {# Pending Invitations Section - Added #}
+        <hr class="my-4"> {# Optional separator #}
+        <h4>Pending Invitations</h4>
+        {% if active_invitations %}
+            <ul class="list-group list-group-flush">
+            {% for inv in active_invitations %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>{{ inv.invitee_email }} (Role: {{ inv.role.name }})</span>
+                    <small class="text-muted">Expires: {{ inv.expires_at.strftime('%Y-%m-%d') }}</small>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-muted">No pending invitations.</p>
+        {% endif %}
     </div>
 </div> 
 
-{# Invite Member Modal #}
+{# Invite Member Modal - Modified #}
 {% if ValidPermissions.INVITE_USER in user_permissions %}
 <div class="modal fade" id="inviteMemberModal" tabindex="-1" aria-labelledby="inviteMemberModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form method="POST" action="{{ url_for('invite_member', org_id=organization.id) }}">
+      {# Modified form action and added role selection #}
+      <form method="POST" action="{{ url_for('create_invitation') }}"> 
         <div class="modal-header">
           <h5 class="modal-title" id="inviteMemberModalLabel">Invite New Member</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <div class="mb-3">
-            <label for="email" class="form-label">Email Address</label>
-            <input type="email" class="form-control" id="email" name="email" placeholder="user@example.com" required>
-            <small class="form-text text-muted">Enter the email address of a user to invite them to this organization.</small>
+            <label for="invitee_email" class="form-label">Email Address</label>
+            {# Changed name attribute #}
+            <input type="email" class="form-control" id="invitee_email" name="invitee_email" placeholder="user@example.com" required>
           </div>
-          <input type="hidden" name="organization_id" value="{{ organization.id }}">
+          {# Added Role Selection Dropdown #}
+          <div class="mb-3">
+            <label for="role_id" class="form-label">Assign Role</label>
+            <select class="form-select" id="role_id" name="role_id" required>
+              <option value="" selected disabled>Select a role...</option>
+              {% for role in organization.roles %}
+                <option value="{{ role.id }}">{{ role.name }}</option>
+              {% endfor %}
+            </select>
+            <small class="form-text text-muted">Select the role the invited user will have.</small>
+          </div>
+          <input type="hidden" name="organization_id" value="{{ organization.id }}"> 
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
