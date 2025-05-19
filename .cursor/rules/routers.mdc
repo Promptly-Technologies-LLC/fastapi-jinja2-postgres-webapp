@@ -1,12 +1,12 @@
 ---
 description: Testing FastAPI routes
-globs: routers/*.py
+globs: routers/**/*.py
 alwaysApply: false
 ---
 Here are the five most critical patterns to maintain consistency when adding a new router:
 
 1. **Authentication & Dependency Injection**
-   - Import `get_authenticated_user` from `utils.dependencies` and include `user: User = Depends(get_authenticated_user)` in the arguments of routes requiring authentication
+   - Import `get_authenticated_user` from `utils.core.dependencies` and include `user: User = Depends(get_authenticated_user)` in the arguments of routes requiring authentication
    - Similarly, use the `get_optional_user` dependency for public routes with potential auth status
 
 2. **Validation Patterns**
@@ -21,7 +21,7 @@ Here are the five most critical patterns to maintain consistency when adding a n
    - Check permissions at both route and template levels via `user_permissions`
 
 4. **Database & Transaction Patterns**
-   - Inject session via `Depends(get_session)`
+   - Inject session via `Depends(get_session)` from `utils/core/dependencies.py`
    - Commit after writes and refresh objects where needed
    - Use `selectinload` for eager loading relationships
    - Follow PRG pattern with RedirectResponse after mutations

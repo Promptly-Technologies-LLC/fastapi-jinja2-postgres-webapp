@@ -1,4 +1,4 @@
-# utils.py
+# utils.core.py
 import os
 import re
 import jwt
@@ -13,7 +13,7 @@ from typing import Optional
 from jinja2.environment import Template
 from fastapi.templating import Jinja2Templates
 from fastapi import Cookie
-from utils.models import PasswordResetToken, EmailUpdateToken, Account
+from utils.core.models import PasswordResetToken, EmailUpdateToken, Account
 
 load_dotenv(override=True)
 resend.api_key = os.environ["RESEND_API_KEY"]

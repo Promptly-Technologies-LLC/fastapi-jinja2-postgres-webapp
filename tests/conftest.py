@@ -4,9 +4,9 @@ from sqlmodel import create_engine, Session, select
 from sqlalchemy import Engine
 from fastapi.testclient import TestClient
 from dotenv import load_dotenv
-from utils.db import get_connection_url, tear_down_db, set_up_db, create_default_roles
-from utils.models import User, PasswordResetToken, EmailUpdateToken, Organization, Role, Account, Invitation
-from utils.auth import get_password_hash, create_access_token, create_refresh_token
+from utils.core.db import get_connection_url, tear_down_db, set_up_db, create_default_roles
+from utils.core.models import User, PasswordResetToken, EmailUpdateToken, Organization, Role, Account, Invitation
+from utils.core.auth import get_password_hash, create_access_token, create_refresh_token
 from main import app
 from datetime import datetime, UTC, timedelta
 

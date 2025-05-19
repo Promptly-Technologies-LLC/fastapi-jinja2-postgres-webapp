@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from utils.enums import ValidPermissions
+from utils.core.enums import ValidPermissions
 
 class EmailAlreadyRegisteredError(HTTPException):
     def __init__(self):

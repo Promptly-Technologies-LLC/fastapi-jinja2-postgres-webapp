@@ -6,7 +6,7 @@ from pydantic import EmailStr
 from sqlmodel import SQLModel, Field, Relationship, Session, select
 from sqlalchemy import Column, Enum as SQLAlchemyEnum, LargeBinary, UniqueConstraint
 from sqlalchemy.orm import Mapped
-from utils.enums import ValidPermissions
+from utils.core.enums import ValidPermissions
 from exceptions.http_exceptions import DataIntegrityError
 
 logger = getLogger("uvicorn.error")

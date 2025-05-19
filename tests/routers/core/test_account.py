@@ -8,8 +8,8 @@ from html import unescape
 from sqlalchemy import inspect
 
 from main import app
-from utils.models import User, PasswordResetToken, EmailUpdateToken, Account
-from utils.auth import (
+from utils.core.models import User, PasswordResetToken, EmailUpdateToken, Account
+from utils.core.auth import (
     create_access_token,
     verify_password,
     validate_token,

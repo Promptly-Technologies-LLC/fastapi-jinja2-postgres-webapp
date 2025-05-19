@@ -3,15 +3,26 @@ from pydantic import EmailStr
 from sqlmodel import Session, select
 from sqlalchemy.orm import selectinload
 from datetime import UTC, datetime
-from typing import Optional, Tuple
-from utils.auth import (
+from typing import Optional, Tuple, Generator
+from utils.core.auth import (
     validate_token, create_access_token, create_refresh_token,
     oauth2_scheme_cookie, verify_password
 )
-from utils.db import get_session
-from utils.models import User, Role, PasswordResetToken, EmailUpdateToken, Account
+from utils.core.db import engine
+from utils.core.models import User, Role, PasswordResetToken, EmailUpdateToken, Account
 from exceptions.http_exceptions import AuthenticationError, CredentialsError, DataIntegrityError
 from exceptions.exceptions import NeedsNewTokens
+
+
+def get_session() -> Generator[Session, None, None]:
+    """
+    Provides a database session for executing queries.
+
+    Yields:
+        Session: A SQLModel session object for database operations.
+    """
+    with Session(engine) as session:
+        yield session
 
 
 def validate_token_and_get_account(

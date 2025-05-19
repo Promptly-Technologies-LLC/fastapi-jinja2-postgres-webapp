@@ -8,9 +8,9 @@ from fastapi.templating import Jinja2Templates
 from starlette.datastructures import URLPath
 from pydantic import EmailStr
 from sqlmodel import Session, select
-from utils.models import User, DataIntegrityError, Account, Invitation
-from utils.db import get_session
-from utils.auth import (
+from utils.core.models import User, DataIntegrityError, Account, Invitation
+from utils.core.dependencies import get_session
+from utils.core.auth import (
     HTML_PASSWORD_PATTERN,
     COMPILED_PASSWORD_PATTERN,
     oauth2_scheme_cookie,
@@ -22,7 +22,7 @@ from utils.auth import (
     send_reset_email,
     send_email_update_confirmation
 )
-from utils.dependencies import (
+from utils.core.dependencies import (
     get_authenticated_account,
     get_optional_user,
     get_account_from_reset_token,
@@ -37,10 +37,10 @@ from exceptions.http_exceptions import (
     InvitationEmailMismatchError,
     InvitationProcessingError
 )
-from routers.dashboard import router as dashboard_router
-from routers.user import router as user_router
-from routers.organization import router as org_router
-from utils.invitations import process_invitation
+from routers.core.dashboard import router as dashboard_router
+from routers.core.user import router as user_router
+from routers.core.organization import router as org_router
+from utils.core.invitations import process_invitation
 logger = getLogger("uvicorn.error")
 
 router = APIRouter(prefix="/account", tags=["account"])

@@ -1,7 +1,7 @@
 import pytest
 from PIL import Image
 import io
-from utils.images import (
+from utils.core.images import (
     validate_and_process_image,
     InvalidImageError,
     MAX_FILE_SIZE,

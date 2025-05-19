@@ -2,7 +2,7 @@
 
 import pytest
 from tests.conftest import SetupError
-from utils.models import Role, Permission, ValidPermissions, User
+from utils.core.models import Role, Permission, ValidPermissions, User
 from sqlmodel import Session, select, col
 import re
 from main import app

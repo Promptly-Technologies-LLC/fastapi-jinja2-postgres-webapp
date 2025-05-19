@@ -6,7 +6,7 @@ from sqlmodel import Session
 from jinja2.environment import Template
 from fastapi.templating import Jinja2Templates
 
-from utils.models import utc_now, Invitation, Organization, User
+from utils.core.models import utc_now, Invitation, Organization, User
 from exceptions.exceptions import EmailSendFailedError
 from exceptions.http_exceptions import DataIntegrityError
 

@@ -5,10 +5,10 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from sqlalchemy.orm import selectinload
-from utils.db import get_session, create_default_roles
-from utils.dependencies import get_authenticated_user, get_user_with_relations
-from utils.models import Organization, User, Role, Account, utc_now, Invitation
-from utils.enums import ValidPermissions
+from utils.core.db import create_default_roles
+from utils.core.dependencies import get_authenticated_user, get_user_with_relations, get_session
+from utils.core.models import Organization, User, Role, Account, utc_now, Invitation
+from utils.core.enums import ValidPermissions
 from exceptions.http_exceptions import (
     OrganizationNotFoundError, OrganizationNameTakenError, 
     InsufficientPermissionsError, OrganizationSetupError,
