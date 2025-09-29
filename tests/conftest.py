@@ -1,17 +1,15 @@
 import pytest
+import os
 from typing import Generator
 from sqlmodel import create_engine, Session, select
 from sqlalchemy import Engine
 from fastapi.testclient import TestClient
 from dotenv import load_dotenv
-from utils.core.db import get_connection_url, tear_down_db, set_up_db, create_default_roles
+from utils.core.db import get_connection_url, tear_down_db, set_up_db, create_default_roles, ensure_database_exists
 from utils.core.models import User, PasswordResetToken, EmailUpdateToken, Organization, Role, Account, Invitation
 from utils.core.auth import get_password_hash, create_access_token, create_refresh_token
 from main import app
 from datetime import datetime, UTC, timedelta
-
-# Load environment variables
-load_dotenv(override=True)
 
 # Define a custom exception for test setup errors
 class SetupError(Exception):
@@ -21,29 +19,44 @@ class SetupError(Exception):
         super().__init__(self.message)
 
 
-@pytest.fixture(scope="session")
-def engine() -> Engine:
+@pytest.fixture
+def env_vars(monkeypatch):
+    # Get valid db user, password, host, and port from .env
+    load_dotenv()
+    os.environ["DB_HOST"] = os.getenv("DB_HOST", "localhost")
+    os.environ["DB_PORT"] = os.getenv("DB_PORT", "5432")
+    os.environ["DB_USER"] = os.getenv("DB_USER", "appuser")
+    os.environ["DB_PASSWORD"] = os.getenv("DB_PASSWORD", "testpassword")
+
+    # monkeypatch remaining env vars
+    with monkeypatch.context() as m:
+        m.setenv("SECRET_KEY", "testsecretkey")
+        m.setenv("HOST_NAME", "Test Organization")
+        m.setenv("DB_HOST", os.getenv("DB_HOST", "localhost"))
+        m.setenv("DB_PORT", os.getenv("DB_PORT", "5432"))
+        m.setenv("DB_USER", os.getenv("DB_USER", "appuser"))
+        m.setenv("DB_PASSWORD", os.getenv("DB_PASSWORD", "testpassword"))
+        m.setenv("DB_NAME", "qual2db4-test-db")
+        m.setenv("RESEND_API_KEY", "test")
+        m.setenv("EMAIL_FROM", "test@example.com")
+        m.setenv("QUALTRICS_BASE_URL", "test")
+        m.setenv("QUALTRICS_API_TOKEN", "test")
+        yield
+
+
+@pytest.fixture
+def engine(env_vars) -> Engine:
     """
     Create a new SQLModel engine for the test database.
     Use PostgreSQL for testing to match production environment.
     """
     # Use PostgreSQL for testing to match production environment
+    ensure_database_exists(get_connection_url())
     engine = create_engine(get_connection_url())
-    return engine
+    set_up_db(drop=True)
 
+    yield engine
 
-@pytest.fixture(scope="session", autouse=True)
-def set_up_database(engine) -> Generator[None, None, None]:
-    """
-    Set up the test database before running the test suite.
-    Drop all tables and recreate them to ensure a clean state.
-    """
-    # Drop and recreate all tables using the helpers from db.py
-    tear_down_db()
-    set_up_db(drop=False)
-    
-    yield
-    
     # Clean up after tests
     tear_down_db()
 
@@ -57,20 +70,7 @@ def session(engine) -> Generator[Session, None, None]:
         yield session
 
 
-@pytest.fixture(autouse=True)
-def clean_db(session: Session) -> None:
-    """
-    Cleans up the database tables before each test.
-    """
-    # Don't delete permissions as they are required for tests
-    for model in (PasswordResetToken, EmailUpdateToken, User, Role, Organization, Account):
-        for record in session.exec(select(model)).all():
-            session.delete(record)
-
-    session.commit()
-
-
-@pytest.fixture()
+@pytest.fixture
 def test_account(session: Session) -> Account:
     """
     Creates a test account in the database.
@@ -85,7 +85,7 @@ def test_account(session: Session) -> Account:
     return account
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_user(session: Session, test_account: Account) -> User:
     """
     Creates a test user in the database linked to the test account.
@@ -103,7 +103,7 @@ def test_user(session: Session, test_account: Account) -> User:
     return user
 
 
-@pytest.fixture()
+@pytest.fixture
 def unauth_client(session: Session) -> Generator[TestClient, None, None]:
     """
     Provides a TestClient instance without authentication.
@@ -112,7 +112,7 @@ def unauth_client(session: Session) -> Generator[TestClient, None, None]:
     yield client
 
 
-@pytest.fixture()
+@pytest.fixture
 def auth_client(session: Session, test_account: Account, test_user: User) -> Generator[TestClient, None, None]:
     """
     Provides a TestClient instance with valid authentication tokens.

@@ -1,14 +1,10 @@
 import os
 import logging
 from typing import Union, Sequence
-from dotenv import load_dotenv
 from sqlalchemy.engine import URL
-from sqlmodel import create_engine, Session, SQLModel, select
+from sqlmodel import create_engine, Session, SQLModel, select, text
 from utils.core.models import Role, Permission, RolePermissionLink
 from utils.core.enums import ValidPermissions
-
-# Load environment variables from a .env file
-load_dotenv()
 
 # Set up a logger for error reporting
 logger = logging.getLogger("uvicorn.error")
@@ -22,6 +18,19 @@ default_roles = ["Owner", "Administrator", "Member"]
 
 # --- Database connection functions ---
 
+
+def ensure_database_exists(url: URL) -> None:
+    dbname = url.database
+    server_url = url.set(database="postgres")
+    engine = create_engine(server_url, isolation_level="AUTOCOMMIT")
+    with engine.connect() as conn:
+        exists = conn.execute(
+            text("SELECT 1 FROM pg_database WHERE datname = :n"),
+            {"n": dbname},
+        ).scalar()
+        if not exists:
+            conn.execute(text(f'CREATE DATABASE "{dbname}"'))
+            
 
 def get_connection_url() -> URL:
     """
@@ -47,10 +56,6 @@ def get_connection_url() -> URL:
     )
 
     return database_url
-
-
-# Create the database engine using the connection URL
-engine = create_engine(get_connection_url())
 
 
 def assign_permissions_to_role(

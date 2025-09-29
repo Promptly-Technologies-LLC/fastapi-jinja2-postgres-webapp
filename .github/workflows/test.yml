@@ -47,26 +47,18 @@ jobs:
 
       - name: Set env variables for pytest
         run: |
-          echo "DB_USER=postgres" >> $GITHUB_ENV
-          echo "DB_PASSWORD=postgres" >> $GITHUB_ENV
           echo "DB_HOST=127.0.0.1" >> $GITHUB_ENV
           echo "DB_PORT=5432" >> $GITHUB_ENV
-          echo "DB_NAME=test_db" >> $GITHUB_ENV
-          echo "SECRET_KEY=$(openssl rand -base64 32)" >> $GITHUB_ENV
-          echo "BASE_URL=http://localhost:8000" >> $GITHUB_ENV
-          echo "RESEND_API_KEY=resend_api_key" >> $GITHUB_ENV
-          echo "EMAIL_FROM=noreply@promptlytechnologies.com" >> $GITHUB_ENV
+          echo "DB_USER=postgres" >> $GITHUB_ENV
+          echo "DB_PASSWORD=postgres" >> $GITHUB_ENV
         
       - name: Verify environment variables
         run: |
           echo "Checking if required environment variables are set..."
-          [ -n "$DB_USER" ] && \
-          [ -n "$DB_PASSWORD" ] && \
           [ -n "$DB_HOST" ] && \
           [ -n "$DB_PORT" ] && \
-          [ -n "$DB_NAME" ] && \
-          [ -n "$SECRET_KEY" ] && \
-          [ -n "$RESEND_API_KEY" ]
+          [ -n "$DB_USER" ] && \
+          [ -n "$DB_PASSWORD" ]
 
       - name: Run type checking with mypy
         run: uv run mypy .
