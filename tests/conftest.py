@@ -45,7 +45,7 @@ def env_vars(monkeypatch):
 
 
 @pytest.fixture
-def engine(env_vars) -> Engine:
+def engine(env_vars):
     """
     Create a new SQLModel engine for the test database.
     Use PostgreSQL for testing to match production environment.
@@ -136,12 +136,12 @@ def test_organization(session: Session) -> Organization:
     session.add(organization)
     session.flush()
 
-    if organization.id is None:
+    if organization.id:
+        # Use the utility function to create default roles and assign permissions
+        # This function handles the commit internally
+        create_default_roles(session, organization.id, check_first=False)
+    else:
         pytest.fail("Failed to get organization ID after flush")
-
-    # Use the utility function to create default roles and assign permissions
-    # This function handles the commit internally
-    create_default_roles(session, organization.id, check_first=False)
 
     return organization
 

@@ -375,15 +375,19 @@ async def login(
 
         # Process the invitation
         try:
-            logger.info(f"Processing invitation {invitation.id} for user {account.user.id} during login.")
-            process_invitation(invitation, account.user, session)
-            session.commit()
-            # Set redirect to the organization page
-            redirect_url = org_router.url_path_for("read_organization", org_id=invitation.organization_id)
-            logger.info(f"Redirecting user {account.user.id} to organization {invitation.organization_id} after accepting invitation {invitation.id}.")
+            if account.user and account.user.id:
+                logger.info(f"Processing invitation {invitation.id} for user {account.user.id} during login.")
+                process_invitation(invitation, account.user, session)
+                session.commit()
+                # Set redirect to the organization page
+                redirect_url = org_router.url_path_for("read_organization", org_id=invitation.organization_id)
+                logger.info(f"Redirecting user {account.user.id} to organization {invitation.organization_id} after accepting invitation {invitation.id}.")
+            else:
+                logger.error("User has no ID during invitation processing.")
+                raise DataIntegrityError(resource="User ID")
         except Exception as e:
              logger.error(
-                 f"Error processing invitation {invitation.id} for user {account.user.id} during login: {e}",
+                 "Error processing invitation during login: {e}",
                  exc_info=True
              )
              session.rollback()
