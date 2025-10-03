@@ -386,13 +386,13 @@ async def login(
                 logger.error("User has no ID during invitation processing.")
                 raise DataIntegrityError(resource="User ID")
         except Exception as e:
-             logger.error(
-                 "Error processing invitation during login: {e}",
-                 exc_info=True
-             )
-             session.rollback()
-             # Raise the specific invitation processing error
-             raise InvitationProcessingError()
+            logger.error(
+                f"Error processing invitation during login: {e}",
+                exc_info=True
+            )
+            session.rollback()
+            # Raise the specific invitation processing error
+            raise InvitationProcessingError()
 
     else:
         logger.info(f"Standard login for account {account.email}. Redirecting to dashboard.")

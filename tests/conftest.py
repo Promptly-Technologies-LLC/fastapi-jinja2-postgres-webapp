@@ -24,18 +24,19 @@ def env_vars(monkeypatch):
 
     # monkeypatch remaining env vars
     with monkeypatch.context() as m:
-        m.setenv("SECRET_KEY", "testsecretkey")
-        m.setenv("HOST_NAME", "Test Organization")
         # Get valid db user, password, host, and port from env
         m.setenv("DB_HOST", os.getenv("DB_HOST", "localhost"))
         m.setenv("DB_PORT", os.getenv("DB_PORT", "5432"))
         m.setenv("DB_USER", os.getenv("DB_USER", "appuser"))
         m.setenv("DB_PASSWORD", os.getenv("DB_PASSWORD", "testpassword"))
+        m.setenv("SECRET_KEY", "testsecretkey")
+        m.setenv("HOST_NAME", "Test Organization")
         m.setenv("DB_NAME", "qual2db4-test-db")
         m.setenv("RESEND_API_KEY", "test")
         m.setenv("EMAIL_FROM", "test@example.com")
         m.setenv("QUALTRICS_BASE_URL", "test")
         m.setenv("QUALTRICS_API_TOKEN", "test")
+        m.setenv("BASE_URL", "http://localhost:8000")
         yield
 
 
