@@ -1,7 +1,6 @@
 import os
 from logging import getLogger, DEBUG
 import resend
-from dotenv import load_dotenv
 from sqlmodel import Session
 from jinja2.environment import Template
 from fastapi.templating import Jinja2Templates
@@ -10,10 +9,6 @@ from utils.core.models import utc_now, Invitation, Organization, User
 from exceptions.exceptions import EmailSendFailedError
 from exceptions.http_exceptions import DataIntegrityError
 
-# Load environment variables
-load_dotenv(override=True)
-resend.api_key = os.environ.get("RESEND_API_KEY")
-BASE_URL = os.getenv("BASE_URL", "")
 
 # Setup logging
 logger = getLogger("uvicorn.error")
@@ -33,7 +28,7 @@ def generate_invitation_link(token: str) -> str:
     Returns:
         The complete URL for accepting the invitation.
     """
-    return f"{BASE_URL}/invitations/accept?token={token}"
+    return f"{os.getenv('BASE_URL')}/invitations/accept?token={token}"
 
 
 def send_invitation_email(invitation: Invitation, session: Session) -> None:
@@ -45,6 +40,7 @@ def send_invitation_email(invitation: Invitation, session: Session) -> None:
         session: The database session (used here primarily for potential future needs or consistency,
                  though direct DB access might be minimal if invitation object is pre-loaded).
     """
+    resend.api_key = os.getenv("RESEND_API_KEY")
     if not resend.api_key:
         logger.error("Resend API key is not configured. Cannot send invitation email.")
         raise EmailSendFailedError("Resend API key is not configured.")

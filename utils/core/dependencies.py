@@ -8,7 +8,7 @@ from utils.core.auth import (
     validate_token, create_access_token, create_refresh_token,
     oauth2_scheme_cookie, verify_password
 )
-from utils.core.db import engine
+from utils.core.db import create_engine, get_connection_url
 from utils.core.models import User, Role, PasswordResetToken, EmailUpdateToken, Account
 from exceptions.http_exceptions import AuthenticationError, CredentialsError, DataIntegrityError
 from exceptions.exceptions import NeedsNewTokens
@@ -21,6 +21,7 @@ def get_session() -> Generator[Session, None, None]:
     Yields:
         Session: A SQLModel session object for database operations.
     """
+    engine = create_engine(get_connection_url())
     with Session(engine) as session:
         yield session
 

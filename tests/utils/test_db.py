@@ -12,7 +12,7 @@ from utils.core.db import (
 from utils.core.models import Role, Permission, Organization, RolePermissionLink, ValidPermissions
 from tests.conftest import SetupError
 
-def test_get_connection_url():
+def test_get_connection_url(env_vars):
     """Test that get_connection_url returns a valid URL object"""
     url = get_connection_url()
     assert url.drivername == "postgresql"
