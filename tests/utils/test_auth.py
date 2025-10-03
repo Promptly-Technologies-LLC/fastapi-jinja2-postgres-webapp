@@ -69,7 +69,7 @@ def test_invalid_token_type(env_vars) -> None:
     decoded = validate_token(access_token, "refresh")
     assert decoded is None
 
-def test_password_reset_url_generation() -> None:
+def test_password_reset_url_generation(env_vars) -> None:
     """
     Tests that the password reset URL is correctly formatted and contains
     the required query parameters.
@@ -151,7 +151,7 @@ def test_password_pattern() -> None:
     password = "aA1" * 3
     assert re.match(COMPILED_PASSWORD_PATTERN, password) is None
 
-def test_email_update_url_generation() -> None:
+def test_email_update_url_generation(env_vars) -> None:
     """
     Tests that the email update confirmation URL is correctly formatted and contains
     the required query parameters.
