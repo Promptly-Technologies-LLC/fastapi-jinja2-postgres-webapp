@@ -2,11 +2,10 @@ import pytest
 import os
 from typing import Generator
 from sqlmodel import create_engine, Session, select
-from sqlalchemy import Engine
 from fastapi.testclient import TestClient
 from dotenv import load_dotenv
 from utils.core.db import get_connection_url, tear_down_db, set_up_db, create_default_roles, ensure_database_exists
-from utils.core.models import User, PasswordResetToken, EmailUpdateToken, Organization, Role, Account, Invitation
+from utils.core.models import User, Organization, Role, Account, Invitation
 from utils.core.auth import get_password_hash, create_access_token, create_refresh_token
 from main import app
 from datetime import datetime, UTC, timedelta
@@ -21,17 +20,13 @@ class SetupError(Exception):
 
 @pytest.fixture
 def env_vars(monkeypatch):
-    # Get valid db user, password, host, and port from .env
     load_dotenv()
-    os.environ["DB_HOST"] = os.getenv("DB_HOST", "localhost")
-    os.environ["DB_PORT"] = os.getenv("DB_PORT", "5432")
-    os.environ["DB_USER"] = os.getenv("DB_USER", "appuser")
-    os.environ["DB_PASSWORD"] = os.getenv("DB_PASSWORD", "testpassword")
 
     # monkeypatch remaining env vars
     with monkeypatch.context() as m:
         m.setenv("SECRET_KEY", "testsecretkey")
         m.setenv("HOST_NAME", "Test Organization")
+        # Get valid db user, password, host, and port from env
         m.setenv("DB_HOST", os.getenv("DB_HOST", "localhost"))
         m.setenv("DB_PORT", os.getenv("DB_PORT", "5432"))
         m.setenv("DB_USER", os.getenv("DB_USER", "appuser"))
