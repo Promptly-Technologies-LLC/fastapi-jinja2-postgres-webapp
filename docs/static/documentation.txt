@@ -789,13 +789,14 @@ Here's an entity-relationship diagram (ERD) of the current core database schema,
 import sys
 sys.path.append("..")
 from utils.core.models import *
-from utils.core.db import engine
+from utils.core.db import get_connection_url
+from sqlmodel import create_engine
 from sqlalchemy import MetaData
 from sqlalchemy_schemadisplay import create_schema_graph
 
 # Create the directed graph
 graph = create_schema_graph(
-    engine=engine,
+    engine=create_engine(get_connection_url()),
     metadata=SQLModel.metadata,
     show_datatypes=True,
     show_indexes=True,
