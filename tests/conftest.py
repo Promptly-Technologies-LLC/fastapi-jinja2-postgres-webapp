@@ -25,10 +25,10 @@ def env_vars(monkeypatch):
     # monkeypatch remaining env vars
     with monkeypatch.context() as m:
         # Get valid db user, password, host, and port from env
-        m.setenv("DB_HOST", os.getenv("DB_HOST", "localhost"))
+        m.setenv("DB_HOST", os.getenv("DB_HOST", "127.0.0.1"))
         m.setenv("DB_PORT", os.getenv("DB_PORT", "5432"))
-        m.setenv("DB_USER", os.getenv("DB_USER", "appuser"))
-        m.setenv("DB_PASSWORD", os.getenv("DB_PASSWORD", "testpassword"))
+        m.setenv("DB_USER", os.getenv("DB_USER", "postgres"))
+        m.setenv("DB_PASSWORD", os.getenv("DB_PASSWORD", "postgres"))
         m.setenv("SECRET_KEY", "testsecretkey")
         m.setenv("HOST_NAME", "Test Organization")
         m.setenv("DB_NAME", "qual2db4-test-db")

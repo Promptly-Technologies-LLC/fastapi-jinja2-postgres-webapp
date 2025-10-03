@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.13"]
         os: [ubuntu-latest]
     
     runs-on: ${{ matrix.os }}
@@ -20,7 +20,7 @@ jobs:
       postgres:
         image: postgres:latest
         env:
-          POSTGRES_DB: test_db
+          POSTGRES_DB: db
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         ports:
@@ -44,21 +44,6 @@ jobs:
 
       - name: Install project
         run: uv sync --all-extras --dev
-
-      - name: Set env variables for pytest
-        run: |
-          echo "DB_HOST=127.0.0.1" >> $GITHUB_ENV
-          echo "DB_PORT=5432" >> $GITHUB_ENV
-          echo "DB_USER=postgres" >> $GITHUB_ENV
-          echo "DB_PASSWORD=postgres" >> $GITHUB_ENV
-        
-      - name: Verify environment variables
-        run: |
-          echo "Checking if required environment variables are set..."
-          [ -n "$DB_HOST" ] && \
-          [ -n "$DB_PORT" ] && \
-          [ -n "$DB_USER" ] && \
-          [ -n "$DB_PASSWORD" ]
 
       - name: Run type checking with mypy
         run: uv run mypy .
