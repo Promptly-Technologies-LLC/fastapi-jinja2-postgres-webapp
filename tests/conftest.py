@@ -34,8 +34,6 @@ def env_vars(monkeypatch):
         m.setenv("DB_NAME", "qual2db4-test-db")
         m.setenv("RESEND_API_KEY", "test")
         m.setenv("EMAIL_FROM", "test@example.com")
-        m.setenv("QUALTRICS_BASE_URL", "test")
-        m.setenv("QUALTRICS_API_TOKEN", "test")
         m.setenv("BASE_URL", "http://localhost:8000")
         yield
 

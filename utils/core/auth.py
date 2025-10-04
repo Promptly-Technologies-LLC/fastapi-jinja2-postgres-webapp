@@ -177,7 +177,7 @@ def send_reset_email(email: str, session: Session) -> None:
             .where(
                 PasswordResetToken.account_id == account.id,
                 PasswordResetToken.expires_at > datetime.now(UTC),
-                not PasswordResetToken.used
+                PasswordResetToken.used == False  # noqa: E712 - SQL expression for boolean false
             )
         ).first()
 
@@ -238,7 +238,7 @@ def send_email_update_confirmation(
         .where(
             EmailUpdateToken.account_id == account_id,
             EmailUpdateToken.expires_at > datetime.now(UTC),
-            not EmailUpdateToken.used
+            EmailUpdateToken.used == False  # noqa: E712 - SQL expression for boolean false
         )
     ).first()
 
