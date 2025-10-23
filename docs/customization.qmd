@@ -258,7 +258,7 @@ organization = session.exec(select(Organization).where(Organization.name == "Acm
 user.has_permission(permission, organization)
 ```
 
-You should create custom `AppPermissions` enum values for your application in `utils/app/` (if needed) and validate that users have the necessary permissions before allowing them to modify organization data resources.
+You can add custom permission enum values to the `ValidPermissions` enum in `utils/core/enums.py` (below the core permissions section) and validate that users have the necessary permissions before allowing them to modify organization data resources.
 
 ### Cascade deletes
 
