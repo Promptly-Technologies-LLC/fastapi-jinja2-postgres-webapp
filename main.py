@@ -1,6 +1,7 @@
 import logging
 from typing import Optional
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Depends, status
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -28,6 +29,7 @@ logger.setLevel(logging.DEBUG)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Optional startup logic
+    load_dotenv()
     set_up_db()
     yield
     # Optional shutdown logic
