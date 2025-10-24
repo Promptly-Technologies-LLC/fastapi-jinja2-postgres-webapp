@@ -31,7 +31,7 @@ def env_vars(monkeypatch):
         m.setenv("DB_PASSWORD", os.getenv("DB_PASSWORD", "postgres"))
         m.setenv("SECRET_KEY", "testsecretkey")
         m.setenv("HOST_NAME", "Test Organization")
-        m.setenv("DB_NAME", "qual2db4-test-db")
+        m.setenv("DB_NAME", "webapp-test-db")
         m.setenv("RESEND_API_KEY", "test")
         m.setenv("EMAIL_FROM", "test@example.com")
         m.setenv("BASE_URL", "http://localhost:8000")
