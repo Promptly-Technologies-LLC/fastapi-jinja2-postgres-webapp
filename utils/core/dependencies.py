@@ -1,4 +1,4 @@
-from fastapi import Depends, Form
+from fastapi import Depends, Form, Request
 from pydantic import EmailStr
 from sqlmodel import Session, select
 from sqlalchemy.orm import selectinload
@@ -322,3 +322,28 @@ def get_user_with_relations(
     ).one()
 
     return eager_user
+
+
+async def get_user_from_request(request: Request) -> Optional[User]:
+    """
+    Helper function to get user from request cookies in exception handlers.
+    Exception handlers can't use Depends(), so we manually extract tokens and get the user.
+    """
+    access_token = request.cookies.get("access_token")
+    refresh_token = request.cookies.get("refresh_token")
+    tokens = (access_token, refresh_token)
+
+    # Get a database session
+    engine = create_engine(get_connection_url())
+    with Session(engine) as session:
+        user, new_access_token, new_refresh_token = get_user_from_tokens(tokens, session)
+
+        # If we got new tokens, we'd normally raise NeedsNewTokens, but in an exception
+        # handler we can't do that easily. For now, just return the user.
+        # The tokens will be refreshed on the next request.
+        if user and new_access_token and new_refresh_token:
+            # Note: We can't easily set cookies here since we're in an exception handler.
+            # The user will need to make another request to get new tokens.
+            pass
+
+        return user
