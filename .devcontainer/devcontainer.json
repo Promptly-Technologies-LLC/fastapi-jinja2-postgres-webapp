@@ -1,0 +1,36 @@
+{
+  "name": "FastAPI Jinja2 Postgres WebApp",
+  "workspaceFolder": "/workspaces/fastapi-jinja2-postgres-webapp",
+
+  // Ensure .env exists before Docker Compose processes env_file entries
+  "initializeCommand": "bash .devcontainer/ensure-env.sh",
+
+  // Start the Postgres sidecar using the existing compose file
+  "dockerComposeFile": [
+    "../docker-compose.yml",
+    "docker-compose.yml"
+  ],
+  "service": "app",
+  "runServices": ["db"],
+  "shutdownAction": "stopCompose",
+
+  // Forward common app/db ports
+  "forwardPorts": [8000, 5432],
+  "portsAttributes": {
+    "8000": { "label": "FastAPI", "onAutoForward": "openBrowser" },
+    "5432": { "label": "PostgreSQL" }
+  },
+
+  // Prepare env, install uv, and sync deps
+  "postCreateCommand": "bash .devcontainer/init-env.sh && curl -LsSf https://astral.sh/uv/install.sh | sh && ~/.local/bin/uv sync",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  }
+}
+
