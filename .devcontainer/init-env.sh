@@ -13,11 +13,11 @@ if [ ! -f ".env" ]; then
   fi
 fi
 
-# Ensure DB_HOST points to the compose service name for in-container access
+# Ensure DB_HOST points to host.docker.internal for DooD sibling container access
 if grep -q '^DB_HOST=' .env; then
-  sed -i 's/^DB_HOST=.*/DB_HOST=db/' .env
+  sed -i 's/^DB_HOST=.*/DB_HOST=host.docker.internal/' .env
 else
-  echo 'DB_HOST=db' >> .env
+  echo 'DB_HOST=host.docker.internal' >> .env
 fi
 
 generate_secret() {
@@ -42,5 +42,5 @@ else
   echo "SECRET_KEY=$(generate_secret)" >> .env
 fi
 
-echo "Environment prepared. DB_HOST set to 'db' and SECRET_KEY ensured."
+echo "Environment prepared. DB_HOST set to 'host.docker.internal' and SECRET_KEY ensured."
 

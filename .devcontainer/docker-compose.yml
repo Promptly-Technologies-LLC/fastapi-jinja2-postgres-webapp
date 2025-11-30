@@ -1,25 +1,15 @@
 services:
-  app:
-    image: mcr.microsoft.com/devcontainers/python:3.13-bookworm
-    container_name: fastapi-jinja2-postgres-webapp-app
-    volumes:
-      - ..:/workspaces/${localWorkspaceFolderBasename}:cached
-    working_dir: /workspaces/${localWorkspaceFolderBasename}
-    depends_on:
-      - db
-    command: sleep infinity
-
-  # Override/augment settings for the db service defined in the root compose file
   db:
-    # Avoid requiring a project-level .env during compose evaluation
-    env_file: []
+    image: postgres:16
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
       POSTGRES_DB: ${DB_NAME:-fastapi-jinja2-postgres-webapp}
-    ports:
-      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
 
-# Note: The 'db' service is defined in the repository root docker-compose.yml.
-# This file is merged with that one via devcontainer.json dockerComposeFile array.
-
+volumes:
+  pgdata:
