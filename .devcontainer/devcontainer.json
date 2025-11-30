@@ -3,7 +3,7 @@
   "workspaceFolder": "/workspaces/fastapi-jinja2-postgres-webapp",
 
   // Ensure .env exists before Docker Compose processes env_file entries
-  "initializeCommand": "bash .devcontainer/ensure-env.sh",
+  "initializeCommand": "cd \"${localWorkspaceFolder}\" && bash .devcontainer/ensure-env.sh",
 
   // Start the Postgres sidecar using the existing compose file
   "dockerComposeFile": [
