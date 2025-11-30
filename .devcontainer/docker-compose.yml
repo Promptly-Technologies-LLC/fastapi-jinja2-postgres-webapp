@@ -3,8 +3,8 @@ services:
     image: mcr.microsoft.com/devcontainers/python:3.13-bookworm
     container_name: fastapi-jinja2-postgres-webapp-app
     volumes:
-      - ..:/workspaces/fastapi-jinja2-postgres-webapp:cached
-    working_dir: /workspaces/fastapi-jinja2-postgres-webapp
+      - ..:/workspaces/${localWorkspaceFolderBasename}:cached
+    working_dir: /workspaces/${localWorkspaceFolderBasename}
     depends_on:
       - db
     command: sleep infinity

@@ -1,9 +1,9 @@
 {
   "name": "FastAPI Jinja2 Postgres WebApp",
-  "workspaceFolder": "/workspaces/fastapi-jinja2-postgres-webapp",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 
   // Ensure .env exists before Docker Compose processes env_file entries
-  "initializeCommand": "cd \"${localWorkspaceFolder}\" && bash .devcontainer/ensure-env.sh",
+  "initializeCommand": "bash \"${localWorkspaceFolder}/.devcontainer/ensure-env.sh\"",
 
   // Start the Postgres sidecar using the existing compose file
   "dockerComposeFile": [
