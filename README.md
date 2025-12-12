@@ -182,11 +182,10 @@ uv run mypy .
 ## Developing with LLMs
 
 The `.cursor/rules` folder contains a set of AI rules for working on
-this codebase in the Cursor IDE. We have also provided an
-[llms.txt](static/llms.txt) system prompt file for use with other
-agentic LLM workflows and exposed the full Markdown-formatted project
-documentation as a [single text file](docs/static/documentation.txt) for
-easy downloading and embedding for RAG.
+this codebase in the Cursor IDE. We have also exposed the full
+Markdown-formatted project documentation as a [single text
+file](docs/static/documentation.txt) for easy downloading and embedding
+for RAG.
 
 ## Contributing
 
