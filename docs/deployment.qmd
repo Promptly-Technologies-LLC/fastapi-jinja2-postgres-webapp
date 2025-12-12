@@ -237,6 +237,42 @@ DB_APPUSER_PASSWORD=your-password
 DB_SSLMODE=require
 ```
 
+### Setting Up a Restricted Application User
+
+When using connection pooling, it's a security best practice to create a separate database user with restricted permissions for your application's runtime connections. This follows the principle of least privilege - the app user can only perform the operations it needs, limiting potential damage from SQL injection or other vulnerabilities.
+
+Connect to your database as the admin user and run:
+
+```sql
+-- Create the application user
+CREATE USER appuser WITH PASSWORD 'your-secure-password';
+
+-- Grant connect permission
+GRANT CONNECT ON DATABASE yourdb TO appuser;
+
+-- Grant usage on the public schema
+GRANT USAGE ON SCHEMA public TO appuser;
+
+-- Grant permissions on all existing tables
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO appuser;
+
+-- Grant permissions on sequences (needed for auto-incrementing IDs)
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO appuser;
+
+-- Ensure future tables also get these permissions
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO appuser;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO appuser;
+```
+
+Then configure your environment to use this user for pooled connections:
+
+```bash
+DB_APPUSER=appuser
+DB_APPUSER_PASSWORD=your-secure-password
+```
+
+Keep your admin credentials (`DB_USER`, `DB_PASSWORD`) for direct connections used during schema migrations or administrative tasks.
+
 ### When to Use Connection Pooling
 
 Consider using a connection pooler when:
