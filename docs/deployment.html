@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.8.26">
+<meta name="generator" content="quarto-1.8.27">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -72,10 +72,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-587c61ba64f3a5504c4d52d930310e48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-0b37c64f34216b628666a8dac638b53b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-afa37c5c79185640b9c231024f4fe5ea.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -183,6 +183,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#deploying-and-configuring-the-fastapi-app" id="toc-deploying-and-configuring-the-fastapi-app" class="nav-link" data-scroll-target="#deploying-and-configuring-the-fastapi-app">Deploying and Configuring the FastAPI App</a>
   <ul class="collapse">
   <li><a href="#on-modal.com" id="toc-on-modal.com" class="nav-link" data-scroll-target="#on-modal.com">On Modal.com</a></li>
+  </ul></li>
+  <li><a href="#connection-pooling" id="toc-connection-pooling" class="nav-link" data-scroll-target="#connection-pooling">Connection Pooling</a>
+  <ul class="collapse">
+  <li><a href="#configuring-pooled-connections" id="toc-configuring-pooled-connections" class="nav-link" data-scroll-target="#configuring-pooled-connections">Configuring Pooled Connections</a></li>
+  <li><a href="#example-supabase-with-connection-pooling" id="toc-example-supabase-with-connection-pooling" class="nav-link" data-scroll-target="#example-supabase-with-connection-pooling">Example: Supabase with Connection Pooling</a></li>
+  <li><a href="#setting-up-a-restricted-application-user" id="toc-setting-up-a-restricted-application-user" class="nav-link" data-scroll-target="#setting-up-a-restricted-application-user">Setting Up a Restricted Application User</a></li>
+  <li><a href="#when-to-use-connection-pooling" id="toc-when-to-use-connection-pooling" class="nav-link" data-scroll-target="#when-to-use-connection-pooling">When to Use Connection Pooling</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -362,9 +369,89 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="testing-the-deployment" class="level4">
 <h4 class="anchored" data-anchor-id="testing-the-deployment">Testing the Deployment</h4>
 <p>Access the provided Modal URL in your browser. Browse the site and test the registration and password reset features to ensure database and Resend connections work.</p>
-
-
 </section>
+</section>
+</section>
+<section id="connection-pooling" class="level2">
+<h2 class="anchored" data-anchor-id="connection-pooling">Connection Pooling</h2>
+<p>When deploying to production with many concurrent connections or in serverless environments, you may want to use an external connection pooler like <a href="https://www.pgbouncer.org/">PgBouncer</a>, <a href="https://supabase.com/docs/guides/database/connecting-to-postgres#connection-pooler">Supabase Pooler</a>, or <a href="https://aws.amazon.com/rds/proxy/">AWS RDS Proxy</a>.</p>
+<p>Connection poolers sit between your application and database, managing a pool of persistent connections. This reduces connection overhead and allows your application to handle more concurrent requests without exhausting database connections.</p>
+<section id="configuring-pooled-connections" class="level3">
+<h3 class="anchored" data-anchor-id="configuring-pooled-connections">Configuring Pooled Connections</h3>
+<p>This template supports switching between direct and pooled database connections via the <code>USE_POOL</code> environment variable.</p>
+<p><strong>Direct mode (default):</strong> Set <code>USE_POOL=0</code> or leave it unset. The application connects directly to the database using:</p>
+<ul>
+<li><code>DB_HOST</code> - Database host</li>
+<li><code>DB_PORT</code> - Database port (typically 5432)</li>
+<li><code>DB_NAME</code> - Database name</li>
+<li><code>DB_USER</code> - Database username</li>
+<li><code>DB_PASSWORD</code> - Database password</li>
+</ul>
+<p><strong>Pooled mode:</strong> Set <code>USE_POOL=1</code>. The application connects via the pooler using:</p>
+<ul>
+<li><code>DB_HOST</code> - Pooler host (may be the same as the database host)</li>
+<li><code>DB_POOL_PORT</code> - Pooler port (typically 6543 for PgBouncer)</li>
+<li><code>DB_POOL_NAME</code> - Database name for pooled connections</li>
+<li><code>DB_APPUSER</code> - Application-specific database user</li>
+<li><code>DB_APPUSER_PASSWORD</code> - Application user password</li>
+</ul>
+<p>Both modes support <code>DB_SSLMODE</code> (defaults to <code>prefer</code>) for configuring SSL connections.</p>
+</section>
+<section id="example-supabase-with-connection-pooling" class="level3">
+<h3 class="anchored" data-anchor-id="example-supabase-with-connection-pooling">Example: Supabase with Connection Pooling</h3>
+<p>Supabase provides a built-in PgBouncer pooler. To use it:</p>
+<ol type="1">
+<li>In your Supabase dashboard, go to Settings &gt; Database</li>
+<li>Find the “Connection pooling” section and copy the pooler connection string</li>
+<li>Extract the host, port, database, user, and password from the connection string</li>
+<li>Configure your environment:</li>
+</ol>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="va">USE_POOL</span><span class="op">=</span>1</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="va">DB_HOST</span><span class="op">=</span>aws-0-us-east-1.pooler.supabase.com</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="va">DB_POOL_PORT</span><span class="op">=</span>6543</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="va">DB_POOL_NAME</span><span class="op">=</span>postgres</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="va">DB_APPUSER</span><span class="op">=</span>postgres.yourproject</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="va">DB_APPUSER_PASSWORD</span><span class="op">=</span>your-password</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="va">DB_SSLMODE</span><span class="op">=</span>require</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="setting-up-a-restricted-application-user" class="level3">
+<h3 class="anchored" data-anchor-id="setting-up-a-restricted-application-user">Setting Up a Restricted Application User</h3>
+<p>When using connection pooling, it’s a security best practice to create a separate database user with restricted permissions for your application’s runtime connections. This follows the principle of least privilege - the app user can only perform the operations it needs, limiting potential damage from SQL injection or other vulnerabilities.</p>
+<p>Connect to your database as the admin user and run:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Create the application user</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="fu">USER</span> appuser <span class="kw">WITH</span> <span class="kw">PASSWORD</span> <span class="st">'your-secure-password'</span>;</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- Grant connect permission</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="kw">GRANT</span> <span class="kw">CONNECT</span> <span class="kw">ON</span> <span class="kw">DATABASE</span> yourdb <span class="kw">TO</span> appuser;</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co">-- Grant usage on the public schema</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="kw">GRANT</span> <span class="kw">USAGE</span> <span class="kw">ON</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">TO</span> appuser;</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="co">-- Grant permissions on all existing tables</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="kw">GRANT</span> <span class="kw">SELECT</span>, <span class="kw">INSERT</span>, <span class="kw">UPDATE</span>, <span class="kw">DELETE</span> <span class="kw">ON</span> <span class="kw">ALL</span> <span class="kw">TABLES</span> <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">TO</span> appuser;</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="co">-- Grant permissions on sequences (needed for auto-incrementing IDs)</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="kw">GRANT</span> <span class="kw">USAGE</span>, <span class="kw">SELECT</span> <span class="kw">ON</span> <span class="kw">ALL</span> SEQUENCES <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">TO</span> appuser;</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a><span class="co">-- Ensure future tables also get these permissions</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">DEFAULT</span> <span class="kw">PRIVILEGES</span> <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">GRANT</span> <span class="kw">SELECT</span>, <span class="kw">INSERT</span>, <span class="kw">UPDATE</span>, <span class="kw">DELETE</span> <span class="kw">ON</span> <span class="kw">TABLES</span> <span class="kw">TO</span> appuser;</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">DEFAULT</span> <span class="kw">PRIVILEGES</span> <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">GRANT</span> <span class="kw">USAGE</span>, <span class="kw">SELECT</span> <span class="kw">ON</span> SEQUENCES <span class="kw">TO</span> appuser;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Then configure your environment to use this user for pooled connections:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="va">DB_APPUSER</span><span class="op">=</span>appuser</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="va">DB_APPUSER_PASSWORD</span><span class="op">=</span>your-secure-password</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Keep your admin credentials (<code>DB_USER</code>, <code>DB_PASSWORD</code>) for direct connections used during schema migrations or administrative tasks.</p>
+</section>
+<section id="when-to-use-connection-pooling" class="level3">
+<h3 class="anchored" data-anchor-id="when-to-use-connection-pooling">When to Use Connection Pooling</h3>
+<p>Consider using a connection pooler when:</p>
+<ul>
+<li>Running in serverless environments (Modal, AWS Lambda, Vercel) where cold starts create many new connections</li>
+<li>Your application handles many concurrent requests</li>
+<li>You’re hitting database connection limits</li>
+<li>You want to reduce connection latency for frequently-accessed queries</li>
+</ul>
+
+
 </section>
 </section>
 
