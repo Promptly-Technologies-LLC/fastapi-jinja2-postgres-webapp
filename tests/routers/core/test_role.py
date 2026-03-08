@@ -581,11 +581,12 @@ def test_organization_page_role_delete_access(auth_client_owner, auth_client_adm
     assert re.search(delete_form_pattern, member_response.text, re.DOTALL) is None
 
     # Built-in roles should not have delete forms for anyone
+    # Use (?:(?!</form>)[\s\S])*? to prevent matching across form boundaries
     for built_in_role_id in (1, 2, 3):
         built_in_delete_pattern = (
             rf'<form[^>]*action="http://testserver{re.escape(str(app.url_path_for("delete_role")))}"[^>]*>'
-            rf'.*?<input type="hidden" name="id" value="{built_in_role_id}">'
-            rf'.*?</form>'
+            rf'(?:(?!</form>)[\s\S])*?<input type="hidden" name="id" value="{built_in_role_id}">'
+            rf'(?:(?!</form>)[\s\S])*?</form>'
         )
         assert re.search(built_in_delete_pattern, owner_response.text, re.DOTALL) is None
         assert re.search(built_in_delete_pattern, admin_response.text, re.DOTALL) is None
