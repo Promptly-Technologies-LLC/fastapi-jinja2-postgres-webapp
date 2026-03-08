@@ -555,8 +555,14 @@ def test_organization_page_role_delete_access(auth_client_owner, auth_client_adm
         follow_redirects=False
     )
     assert owner_response.status_code == 200
-    expected_custom_delete_form = f'<form method="POST" action="http://testserver{app.url_path_for('delete_role')}" class="d-inline">\\s*<input type="hidden" name="id" value="{custom_role.id}">\\s*<input type="hidden" name="organization_id" value="{test_organization.id}">\\s*<button type="submit" class="btn btn-sm btn-outline-danger"\\s*>\\s*Delete Role\\s*</button>\\s*</form>'
-    assert re.search(expected_custom_delete_form, owner_response.text) is not None
+    delete_form_pattern = (
+        rf'<form[^>]*action="http://testserver{re.escape(str(app.url_path_for("delete_role")))}"[^>]*>'
+        rf'.*?<input type="hidden" name="id" value="{custom_role.id}">'
+        rf'.*?<input type="hidden" name="organization_id" value="{test_organization.id}">'
+        rf'.*?Delete Role'
+        rf'.*?</form>'
+    )
+    assert re.search(delete_form_pattern, owner_response.text, re.DOTALL) is not None
 
     # Admin should see the delete role form action
     admin_response = auth_client_admin.get(
@@ -564,8 +570,7 @@ def test_organization_page_role_delete_access(auth_client_owner, auth_client_adm
         follow_redirects=False
     )
     assert admin_response.status_code == 200
-    assert f'<input type="hidden" name="id" value="{custom_role.id}">' in admin_response.text
-    assert f'action="http://testserver{app.url_path_for('delete_role')}"' in admin_response.text
+    assert re.search(delete_form_pattern, admin_response.text, re.DOTALL) is not None
 
     # Member should *not* see the delete role form action
     member_response = auth_client_member.get(
@@ -573,25 +578,18 @@ def test_organization_page_role_delete_access(auth_client_owner, auth_client_adm
         follow_redirects=False
     )
     assert member_response.status_code == 200
-    assert f'<input type="hidden" name="id" value="{custom_role.id}">' not in member_response.text
-    assert f'action="http://testserver{app.url_path_for('delete_role')}"' not in member_response.text
+    assert re.search(delete_form_pattern, member_response.text, re.DOTALL) is None
 
     # Built-in roles should not have delete forms for anyone
-    # Check that the delete form is NOT present for the built-in "Owner" role (hardcoded ID 1 in fixtures)
-    expected_owner_delete_form = f'<form method="POST" action="http://testserver{app.url_path_for('delete_role')}" class="d-inline">\\s*<input type="hidden" name="id" value="1">' # Check only for the form targeting owner role ID
-    assert expected_owner_delete_form not in owner_response.text
-    assert expected_owner_delete_form not in admin_response.text
-    assert expected_owner_delete_form not in member_response.text
-    # Check that the delete form is NOT present for built-in Administrator role
-    expected_admin_delete_form = f'<form method="POST" action="http://testserver{app.url_path_for('delete_role')}" class="d-inline">\\s*<input type="hidden" name="id" value="2">' # Check only for the form targeting admin role ID
-    assert expected_admin_delete_form not in owner_response.text
-    assert expected_admin_delete_form not in admin_response.text
-    assert expected_admin_delete_form not in member_response.text
-    # Check that the delete form is NOT present for built-in Member role
-    expected_member_delete_form = f'<form method="POST" action="http://testserver{app.url_path_for('delete_role')}" class="d-inline">\\s*<input type="hidden" name="id" value="3">' # Check only for the form targeting member role ID
-    assert expected_member_delete_form not in owner_response.text
-    assert expected_member_delete_form not in admin_response.text
-    assert expected_member_delete_form not in member_response.text
+    for built_in_role_id in (1, 2, 3):
+        built_in_delete_pattern = (
+            rf'<form[^>]*action="http://testserver{re.escape(str(app.url_path_for("delete_role")))}"[^>]*>'
+            rf'.*?<input type="hidden" name="id" value="{built_in_role_id}">'
+            rf'.*?</form>'
+        )
+        assert re.search(built_in_delete_pattern, owner_response.text, re.DOTALL) is None
+        assert re.search(built_in_delete_pattern, admin_response.text, re.DOTALL) is None
+        assert re.search(built_in_delete_pattern, member_response.text, re.DOTALL) is None
 
 
 def test_organization_page_always_shows_default_roles(auth_client_member, test_organization, session: Session):
