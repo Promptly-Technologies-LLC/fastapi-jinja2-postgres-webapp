@@ -5,23 +5,26 @@
 
   "features": {
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
-    "ghcr.io/devcontainers/features/github-cli:1": {}
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers-extra/features/uv:1": {}
   },
 
   "runArgs": [
     "--add-host=host.docker.internal:host-gateway"
   ],
 
+  "remoteEnv": {
+    "DOCKER_API_VERSION": "1.43"
+  },
+
   "forwardPorts": [8000, 5432],
   "portsAttributes": {
     "8000": { "label": "FastAPI", "onAutoForward": "openBrowser" },
     "5432": { "label": "PostgreSQL" }
   },
-
   "initializeCommand": "bash \"${localWorkspaceFolder}/.devcontainer/ensure-env.sh\"",
   "postStartCommand": "docker compose -f .devcontainer/docker-compose.yml up -d",
   "postCreateCommand": "bash .devcontainer/init-env.sh && curl -LsSf https://astral.sh/uv/install.sh | sh && ~/.local/bin/uv sync",
-
   "customizations": {
     "vscode": {
       "extensions": [
