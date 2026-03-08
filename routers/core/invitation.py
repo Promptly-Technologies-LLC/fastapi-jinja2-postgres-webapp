@@ -132,7 +132,7 @@ async def create_invitation(
         session.rollback()
         raise HTTPException(status_code=500, detail="An unexpected error occurred.")
 
-    # Return HTMX partial or redirect (PRG pattern)
+    # HTMX: return partial; non-HTMX: PRG redirect
     if is_htmx_request(request):
         active_invitations = Invitation.get_active_for_org(session, organization_id)
         return templates.TemplateResponse(
