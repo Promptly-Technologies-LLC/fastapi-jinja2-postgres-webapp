@@ -346,4 +346,8 @@ async def get_user_from_request(request: Request) -> Optional[User]:
             # The user will need to make another request to get new tokens.
             pass
 
+        if user:
+            # Eagerly load avatar so it's available after the session closes
+            _ = user.avatar
+
         return user

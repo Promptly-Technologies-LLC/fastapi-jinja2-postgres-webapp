@@ -114,12 +114,17 @@ class RolePermissionLink(SQLModel, table=True):
 
 class UserBase(SQLModel):
     name: Optional[str] = None
-    avatar_data: Optional[bytes] = Field(
-        default=None, sa_column=Column(LargeBinary)
-    )
-    avatar_content_type: Optional[str] = Field(
-        default=None
-    )
+
+
+class UserAvatar(SQLModel, table=True):
+    __tablename__ = "useravatar"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", unique=True, index=True)
+    avatar_data: bytes = Field(sa_column=Column(LargeBinary, nullable=False))
+    avatar_content_type: str
+
+    user: Mapped["User"] = Relationship(back_populates="avatar")
 
 
 # TODO: Prevent deleting a user who is sole owner of an organization
@@ -132,6 +137,13 @@ class User(UserBase, table=True):
     account_id: Optional[int] = Field(foreign_key="private.account.id", unique=True)
     account: Mapped[Optional[Account]] = Relationship(
         back_populates="user"
+    )
+    avatar: Mapped[Optional["UserAvatar"]] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan",
+            "uselist": False
+        }
     )
     roles: Mapped[List["Role"]] = Relationship(
         back_populates="users",
