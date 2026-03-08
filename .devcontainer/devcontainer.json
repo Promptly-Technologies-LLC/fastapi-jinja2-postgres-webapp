@@ -4,7 +4,8 @@
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 
   "features": {
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
 
   "runArgs": [
@@ -25,7 +26,8 @@
     "vscode": {
       "extensions": [
         "ms-python.python",
-        "ms-python.vscode-pylance"
+        "ms-python.vscode-pylance",
+        "anthropic.claude-code"
       ]
     }
   }
