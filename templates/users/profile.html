@@ -25,7 +25,7 @@
         <div class="card-header">
             Basic Information
         </div>
-        <div class="card-body">
+        <div class="card-body" id="profile-display">
             <p><strong>Name:</strong> {{ user.name }}</p>
             <p><strong>Email:</strong> {{ user.account.email }}</p>
             <!-- Display user avatar or silhouette if no avatar is available -->
@@ -46,8 +46,13 @@
         <div class="card-header">
             Edit Profile
         </div>
-        <div class="card-body">
-            <form action="{{ url_for('update_profile') }}" method="post" enctype="multipart/form-data">
+        <div class="card-body" id="profile-form">
+            <form action="{{ url_for('update_profile') }}" method="post" enctype="multipart/form-data"
+                  hx-post="{{ url_for('update_profile') }}"
+                  hx-target="#profile-display"
+                  hx-swap="innerHTML"
+                  hx-encoding="multipart/form-data"
+                  hx-on::after-request="if(event.detail.successful) { document.getElementById('edit-profile').style.display='none'; document.getElementById('basic-info').style.display='block'; }">
                 <div class="mb-3">
                     <label for="name" class="form-label">Name</label>
                     <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}">
@@ -76,10 +81,13 @@
             Update Email
         </div>
         <div class="card-body">
-            <form action="{{ url_for('request_email_update') }}" method="post">
+            <form action="{{ url_for('request_email_update') }}" method="post"
+                  hx-post="{{ url_for('request_email_update') }}"
+                  hx-swap="none">
+                <input type="hidden" name="email" value="{{ user.account.email }}">
                 <div class="mb-3">
                     <label for="new_email" class="form-label">New Email Address</label>
-                    <input type="email" class="form-control" id="new_email" name="new_email" value="{{ user.account.email }}">
+                    <input type="email" class="form-control" id="new_email" name="new_email" placeholder="newemail@example.com">
                 </div>
                 <p class="form-text">A confirmation link will be sent to your new email address to verify the change.</p>
                 <button type="submit" class="btn btn-primary">Update Email</button>

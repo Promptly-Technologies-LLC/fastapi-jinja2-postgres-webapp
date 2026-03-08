@@ -1,0 +1,26 @@
+{# Partial: profile edit form card body. Swapped into #profile-form. #}
+<form action="{{ url_for('update_profile') }}" method="post" enctype="multipart/form-data"
+      hx-post="{{ url_for('update_profile') }}"
+      hx-target="#profile-display"
+      hx-swap="innerHTML"
+      hx-encoding="multipart/form-data"
+      hx-on::after-request="if(event.detail.successful) { document.getElementById('edit-profile').style.display='none'; document.getElementById('basic-info').style.display='block'; }">
+    <div class="mb-3">
+        <label for="name" class="form-label">Name</label>
+        <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}">
+    </div>
+    <div class="mb-3">
+        <label for="avatar_file" class="form-label">Avatar</label>
+        <input type="file" class="form-control" id="avatar_file" name="avatar_file" accept="image/*">
+        <div class="form-text">
+            <ul class="mb-0">
+                <li>Maximum file size: {{ max_file_size_mb }} MB</li>
+                <li>Minimum dimension: {{ min_dimension }}x{{ min_dimension }} pixels</li>
+                <li>Maximum dimension: {{ max_dimension }}x{{ max_dimension }} pixels</li>
+                <li>Allowed formats: {{ allowed_formats|join(', ') }}</li>
+                <li>Image will be cropped to a square</li>
+            </ul>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+</form>

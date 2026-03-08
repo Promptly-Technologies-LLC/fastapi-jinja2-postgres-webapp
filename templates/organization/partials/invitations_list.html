@@ -1,0 +1,9 @@
+{# Partial: <li> items for pending invitations. Swapped into <ul id="invitations-list">. #}
+{% for inv in active_invitations %}
+<li class="list-group-item d-flex justify-content-between align-items-center">
+    <span>{{ inv.invitee_email }} (Role: {{ inv.role.name }})</span>
+    <small class="text-muted">Expires: {{ inv.expires_at.strftime('%Y-%m-%d') }}</small>
+</li>
+{% else %}
+<li class="list-group-item text-muted">No pending invitations.</li>
+{% endfor %}

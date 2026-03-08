@@ -195,6 +195,7 @@ def test_password_reset_with_invalid_token(unauth_client: TestClient, test_accou
         }
     )
     assert response.status_code == 401  # Unauthorized for invalid token
+    assert app.url_path_for("read_login") not in response.headers.get("location", "")
 
 
 def test_password_reset_email_url(unauth_client: TestClient, session: Session, test_account: Account, mock_resend_send):
@@ -259,6 +260,18 @@ def test_request_email_update_success(auth_client: TestClient, test_account: Acc
     assert "Confirm Email Update" in call_args["subject"]
     assert "confirm_email_update" in call_args["html"]
     assert new_email in call_args["html"]
+
+
+def test_request_email_update_same_email_returns_error_page(auth_client: TestClient, test_account: Account):
+    response = auth_client.post(
+        app.url_path_for("request_email_update"),
+        data={"email": test_account.email, "new_email": test_account.email},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 401
+    assert response.headers.get("location") is None
+    assert "New email is the same as the current email" in response.text
 
 
 def test_request_email_update_already_registered(auth_client: TestClient, session: Session, test_account: Account):

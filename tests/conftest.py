@@ -521,3 +521,17 @@ def mock_resend_send(mock_email_response):
     import resend
     with patch('resend.Emails.send', return_value=mock_email_response) as mock:
         yield mock
+
+# --- HTMX Test Helpers ---
+
+def htmx_headers() -> dict:
+    """Headers that simulate an HTMX request."""
+    return {"HX-Request": "true", "HX-Current-URL": "http://testserver/"}
+
+
+def is_html_partial(response) -> bool:
+    """True if response is a 200 HTML fragment (not a full page)."""
+    return (
+        response.status_code == 200
+        and "<!DOCTYPE html>" not in response.text
+    )

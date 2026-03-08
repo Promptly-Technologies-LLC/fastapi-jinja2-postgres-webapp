@@ -13,9 +13,11 @@ from utils.core.dependencies import (
     get_optional_user,
     get_user_from_request
 )
+from utils.htmx import is_htmx_request
 from exceptions.http_exceptions import (
     AuthenticationError,
-    PasswordValidationError
+    PasswordValidationError,
+    CredentialsError
 )
 from exceptions.exceptions import (
     NeedsNewTokens
@@ -62,9 +64,32 @@ app.include_router(user.router)
 # Handle AuthenticationError by redirecting to login page
 @app.exception_handler(AuthenticationError)
 async def authentication_error_handler(request: Request, exc: AuthenticationError):
+    if is_htmx_request(request):
+        response = Response(status_code=200)
+        response.headers["HX-Redirect"] = str(request.url_for("read_login"))
+        return response
     return RedirectResponse(
         url=app.url_path_for("read_login"),
         status_code=status.HTTP_303_SEE_OTHER
+    )
+
+
+# Handle CredentialsError (invalid email/password) with toast for HTMX
+@app.exception_handler(CredentialsError)
+async def credentials_exception_handler(request: Request, exc: CredentialsError):
+    if is_htmx_request(request):
+        return templates.TemplateResponse(
+            request,
+            "base/partials/toast.html",
+            {"message": exc.detail or "Invalid email or password.", "level": "danger"},
+            status_code=401,
+        )
+    user = await get_user_from_request(request)
+    return templates.TemplateResponse(
+        request,
+        "errors/error.html",
+        {"status_code": exc.status_code, "detail": exc.detail, "user": user},
+        status_code=exc.status_code,
     )
 
 
@@ -96,6 +121,18 @@ async def password_validation_exception_handler(
     request: Request,
     exc: PasswordValidationError
 ) -> Response:
+    if is_htmx_request(request):
+        detail = exc.detail
+        if isinstance(detail, dict):
+            message = detail.get("message", str(detail))
+        else:
+            message = str(detail)
+        return templates.TemplateResponse(
+            request,
+            "base/partials/toast.html",
+            {"message": message, "level": "danger"},
+            status_code=422,
+        )
     user = await get_user_from_request(request)
     return templates.TemplateResponse(
         request,
@@ -152,6 +189,17 @@ async def validation_exception_handler(
 
         errors[display_name] = message_template
 
+    if is_htmx_request(request):
+        message = "; ".join(
+            f"{k}: {v}" for k, v in errors.items()
+        ) if errors else "Validation error"
+        return templates.TemplateResponse(
+            request,
+            "base/partials/toast.html",
+            {"message": message, "level": "danger"},
+            status_code=422,
+        )
+
     user = await get_user_from_request(request)
     return templates.TemplateResponse(
         request,
@@ -168,6 +216,14 @@ async def validation_exception_handler(
 # Handle StarletteHTTPException (including 404, 405, etc.) by rendering the error page
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    if is_htmx_request(request):
+        detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
+        return templates.TemplateResponse(
+            request,
+            "base/partials/toast.html",
+            {"message": detail, "level": "danger"},
+            status_code=exc.status_code,
+        )
     user = await get_user_from_request(request)
     return templates.TemplateResponse(
         request,
@@ -182,6 +238,15 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 async def general_exception_handler(request: Request, exc: Exception):
     # Log the error for debugging
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
+
+    if is_htmx_request(request):
+        return templates.TemplateResponse(
+            request,
+            "base/partials/toast.html",
+            {"message": "Internal Server Error", "level": "danger"},
+            status_code=500,
+        )
+
     user = await get_user_from_request(request)
 
     return templates.TemplateResponse(
