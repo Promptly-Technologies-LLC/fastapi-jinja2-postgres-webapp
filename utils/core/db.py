@@ -211,6 +211,10 @@ def set_up_db(drop: bool = False) -> None:
     engine = create_engine(get_connection_url())
     if drop:
         SQLModel.metadata.drop_all(engine)
+    # Ensure the private schema exists before creating tables
+    with engine.connect() as conn:
+        conn.execute(text("CREATE SCHEMA IF NOT EXISTS private"))
+        conn.commit()
     SQLModel.metadata.create_all(engine)
     # Create default permissions
     with Session(engine) as session:
@@ -221,8 +225,11 @@ def set_up_db(drop: bool = False) -> None:
 
 def tear_down_db() -> None:
     """
-    Tears down the database by dropping all tables.
+    Tears down the database by dropping all tables and the private schema.
     """
     engine = create_engine(get_connection_url())
     SQLModel.metadata.drop_all(engine)
+    with engine.connect() as conn:
+        conn.execute(text("DROP SCHEMA IF EXISTS private CASCADE"))
+        conn.commit()
     engine.dispose()

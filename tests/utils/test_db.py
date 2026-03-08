@@ -219,22 +219,56 @@ def test_set_up_db_creates_tables(engine: Engine, session: Session):
 
     # Use SQLAlchemy inspect to check tables
     inspector = inspect(engine)
-    table_names = inspector.get_table_names()
+    public_table_names = inspector.get_table_names(schema="public")
 
-    # Check for core tables
-    expected_tables = {
+    # Check for public tables
+    expected_public_tables = {
         "user",
         "organization",
         "role",
         "permission",
         "rolepermissionlink",
-        "passwordresettoken"
     }
-    assert expected_tables.issubset(set(table_names))
+    assert expected_public_tables.issubset(set(public_table_names))
+
+    # Check that private tables are NOT in the public schema
+    assert "account" not in public_table_names
+    assert "passwordresettoken" not in public_table_names
+    assert "emailupdatetoken" not in public_table_names
+
+    # Check that private tables ARE in the private schema
+    private_table_names = inspector.get_table_names(schema="private")
+    expected_private_tables = {"account", "passwordresettoken", "emailupdatetoken"}
+    assert expected_private_tables.issubset(set(private_table_names))
 
     # Verify permissions were created
     permissions = session.exec(select(Permission)).all()
     assert len(permissions) == len(ValidPermissions)
+
+
+def test_private_schema_exists_after_setup(engine: Engine):
+    """Test that set_up_db creates the 'private' PostgreSQL schema."""
+    inspector = inspect(engine)
+    schemas = inspector.get_schema_names()
+    assert "private" in schemas
+
+
+def test_private_tables_in_private_schema(engine: Engine):
+    """Account, PasswordResetToken, and EmailUpdateToken must be in the private schema."""
+    inspector = inspect(engine)
+    private_tables = set(inspector.get_table_names(schema="private"))
+    assert {"account", "passwordresettoken", "emailupdatetoken"}.issubset(private_tables)
+
+
+def test_public_tables_in_public_schema(engine: Engine):
+    """Core business-logic tables must be in the public schema."""
+    inspector = inspect(engine)
+    public_tables = set(inspector.get_table_names(schema="public"))
+    assert {"user", "organization", "role", "permission"}.issubset(public_tables)
+    # Private tables must not leak into public
+    assert "account" not in public_tables
+    assert "passwordresettoken" not in public_tables
+    assert "emailupdatetoken" not in public_tables
 
 
 def test_set_up_db_drop_flag(engine: Engine, session: Session):

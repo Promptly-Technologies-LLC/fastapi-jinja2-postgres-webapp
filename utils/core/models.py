@@ -25,6 +25,8 @@ def utc_now():
 
 # TODO: Handle password hashing and checking on the data model?
 class Account(SQLModel, table=True):
+    __table_args__ = {"schema": "private"}
+
     id: Optional[int] = Field(default=None, primary_key=True)
     email: EmailStr = Field(index=True, unique=True)
     hashed_password: str
@@ -51,8 +53,10 @@ class Account(SQLModel, table=True):
     )
 
 class PasswordResetToken(SQLModel, table=True):
+    __table_args__ = {"schema": "private"}
+
     id: Optional[int] = Field(default=None, primary_key=True)
-    account_id: Optional[int] = Field(foreign_key="account.id")
+    account_id: Optional[int] = Field(foreign_key="private.account.id")
     token: str = Field(default_factory=lambda: str(
         uuid4()), index=True, unique=True)
     expires_at: datetime = Field(
@@ -70,8 +74,10 @@ class PasswordResetToken(SQLModel, table=True):
 
 
 class EmailUpdateToken(SQLModel, table=True):
+    __table_args__ = {"schema": "private"}
+
     id: Optional[int] = Field(default=None, primary_key=True)
-    account_id: Optional[int] = Field(foreign_key="account.id")
+    account_id: Optional[int] = Field(foreign_key="private.account.id")
     token: str = Field(default_factory=lambda: str(
         uuid4()), index=True, unique=True)
     expires_at: datetime = Field(
@@ -123,7 +129,7 @@ class User(UserBase, table=True):
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
 
-    account_id: Optional[int] = Field(foreign_key="account.id", unique=True)
+    account_id: Optional[int] = Field(foreign_key="private.account.id", unique=True)
     account: Mapped[Optional[Account]] = Relationship(
         back_populates="user"
     )

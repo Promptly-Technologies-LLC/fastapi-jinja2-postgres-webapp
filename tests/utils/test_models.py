@@ -4,17 +4,36 @@ from sqlmodel import select, Session
 from sqlalchemy.exc import IntegrityError
 import pytest
 from utils.core.models import (
+    Account,
+    EmailUpdateToken,
+    Organization,
     Permission,
+    PasswordResetToken,
     Role,
     RolePermissionLink,
-    Organization,
-    ValidPermissions,
     User,
     UserRoleLink,
-    PasswordResetToken,
-    Account
+    ValidPermissions,
 )
 from tests.conftest import SetupError
+
+
+# --- Schema placement tests ---
+
+
+def test_private_models_have_private_schema():
+    """Account, PasswordResetToken, and EmailUpdateToken must live in the 'private' schema."""
+    assert Account.__table__.schema == "private"
+    assert PasswordResetToken.__table__.schema == "private"
+    assert EmailUpdateToken.__table__.schema == "private"
+
+
+def test_public_models_not_in_private_schema():
+    """Public models must not be placed in the 'private' schema."""
+    for model in (User, Organization, Role, Permission, UserRoleLink, RolePermissionLink):
+        assert model.__table__.schema != "private", (
+            f"{model.__name__} should not be in the 'private' schema"
+        )
 
 
 def test_permissions_persist_after_role_deletion(session: Session):
