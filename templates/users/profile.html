@@ -30,7 +30,7 @@
             <p><strong>Email:</strong> {{ user.account.email }}</p>
             <!-- Display user avatar or silhouette if no avatar is available -->
             <div class="mb-3">
-                {% if user.avatar_data %}
+                {% if user.avatar %}
                     <img src="{{ url_for('get_avatar') }}" alt="User Avatar" class="img-thumbnail" width="150">
                 {% else %}
                     {{ render_silhouette(width=150, height=150) }}

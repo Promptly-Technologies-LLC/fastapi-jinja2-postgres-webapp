@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 from typing import Optional, List
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import selectinload
-from utils.core.models import User, DataIntegrityError, Organization
+from utils.core.models import User, UserAvatar, DataIntegrityError, Organization
 from utils.core.dependencies import get_authenticated_user, get_user_with_relations, get_session
 from utils.core.images import validate_and_process_image, MAX_FILE_SIZE, MIN_DIMENSION, MAX_DIMENSION, ALLOWED_CONTENT_TYPES
 from utils.core.enums import ValidPermissions
@@ -55,13 +55,20 @@ async def update_profile(
     if avatar_file:
         avatar_data = await avatar_file.read()
         avatar_content_type = avatar_file.content_type
-        
+
         processed_image, content_type = validate_and_process_image(
             avatar_data,
             avatar_content_type
         )
-        user.avatar_data = processed_image
-        user.avatar_content_type = content_type
+        if user.avatar:
+            user.avatar.avatar_data = processed_image
+            user.avatar.avatar_content_type = content_type
+        else:
+            user.avatar = UserAvatar(
+                user_id=user.id,
+                avatar_data=processed_image,
+                avatar_content_type=content_type
+            )
 
     # Update user details
     user.name = name
@@ -76,14 +83,14 @@ async def get_avatar(
     user: User = Depends(get_authenticated_user)
 ):
     """Serve avatar image from database"""
-    if not user.avatar_data:
+    if not user.avatar:
         raise DataIntegrityError(
             resource="User avatar"
         )
 
     return Response(
-        content=user.avatar_data,
-        media_type=user.avatar_content_type
+        content=user.avatar.avatar_data,
+        media_type=user.avatar.avatar_content_type
     )
 
 

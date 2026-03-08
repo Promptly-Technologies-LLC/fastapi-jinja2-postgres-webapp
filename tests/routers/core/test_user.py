@@ -84,8 +84,9 @@ def test_update_profile_authorized(
     # Verify changes in database
     session.refresh(test_user)
     assert test_user.name == "Updated Name"
-    assert test_user.avatar_data == MOCK_IMAGE_DATA
-    assert test_user.avatar_content_type == MOCK_CONTENT_TYPE
+    assert test_user.avatar is not None
+    assert test_user.avatar.avatar_data == MOCK_IMAGE_DATA
+    assert test_user.avatar.avatar_content_type == MOCK_CONTENT_TYPE
 
     # Verify mock was called correctly
     mock_validate.assert_called_once()
