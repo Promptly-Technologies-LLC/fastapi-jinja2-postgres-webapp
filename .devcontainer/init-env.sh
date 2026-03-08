@@ -36,7 +36,7 @@ if grep -q '^SECRET_KEY=' .env; then
   current_secret="$(grep '^SECRET_KEY=' .env | cut -d= -f2-)"
   if [ -z "${current_secret}" ] || [ "${current_secret}" = "changeme" ] || [ "${current_secret}" = "REPLACE_ME" ]; then
     new_secret="$(generate_secret)"
-    sed -i "s/^SECRET_KEY=.*/SECRET_KEY=${new_secret}/" .env
+    sed -i "s|^SECRET_KEY=.*|SECRET_KEY=${new_secret}|" .env
   fi
 else
   echo "SECRET_KEY=$(generate_secret)" >> .env
