@@ -187,7 +187,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </ul></li>
   <li><a href="#application-architecture" id="toc-application-architecture" class="nav-link" data-scroll-target="#application-architecture">Application architecture</a>
   <ul class="collapse">
-  <li><a href="#post-redirect-get-pattern" id="toc-post-redirect-get-pattern" class="nav-link" data-scroll-target="#post-redirect-get-pattern">Post-Redirect-Get pattern</a></li>
+  <li><a href="#hybrid-prg-htmx-pattern" id="toc-hybrid-prg-htmx-pattern" class="nav-link" data-scroll-target="#hybrid-prg-htmx-pattern">Hybrid PRG + HTMX pattern</a></li>
   </ul></li>
   <li><a href="#backend" id="toc-backend" class="nav-link" data-scroll-target="#backend">Backend</a>
   <ul class="collapse">
@@ -296,10 +296,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="application-architecture" class="level2">
 <h2 class="anchored" data-anchor-id="application-architecture">Application architecture</h2>
-<section id="post-redirect-get-pattern" class="level3">
-<h3 class="anchored" data-anchor-id="post-redirect-get-pattern">Post-Redirect-Get pattern</h3>
+<section id="hybrid-prg-htmx-pattern" class="level3">
+<h3 class="anchored" data-anchor-id="hybrid-prg-htmx-pattern">Hybrid PRG + HTMX pattern</h3>
 <p>In this template, we use FastAPI to define the “API endpoints” of our application. An API endpoint is simply a URL that accepts user requests and returns responses. When a user visits a page, their browser sends what’s called a “GET” request to an endpoint, and the server processes it (often querying a database), and returns a response (typically HTML). The browser renders the HTML, displaying the page.</p>
-<p>We also create POST endpoints, which accept form submissions so the user can create, update, and delete data in the database. This template follows the Post-Redirect-Get (PRG) pattern to handle POST requests. When a form is submitted, the server processes the data and then returns a “redirect” response, which sends the user to a GET endpoint to re-render the page with the updated data. (See <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html">Architecture</a> for more details.)</p>
+<p>We also create POST endpoints, which accept form submissions so the user can create, update, and delete data in the database. This template uses a <strong>hybrid Post-Redirect-Get (PRG) + HTMX</strong> approach for POST requests:</p>
+<ul>
+<li><strong>Non-HTMX (PRG):</strong> When a form is submitted without HTMX, the server processes the data and returns a <code>303 See Other</code> redirect to a GET endpoint, which re-renders the full page with updated data.</li>
+<li><strong>HTMX:</strong> When HTMX submits the same form, the server detects the <code>HX-Request: true</code> header and instead returns a <code>200</code> HTML partial that HTMX swaps into the relevant part of the page — no full-page reload needed.</li>
+</ul>
+<p>Both paths use the same POST route URLs and form field contracts. (See <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html">Architecture</a> for more details.)</p>
 <section id="file-structure" class="level4">
 <h4 class="anchored" data-anchor-id="file-structure">File structure</h4>
 <ul>
@@ -326,6 +331,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Enums: <code>enums.py</code></li>
 <li>Image helpers: <code>images.py</code></li>
 <li>Database models: <code>models.py</code></li>
+</ul></li>
+<li>Shared helper functions: <code>utils/</code>
+<ul>
+<li>HTMX request detection: <code>htmx.py</code></li>
 </ul></li>
 <li>Custom template helper functions for your app: <code>utils/app/</code></li>
 <li>Exceptions: <code>exceptions/</code>
@@ -390,18 +399,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Middlewares—which process requests before they reach the route handlers and responses before they are sent back to the client—are defined in <code>main.py</code>. They are commonly used in web development for tasks such as error handling, authentication token validation, logging, and modifying request/response objects.</p>
 <p>This template uses middlewares exclusively for global exception handling; they only affect requests that raise an exception. This allows for consistent error responses and centralized error logging. Middleware can catch exceptions raised during request processing and return appropriate HTTP responses.</p>
 <p>Middleware functions are decorated with <code>@app.exception_handler(ExceptionType)</code> and are executed in the order they are defined in <code>main.py</code>, from most to least specific.</p>
-<p>Here’s a middleware for handling the <code>PasswordMismatchError</code> exception from the previous example, which renders the <code>errors/validation_error.html</code> template with the error details:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.exception_handler</span>(PasswordValidationError)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> password_validation_exception_handler(request: Request, exc: PasswordValidationError):</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> templates.TemplateResponse(</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        request,</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"errors/validation_error.html"</span>,</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        {</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>            <span class="st">"status_code"</span>: <span class="dv">422</span>,</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>            <span class="st">"errors"</span>: {<span class="st">"error"</span>: exc.detail}</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        },</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        status_code<span class="op">=</span><span class="dv">422</span>,</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Here’s a middleware for handling the <code>PasswordValidationError</code> exception, which returns a toast partial for HTMX requests or a full error page for non-HTMX requests:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils.htmx <span class="im">import</span> is_htmx_request</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="at">@app.exception_handler</span>(PasswordValidationError)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> password_validation_exception_handler(request: Request, exc: PasswordValidationError):</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> is_htmx_request(request):</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> templates.TemplateResponse(</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>            request,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>            <span class="st">"base/partials/toast.html"</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>            {<span class="st">"message"</span>: exc.detail, <span class="st">"level"</span>: <span class="st">"danger"</span>},</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>            status_code<span class="op">=</span><span class="dv">422</span>,</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> templates.TemplateResponse(</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>        request,</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        <span class="st">"errors/validation_error.html"</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        {</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>            <span class="st">"status_code"</span>: <span class="dv">422</span>,</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>            <span class="st">"errors"</span>: {<span class="st">"error"</span>: exc.detail}</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        },</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>        status_code<span class="op">=</span><span class="dv">422</span>,</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 <section id="database-configuration-and-access-with-sqlmodel" class="level2">
@@ -557,7 +575,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="client-side-form-validation" class="level3">
 <h3 class="anchored" data-anchor-id="client-side-form-validation">Client-side form validation</h3>
-<p>While this template includes comprehensive server-side validation through Pydantic models and custom validators, it’s important to note that server-side validation should be treated as a fallback security measure. If users ever see the <code>validation_error.html</code> template, it indicates that our client-side validation has failed to catch invalid input before it reaches the server.</p>
+<p>While this template includes comprehensive server-side validation through Pydantic models and custom validators, it’s important to note that server-side validation should be treated as a fallback security measure. For HTMX requests, validation errors are surfaced as a toast notification without a page reload. For non-HTMX requests, they render the <code>validation_error.html</code> full-page error template. In either case, seeing a validation error means client-side validation has failed to catch invalid input before it reached the server.</p>
 <p>Best practices dictate implementing thorough client-side validation via JavaScript and/or HTML <code>input</code> element <code>pattern</code> attributes to:</p>
 <ul>
 <li>Provide immediate feedback to users</li>
