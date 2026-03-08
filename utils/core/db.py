@@ -36,23 +36,62 @@ def get_connection_url() -> URL:
     """
     Constructs a SQLModel URL object for connecting to the PostgreSQL database.
 
-    The connection details are sourced from environment variables, which should include:
+    Supports two connection modes controlled by the USE_POOL environment variable:
+    - Direct mode (USE_POOL=0, default): Connects directly to the database
+    - Pooled mode (USE_POOL=1): Connects via an external connection pooler (e.g., PgBouncer)
+
+    Direct mode environment variables:
+    - DB_HOST: Database host address
+    - DB_PORT: Database port
+    - DB_NAME: Database name
     - DB_USER: Database username
     - DB_PASSWORD: Database password
+    - DB_SSLMODE: SSL mode (default: "prefer")
+
+    Pooled mode environment variables:
     - DB_HOST: Database host address
-    - DB_PORT: Database port (default is 5432)
-    - DB_NAME: Database name
+    - DB_POOL_PORT: Connection pooler port
+    - DB_POOL_NAME: Database name for pooled connections
+    - DB_APPUSER: Application user for pooled connections
+    - DB_APPUSER_PASSWORD: Application user password
+    - DB_SSLMODE: SSL mode (default: "prefer")
 
     Returns:
         URL: A SQLModel URL object containing the connection details.
+
+    Raises:
+        ValueError: If required environment variables are missing.
     """
+    use_pool = bool(int(os.getenv("USE_POOL", "0")))
+
+    host = os.getenv("DB_HOST")
+    sslmode = os.getenv("DB_SSLMODE", "prefer")
+
+    if use_pool:
+        port = os.getenv("DB_POOL_PORT")
+        database = os.getenv("DB_POOL_NAME")
+        username = os.getenv("DB_APPUSER")
+        password = os.getenv("DB_APPUSER_PASSWORD")
+        required = ["DB_HOST", "DB_POOL_PORT", "DB_POOL_NAME", "DB_APPUSER", "DB_APPUSER_PASSWORD"]
+    else:
+        port = os.getenv("DB_PORT")
+        database = os.getenv("DB_NAME")
+        username = os.getenv("DB_USER")
+        password = os.getenv("DB_PASSWORD")
+        required = ["DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD"]
+
+    missing = [var for var in required if not os.getenv(var)]
+    if missing:
+        raise ValueError(f"Missing environment variables: {', '.join(missing)}")
+
     database_url: URL = URL.create(
         drivername="postgresql",
-        username=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        host=os.getenv("DB_HOST"),
-        port=int(os.getenv("DB_PORT") or "5432"),
-        database=os.getenv("DB_NAME"),
+        username=username,
+        password=password,
+        host=host,
+        port=int(port),  # type: ignore[arg-type]
+        database=database,
+        query={"sslmode": sslmode},
     )
 
     return database_url

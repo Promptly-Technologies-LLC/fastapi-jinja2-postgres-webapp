@@ -189,3 +189,95 @@ modal secret create your-app-name-secret \
 #### Testing the Deployment
 
 Access the provided Modal URL in your browser. Browse the site and test the registration and password reset features to ensure database and Resend connections work.
+
+## Connection Pooling
+
+When deploying to production with many concurrent connections or in serverless environments, you may want to use an external connection pooler like [PgBouncer](https://www.pgbouncer.org/), [Supabase Pooler](https://supabase.com/docs/guides/database/connecting-to-postgres#connection-pooler), or [AWS RDS Proxy](https://aws.amazon.com/rds/proxy/).
+
+Connection poolers sit between your application and database, managing a pool of persistent connections. This reduces connection overhead and allows your application to handle more concurrent requests without exhausting database connections.
+
+### Configuring Pooled Connections
+
+This template supports switching between direct and pooled database connections via the `USE_POOL` environment variable.
+
+**Direct mode (default):** Set `USE_POOL=0` or leave it unset. The application connects directly to the database using:
+
+- `DB_HOST` - Database host
+- `DB_PORT` - Database port (typically 5432)
+- `DB_NAME` - Database name
+- `DB_USER` - Database username
+- `DB_PASSWORD` - Database password
+
+**Pooled mode:** Set `USE_POOL=1`. The application connects via the pooler using:
+
+- `DB_HOST` - Pooler host (may be the same as the database host)
+- `DB_POOL_PORT` - Pooler port (typically 6543 for PgBouncer)
+- `DB_POOL_NAME` - Database name for pooled connections
+- `DB_APPUSER` - Application-specific database user
+- `DB_APPUSER_PASSWORD` - Application user password
+
+Both modes support `DB_SSLMODE` (defaults to `prefer`) for configuring SSL connections.
+
+### Example: Supabase with Connection Pooling
+
+Supabase provides a built-in PgBouncer pooler. To use it:
+
+1. In your Supabase dashboard, go to Settings > Database
+2. Find the "Connection pooling" section and copy the pooler connection string
+3. Extract the host, port, database, user, and password from the connection string
+4. Configure your environment:
+
+```bash
+USE_POOL=1
+DB_HOST=aws-0-us-east-1.pooler.supabase.com
+DB_POOL_PORT=6543
+DB_POOL_NAME=postgres
+DB_APPUSER=postgres.yourproject
+DB_APPUSER_PASSWORD=your-password
+DB_SSLMODE=require
+```
+
+### Setting Up a Restricted Application User
+
+When using connection pooling, it's a security best practice to create a separate database user with restricted permissions for your application's runtime connections. This follows the principle of least privilege - the app user can only perform the operations it needs, limiting potential damage from SQL injection or other vulnerabilities.
+
+Connect to your database as the admin user and run:
+
+```sql
+-- Create the application user
+CREATE USER appuser WITH PASSWORD 'your-secure-password';
+
+-- Grant connect permission
+GRANT CONNECT ON DATABASE yourdb TO appuser;
+
+-- Grant usage on the public schema
+GRANT USAGE ON SCHEMA public TO appuser;
+
+-- Grant permissions on all existing tables
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO appuser;
+
+-- Grant permissions on sequences (needed for auto-incrementing IDs)
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO appuser;
+
+-- Ensure future tables also get these permissions
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO appuser;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO appuser;
+```
+
+Then configure your environment to use this user for pooled connections:
+
+```bash
+DB_APPUSER=appuser
+DB_APPUSER_PASSWORD=your-secure-password
+```
+
+Keep your admin credentials (`DB_USER`, `DB_PASSWORD`) for direct connections used during schema migrations or administrative tasks.
+
+### When to Use Connection Pooling
+
+Consider using a connection pooler when:
+
+- Running in serverless environments (Modal, AWS Lambda, Vercel) where cold starts create many new connections
+- Your application handles many concurrent requests
+- You're hitting database connection limits
+- You want to reduce connection latency for frequently-accessed queries
