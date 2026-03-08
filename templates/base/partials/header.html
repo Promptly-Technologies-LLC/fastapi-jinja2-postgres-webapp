@@ -2,7 +2,7 @@
 {% from 'base/macros/silhouette.html' import render_silhouette %}
 
 
-<header class="navbar navbar-expand-lg navbar-light bg-light">
+<header class="navbar navbar-expand-lg navbar-light bg-light" hx-boost="true">
     <div class="container-fluid">
         <!-- Logo/Branding -->
         <a class="navbar-brand" href="{{ url_for('read_home') }}">

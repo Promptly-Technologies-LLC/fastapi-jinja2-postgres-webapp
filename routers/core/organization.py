@@ -1,7 +1,7 @@
 from logging import getLogger
 from typing import Annotated
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from sqlalchemy.orm import selectinload
@@ -10,11 +10,12 @@ from utils.core.dependencies import get_authenticated_user, get_user_with_relati
 from utils.core.models import Organization, User, Role, Account, utc_now, Invitation
 from utils.core.enums import ValidPermissions
 from exceptions.http_exceptions import (
-    OrganizationNotFoundError, OrganizationNameTakenError, 
+    OrganizationNotFoundError, OrganizationNameTakenError,
     InsufficientPermissionsError, OrganizationSetupError,
     UserNotFoundError, UserAlreadyMemberError, DataIntegrityError
 )
 from pydantic import EmailStr
+from utils.htmx import is_htmx_request
 
 logger = getLogger("uvicorn.error")
 
@@ -150,6 +151,7 @@ def create_organization(
 
 @router.post("/update/{org_id}", response_class=RedirectResponse)
 def update_organization(
+    request: Request,
     org_id: int,
     name: Annotated[str, Form(
         min_length=1,
@@ -184,11 +186,16 @@ def update_organization(
     session.add(organization)
     session.commit()
 
+    if is_htmx_request(request):
+        response = Response(status_code=200)
+        response.headers["HX-Redirect"] = str(router.url_path_for("read_organization", org_id=org_id))
+        return response
     return RedirectResponse(url=router.url_path_for("read_organization", org_id=org_id), status_code=303)
 
 
 @router.post("/delete/{org_id}", response_class=RedirectResponse)
 def delete_organization(
+    request: Request,
     org_id: int,
     user: User = Depends(get_user_with_relations),
     session: Session = Depends(get_session)
@@ -207,6 +214,10 @@ def delete_organization(
     session.delete(organization)
     session.commit()
 
+    if is_htmx_request(request):
+        response = Response(status_code=200)
+        response.headers["HX-Redirect"] = "/user/profile"
+        return response
     return RedirectResponse(url="/user/profile", status_code=303)
 
 

@@ -1,0 +1,42 @@
+{# Partial: single member <tr>. Swapped into <tr id="member-row-{{ member.id }}"> via outerHTML. #}
+{% from 'base/macros/silhouette.html' import render_silhouette %}
+<tr id="member-row-{{ member.id }}">
+    <td class="text-center" style="width: 50px;">
+        {% if member.avatar_data %}
+            <img src="{{ url_for('get_avatar', user_id=member.id) }}" alt="User Avatar" class="d-inline-block align-top" width="40" height="40" style="border-radius: 50%;">
+        {% else %}
+            {{ render_silhouette(width=40, height=40) }}
+        {% endif %}
+    </td>
+    <td>{{ member.name }}</td>
+    <td>{{ member.account.email }}</td>
+    <td>
+        {% for role in member.roles %}
+            {% if role.organization_id == organization.id %}
+                <span class="badge bg-secondary">{{ role.name }}</span>
+            {% endif %}
+        {% endfor %}
+    </td>
+    {% if ValidPermissions.EDIT_USER_ROLE in user_permissions or ValidPermissions.REMOVE_USER in user_permissions %}
+    <td>
+        {% if ValidPermissions.EDIT_USER_ROLE in user_permissions %}
+        <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editUserRoleModal{{ member.id }}">
+            Edit Role
+        </button>
+        {% endif %}
+
+        {% if ValidPermissions.REMOVE_USER in user_permissions %}
+        <form method="POST" action="{{ url_for('remove_user_from_organization') }}" class="d-inline"
+              hx-post="{{ url_for('remove_user_from_organization') }}"
+              hx-target="#members-card-content"
+              hx-swap="innerHTML">
+            <input type="hidden" name="user_id" value="{{ member.id }}">
+            <input type="hidden" name="organization_id" value="{{ organization.id }}">
+            <button type="submit" class="btn btn-sm btn-outline-danger" {% if member.id == user.id %}disabled{% endif %}>
+                Remove
+            </button>
+        </form>
+        {% endif %}
+    </td>
+    {% endif %}
+</tr>

@@ -10,7 +10,7 @@
         </button>
         {% endif %}
     </div>
-    <div class="card-body">
+    <div class="card-body" id="members-card-content">
         {# For test_empty_organization_displays_no_members_message, consider only the current user as owner #}
         {% if organization.users|length <= 1 %}
         <p class="text-muted">No members found</p>
@@ -28,9 +28,9 @@
                         {% endif %}
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="members-table-body">
                     {% for member in organization.users %}
-                    <tr>
+                    <tr id="member-row-{{ member.id }}">
                         <td class="text-center" style="width: 50px;">
                             {% if member.avatar_data %}
                                 <img src="{{ url_for('get_avatar', user_id=member.id) }}" alt="User Avatar" class="d-inline-block align-top" width="40" height="40" style="border-radius: 50%;">
@@ -54,9 +54,12 @@
                                 Edit Role
                             </button>
                             {% endif %}
-                            
+
                             {% if ValidPermissions.REMOVE_USER in user_permissions %}
-                            <form method="POST" action="{{ url_for('remove_user_from_organization') }}" class="d-inline">
+                            <form method="POST" action="{{ url_for('remove_user_from_organization') }}" class="d-inline"
+                                  hx-post="{{ url_for('remove_user_from_organization') }}"
+                                  hx-target="#members-card-content"
+                                  hx-swap="innerHTML">
                                 <input type="hidden" name="user_id" value="{{ member.id }}">
                                 <input type="hidden" name="organization_id" value="{{ organization.id }}">
                                 <button type="submit" class="btn btn-sm btn-outline-danger" {% if member.id == user.id %}disabled{% endif %}>
@@ -73,11 +76,11 @@
         </div>
         {% endif %}
 
-        {# Pending Invitations Section - Added #}
-        <hr class="my-4"> {# Optional separator #}
+        {# Pending Invitations Section #}
+        <hr class="my-4">
         <h4>Pending Invitations</h4>
         {% if active_invitations %}
-            <ul class="list-group list-group-flush">
+            <ul class="list-group list-group-flush" id="invitations-list">
             {% for inv in active_invitations %}
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <span>{{ inv.invitee_email }} (Role: {{ inv.role.name }})</span>
@@ -86,18 +89,23 @@
             {% endfor %}
             </ul>
         {% else %}
-            <p class="text-muted">No pending invitations.</p>
+            <ul class="list-group list-group-flush" id="invitations-list">
+                <li class="list-group-item text-muted">No pending invitations.</li>
+            </ul>
         {% endif %}
     </div>
-</div> 
+</div>
 
-{# Invite Member Modal - Modified #}
+{# Invite Member Modal #}
 {% if ValidPermissions.INVITE_USER in user_permissions %}
 <div class="modal fade" id="inviteMemberModal" tabindex="-1" aria-labelledby="inviteMemberModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      {# Modified form action and added role selection #}
-      <form method="POST" action="{{ url_for('create_invitation') }}"> 
+      <form method="POST" action="{{ url_for('create_invitation') }}"
+            hx-post="{{ url_for('create_invitation') }}"
+            hx-target="#members-card-content"
+            hx-swap="innerHTML"
+            hx-on::after-request="if(event.detail.successful) { bootstrap.Modal.getInstance(document.getElementById('inviteMemberModal'))?.hide(); }">
         <div class="modal-header">
           <h5 class="modal-title" id="inviteMemberModalLabel">Invite New Member</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -105,10 +113,8 @@
         <div class="modal-body">
           <div class="mb-3">
             <label for="invitee_email" class="form-label">Email Address</label>
-            {# Changed name attribute #}
             <input type="email" class="form-control" id="invitee_email" name="invitee_email" placeholder="user@example.com" required>
           </div>
-          {# Added Role Selection Dropdown #}
           <div class="mb-3">
             <label for="role_id" class="form-label">Assign Role</label>
             <select class="form-select" id="role_id" name="role_id" required>
@@ -119,7 +125,7 @@
             </select>
             <small class="form-text text-muted">Select the role the invited user will have.</small>
           </div>
-          <input type="hidden" name="organization_id" value="{{ organization.id }}"> 
+          <input type="hidden" name="organization_id" value="{{ organization.id }}">
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -131,13 +137,17 @@
 </div>
 {% endif %}
 
-{# Edit User Role Modals #}
+<div id="member-role-modals-container">
 {% if ValidPermissions.EDIT_USER_ROLE in user_permissions %}
   {% for member in organization.users %}
     <div class="modal fade" id="editUserRoleModal{{ member.id }}" tabindex="-1" aria-labelledby="editUserRoleModalLabel{{ member.id }}" aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-content">
-          <form method="POST" action="{{ url_for('update_user_role') }}">
+          <form method="POST" action="{{ url_for('update_user_role') }}"
+                hx-post="{{ url_for('update_user_role') }}"
+                hx-target="#members-card-content"
+                hx-swap="innerHTML"
+                hx-on::after-request="if(event.detail.successful) { bootstrap.Modal.getInstance(document.getElementById('editUserRoleModal{{ member.id }}'))?.hide(); }">
             <div class="modal-header">
               <h5 class="modal-title" id="editUserRoleModalLabel{{ member.id }}">Edit Roles for {{ member.name }}</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -147,7 +157,7 @@
                 <label class="form-label">Assign Roles</label>
                 {% for role in organization.roles %}
                   <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="roles" value="{{ role.id }}" 
+                    <input class="form-check-input" type="checkbox" name="roles" value="{{ role.id }}"
                            id="role_{{ member.id }}_{{ role.id }}"
                            {% if role in member.roles %}checked{% endif %}>
                     <label class="form-check-label" for="role_{{ member.id }}_{{ role.id }}">
@@ -168,4 +178,5 @@
       </div>
     </div>
   {% endfor %}
-{% endif %} 
+{% endif %}
+</div>

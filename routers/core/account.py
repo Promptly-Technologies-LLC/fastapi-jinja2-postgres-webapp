@@ -41,6 +41,7 @@ from routers.core.dashboard import router as dashboard_router
 from routers.core.user import router as user_router
 from routers.core.organization import router as org_router
 from utils.core.invitations import process_invitation
+from utils.htmx import is_htmx_request
 logger = getLogger("uvicorn.error")
 
 router = APIRouter(prefix="/account", tags=["account"])
@@ -531,6 +532,7 @@ async def reset_password(
 
 @router.post("/update_email")
 async def request_email_update(
+    request: Request,
     email: EmailStr = Form(...),
     new_email: EmailStr = Form(...),
     account: Account = Depends(get_authenticated_account),
@@ -565,6 +567,12 @@ async def request_email_update(
         session=session
     )
 
+    if is_htmx_request(request):
+        return templates.TemplateResponse(
+            request,
+            "base/partials/toast.html",
+            {"message": "Confirmation email sent. Check your inbox.", "level": "success"},
+        )
     # Generate URL with query parameters separately
     profile_path: URLPath = user_router.url_path_for("read_profile")
     redirect_url = f"{profile_path}?email_update_requested=true"

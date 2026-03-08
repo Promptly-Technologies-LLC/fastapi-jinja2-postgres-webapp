@@ -8,14 +8,14 @@
         </button>
         {% endif %}
     </div>
-    <div class="card-body">
+    <div class="card-body" id="roles-card-content">
         {% set ns = namespace(custom_roles_exist=false) %}
         {% for role in organization.roles %}
             {% if role.name not in ["Owner", "Administrator", "Member"] %}
                 {% set ns.custom_roles_exist = true %}
             {% endif %}
         {% endfor %}
-        
+
         {% if organization.roles %}
             <div class="table-responsive">
                 <table class="table table-hover">
@@ -29,9 +29,9 @@
                             {% endif %}
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="roles-table-body">
                         {% for role in organization.roles %}
-                        <tr>
+                        <tr id="role-row-{{ role.id }}">
                             <td>{{ role.name }}</td>
                             <td>{{ role.users|length }}</td>
                             <td>
@@ -48,9 +48,13 @@
                                     Edit Role
                                 </button>
                                 {% endif %}
-                                
+
                                 {% if ValidPermissions.DELETE_ROLE in user_permissions and role.name not in ["Owner", "Administrator", "Member"] %}
-                                <form method="POST" action="{{ url_for('delete_role') }}" class="d-inline">
+                                <form method="POST" action="{{ url_for('delete_role') }}" class="d-inline"
+                                      hx-post="{{ url_for('delete_role') }}"
+                                      hx-target="#roles-card-content"
+                                      hx-swap="innerHTML"
+                                      hx-confirm="Are you sure you want to delete this role?">
                                     <input type="hidden" name="id" value="{{ role.id }}">
                                     <input type="hidden" name="organization_id" value="{{ organization.id }}">
                                     <button type="submit" class="btn btn-sm btn-outline-danger" {% if role.users|length > 0 %}disabled{% endif %}>
@@ -69,14 +73,18 @@
         <p class="text-muted">No roles defined</p>
         {% endif %}
     </div>
-</div> 
+</div>
 
 {# Create Role Modal #}
 {% if ValidPermissions.CREATE_ROLE in user_permissions %}
 <div class="modal fade" id="createRoleModal" tabindex="-1" aria-labelledby="createRoleModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
-      <form method="POST" action="{{ url_for('create_role') }}">
+      <form method="POST" action="{{ url_for('create_role') }}"
+            hx-post="{{ url_for('create_role') }}"
+            hx-target="#roles-card-content"
+            hx-swap="innerHTML"
+            hx-on::after-request="if(event.detail.successful) { bootstrap.Modal.getInstance(document.getElementById('createRoleModal'))?.hide(); }">
         <div class="modal-header">
           <h5 class="modal-title" id="createRoleModalLabel">Create New Role</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -113,14 +121,18 @@
 </div>
 {% endif %}
 
-{# Edit Role Modals #}
+<div id="role-modals-container">
 {% if ValidPermissions.EDIT_ROLE in user_permissions %}
   {% for role in organization.roles %}
     {% if role.name not in ["Owner", "Administrator", "Member"] %}
     <div class="modal fade" id="editRoleModal{{ role.id }}" tabindex="-1" aria-labelledby="editRoleModalLabel{{ role.id }}" aria-hidden="true">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
-          <form method="POST" action="{{ url_for('update_role') }}">
+          <form method="POST" action="{{ url_for('update_role') }}"
+                hx-post="{{ url_for('update_role') }}"
+                hx-target="#roles-card-content"
+                hx-swap="innerHTML"
+                hx-on::after-request="if(event.detail.successful) { bootstrap.Modal.getInstance(document.getElementById('editRoleModal{{ role.id }}'))?.hide(); }">
             <div class="modal-header">
               <h5 class="modal-title" id="editRoleModalLabel{{ role.id }}">Edit Role: {{ role.name }}</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -137,7 +149,7 @@
                   {% for permission in ValidPermissions %}
                     <div class="col-md-6 mb-2">
                       <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="permissions" value="{{ permission.value }}" 
+                        <input class="form-check-input" type="checkbox" name="permissions" value="{{ permission.value }}"
                                id="perm_{{ role.id }}_{{ permission.value | replace(' ', '_') }}"
                                {% if permission in role_permission_names %}checked{% endif %}>
                         <label class="form-check-label" for="perm_{{ role.id }}_{{ permission.value | replace(' ', '_') }}">
@@ -161,4 +173,5 @@
     </div>
     {% endif %}
   {% endfor %}
-{% endif %} 
+{% endif %}
+</div>

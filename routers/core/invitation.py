@@ -1,7 +1,8 @@
 from uuid import uuid4
 from typing import Optional
-from fastapi import APIRouter, Depends, Form, Query, status
+from fastapi import APIRouter, Depends, Form, Query, Request, status
 from fastapi.responses import RedirectResponse
+from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import HTTPException
 from pydantic import EmailStr
 from sqlmodel import Session, select
@@ -20,12 +21,15 @@ from exceptions.http_exceptions import (
     InvitationEmailMismatchError,
 )
 from exceptions.exceptions import EmailSendFailedError
+from utils.htmx import is_htmx_request
 # Import the account router to generate URLs for login/register
 from routers.core.account import router as account_router
 from routers.core.organization import router as org_router # Already imported, check usage
 
 # Setup logger
 logger = getLogger("uvicorn.error")
+
+templates = Jinja2Templates(directory="templates")
 
 router = APIRouter(
     prefix="/invitations",
@@ -48,6 +52,7 @@ def get_valid_invitation(
 
 @router.post("/", name="create_invitation")
 async def create_invitation(
+    request: Request,
     current_user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session),
     invitee_email: EmailStr = Form(...),
@@ -127,7 +132,14 @@ async def create_invitation(
         session.rollback()
         raise HTTPException(status_code=500, detail="An unexpected error occurred.")
 
-    # Redirect back to organization page (PRG pattern)
+    # Return HTMX partial or redirect (PRG pattern)
+    if is_htmx_request(request):
+        active_invitations = Invitation.get_active_for_org(session, organization_id)
+        return templates.TemplateResponse(
+            request,
+            "organization/partials/invitations_list.html",
+            {"active_invitations": active_invitations},
+        )
     return RedirectResponse(url=f"/organizations/{organization_id}", status_code=303)
 
 

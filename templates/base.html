@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Home{% endblock %} | FastAPI-Jinja2-Postgres Webapp</title>
-    
+
     <link href="{{ url_for('static', path='css/styles.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', path='css/extras.css') }}" rel="stylesheet">
 
@@ -15,25 +15,33 @@
     <link rel="mask-icon" href="{{ url_for('static', path='safari-pinned-tab.svg') }}" color="#5bbad5">
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="theme-color" content="#ffffff">
+    {% block extra_head %}{% endblock %}
 </head>
-<body class="min-vh-100 d-flex flex-column">    
+<body class="min-vh-100 d-flex flex-column">
+    <div id="toast-container"
+         class="toast-container position-fixed bottom-0 end-0 p-3"
+         aria-live="polite">
+    </div>
+
     <header>
         <!-- Common header content -->
         {% include 'base/partials/header.html' %}
     </header>
-    
+
     <main class="flex-grow-1">
         {% block content %}
         <!-- Page-specific content goes here -->
         {% endblock %}
     </main>
-    
+
     <footer>
         <!-- Common footer content -->
         {% include 'base/partials/footer.html' %}
     </footer>
-    
+
     <!-- Common scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
+    {% block extra_scripts %}{% endblock %}
 </body>
 </html>
