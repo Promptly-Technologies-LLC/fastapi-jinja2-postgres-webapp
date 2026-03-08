@@ -162,7 +162,7 @@ def update_organization(
     )],
     user: User = Depends(get_user_with_relations),
     session: Session = Depends(get_session)
-) -> RedirectResponse:
+) -> Response:
     # This will raise appropriate exceptions if org doesn't exist or user lacks access
     organization: Organization | None = next(
         (org_item for org_item in user.organizations if org_item.id == org_id), None)
@@ -199,7 +199,7 @@ def delete_organization(
     org_id: int,
     user: User = Depends(get_user_with_relations),
     session: Session = Depends(get_session)
-) -> RedirectResponse:
+) -> Response:
     # Find the organization the user belongs to
     organization: Organization | None = next(
         (org for org in user.organizations if org.id == org_id), None)

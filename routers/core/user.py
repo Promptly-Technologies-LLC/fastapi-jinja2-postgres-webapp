@@ -139,7 +139,7 @@ def update_user_role(
     roles: Optional[List[int]] = Form(None),
     user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session)
-) -> RedirectResponse:
+) -> Response:
     """Update the roles of a user in an organization"""
     # Check if the current user has permission to edit user roles
     if not user.has_permission(ValidPermissions.EDIT_USER_ROLE, organization_id):
@@ -208,7 +208,7 @@ def remove_user_from_organization(
     organization_id: int = Form(...),
     user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session)
-) -> RedirectResponse:
+) -> Response:
     """Remove a user from an organization by removing all their roles in that organization"""
     # Check if the current user has permission to remove users
     if not user.has_permission(ValidPermissions.REMOVE_USER, organization_id):
