@@ -993,9 +993,9 @@ There are *many* hosting options available for each of these services; this guid
 
 #### Getting Started
 
-- Create a [DigitalOcean](mdc:https:/www.digitalocean.com) account
-- Install the [`doctl` CLI tool](mdc:https:/docs.digitalocean.com/reference/doctl) and authenticate with `doctl auth init`
-- Install the [`psql` client](mdc:https:/www.postgresql.org/download)
+- Create a [DigitalOcean](https://www.digitalocean.com) account
+- Install the [`doctl` CLI tool](https://docs.digitalocean.com/reference/doctl) and authenticate with `doctl auth init`
+- Install the [`psql` client](https://www.postgresql.org/download)
 
 #### Create a Project
 
