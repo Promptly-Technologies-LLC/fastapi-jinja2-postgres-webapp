@@ -1,6 +1,16 @@
 from fastapi import HTTPException, status
 from utils.core.enums import ValidPermissions
 
+class RateLimitError(HTTPException):
+    """Raised when a client exceeds the allowed request rate."""
+    def __init__(self, retry_after: int = 60):
+        self.retry_after = retry_after
+        super().__init__(
+            status_code=429,
+            detail="Too many attempts. Please try again later."
+        )
+
+
 class EmailAlreadyRegisteredError(HTTPException):
     def __init__(self):
         super().__init__(

@@ -12,6 +12,7 @@ from typing import Optional
 from jinja2.environment import Template
 from fastapi.templating import Jinja2Templates
 from fastapi import Cookie
+from utils.core.db import create_engine, get_connection_url
 from utils.core.models import PasswordResetToken, EmailUpdateToken, Account
 
 logger = logging.getLogger(__name__)
@@ -216,6 +217,18 @@ def send_reset_email(email: str, session: Session) -> None:
             session.rollback()
     else:
         logger.debug("No account found with the provided email.")
+
+
+def send_reset_email_task(email: str) -> None:
+    """
+    Background-task wrapper that creates its own session.
+
+    FastAPI background tasks should not reuse request-scoped resources from
+    `yield` dependencies, because cleanup may run before the task executes.
+    """
+    engine = create_engine(get_connection_url())
+    with Session(engine) as session:
+        send_reset_email(email, session)
 
 
 def generate_email_update_url(account_id: int, token: str, new_email: str) -> str:

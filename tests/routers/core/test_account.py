@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 from starlette.datastructures import URLPath
 from sqlmodel import Session, select
@@ -14,6 +15,27 @@ from utils.core.auth import (
     validate_token,
     get_password_hash
 )
+from utils.core.rate_limit import (
+    login_ip_limiter,
+    login_email_limiter,
+    register_ip_limiter,
+    forgot_password_ip_limiter,
+    forgot_password_email_limiter,
+)
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limiters():
+    """Reset all rate limiter state between tests to avoid cross-test pollution."""
+    yield
+    for limiter in (
+        login_ip_limiter,
+        login_email_limiter,
+        register_ip_limiter,
+        forgot_password_ip_limiter,
+        forgot_password_email_limiter,
+    ):
+        limiter._attempts.clear()
 
 # --- API Endpoint Tests ---
 
@@ -237,6 +259,34 @@ def test_password_reset_email_url(unauth_client: TestClient, session: Session, t
     assert query_params["token"][0] == reset_token.token
 
 
+def test_forgot_password_does_not_send_second_email_while_token_is_active(
+    unauth_client: TestClient,
+    session: Session,
+    test_account: Account,
+    mock_resend_send,
+):
+    """Forgot-password preserves the existing one-hour token/send suppression."""
+    first_response = unauth_client.post(
+        app.url_path_for("forgot_password"),
+        data={"email": test_account.email},
+        follow_redirects=False,
+    )
+    assert first_response.status_code == 303
+
+    second_response = unauth_client.post(
+        app.url_path_for("forgot_password"),
+        data={"email": test_account.email},
+        follow_redirects=False,
+    )
+    assert second_response.status_code == 303
+
+    tokens = session.exec(
+        select(PasswordResetToken).where(PasswordResetToken.account_id == test_account.id)
+    ).all()
+    assert len(tokens) == 1
+    assert mock_resend_send.call_count == 1
+
+
 def test_request_email_update_success(auth_client: TestClient, test_account: Account, mock_resend_send):
     """Test successful email update request"""
     new_email = "newemail@example.com"
@@ -370,7 +420,7 @@ def test_confirm_email_update_used_token(unauth_client: TestClient, session: Ses
     )
     session.add(used_token)
     session.commit()
-    
+
     response = unauth_client.get(
         app.url_path_for("confirm_email_update"),
         params={
@@ -379,10 +429,125 @@ def test_confirm_email_update_used_token(unauth_client: TestClient, session: Ses
             "new_email": "new@example.com"
         }
     )
-    
+
     assert response.status_code == 401
     assert "Invalid or expired" in response.text
-    
+
     # Verify email was not updated
     session.refresh(test_account)
     assert test_account.email == "test@example.com"
+
+
+# --- Rate Limiting Tests ---
+
+
+def test_login_ip_rate_limit(unauth_client: TestClient, test_account: Account):
+    """Login returns 429 after exceeding IP rate limit."""
+    for _ in range(login_ip_limiter.max_attempts):
+        unauth_client.post(
+            app.url_path_for("login"),
+            data={"email": test_account.email, "password": "WrongPass123!@#"},
+        )
+
+    response = unauth_client.post(
+        app.url_path_for("login"),
+        data={"email": test_account.email, "password": "WrongPass123!@#"},
+    )
+    assert response.status_code == 429
+    assert "Retry-After" in response.headers
+
+
+def test_login_email_rate_limit(unauth_client: TestClient, test_account: Account):
+    """Login returns 429 after exceeding per-email rate limit."""
+    for _ in range(login_email_limiter.max_attempts):
+        unauth_client.post(
+            app.url_path_for("login"),
+            data={"email": test_account.email, "password": "WrongPass123!@#"},
+        )
+
+    response = unauth_client.post(
+        app.url_path_for("login"),
+        data={"email": test_account.email, "password": "WrongPass123!@#"},
+    )
+    assert response.status_code == 429
+
+
+def test_login_success_resets_email_limiter(unauth_client: TestClient, test_account: Account):
+    """Successful login resets the per-email rate limiter."""
+    # Use up all but one email attempt
+    for _ in range(login_email_limiter.max_attempts - 1):
+        unauth_client.post(
+            app.url_path_for("login"),
+            data={"email": test_account.email, "password": "WrongPass123!@#"},
+        )
+    assert login_email_limiter.remaining(f"email:{test_account.email.lower().strip()}") == 1
+
+    # Successful login should reset the counter
+    response = unauth_client.post(
+        app.url_path_for("login"),
+        data={"email": test_account.email, "password": "Test123!@#"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+
+    # Verify the limiter was reset — full allowance available
+    assert login_email_limiter.remaining(f"email:{test_account.email.lower().strip()}") == login_email_limiter.max_attempts
+
+
+def test_register_ip_rate_limit(unauth_client: TestClient, session: Session):
+    """Register returns 429 after exceeding IP rate limit."""
+    for i in range(register_ip_limiter.max_attempts):
+        unauth_client.post(
+            app.url_path_for("register"),
+            data={
+                "name": f"User{i}",
+                "email": f"user{i}@example.com",
+                "password": "Test123!@#",
+                "confirm_password": "Test123!@#",
+            },
+            follow_redirects=False,
+        )
+
+    response = unauth_client.post(
+        app.url_path_for("register"),
+        data={
+            "name": "Blocked",
+            "email": "blocked@example.com",
+            "password": "Test123!@#",
+            "confirm_password": "Test123!@#",
+        },
+    )
+    assert response.status_code == 429
+
+
+def test_forgot_password_ip_rate_limit(unauth_client: TestClient):
+    """Forgot password returns 429 after exceeding IP rate limit."""
+    for i in range(forgot_password_ip_limiter.max_attempts):
+        unauth_client.post(
+            app.url_path_for("forgot_password"),
+            data={"email": f"user{i}@example.com"},
+            follow_redirects=False,
+        )
+
+    response = unauth_client.post(
+        app.url_path_for("forgot_password"),
+        data={"email": "extra@example.com"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 429
+
+
+def test_forgot_password_email_rate_limit(unauth_client: TestClient, test_account: Account, mock_resend_send):
+    """Forgot password returns 429 after exceeding per-email rate limit."""
+    for _ in range(forgot_password_email_limiter.max_attempts):
+        unauth_client.post(
+            app.url_path_for("forgot_password"),
+            data={"email": test_account.email},
+            follow_redirects=False,
+        )
+
+    response = unauth_client.post(
+        app.url_path_for("forgot_password"),
+        data={"email": test_account.email},
+    )
+    assert response.status_code == 429

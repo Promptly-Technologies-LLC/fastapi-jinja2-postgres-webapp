@@ -19,7 +19,7 @@ from utils.core.auth import (
     create_access_token,
     create_refresh_token,
     validate_token,
-    send_reset_email,
+    send_reset_email_task,
     send_email_update_confirmation
 )
 from utils.core.dependencies import (
@@ -41,6 +41,14 @@ from routers.core.dashboard import router as dashboard_router
 from routers.core.user import router as user_router
 from routers.core.organization import router as org_router
 from utils.core.invitations import process_invitation
+from utils.core.rate_limit import (
+    check_login_ip_rate_limit,
+    check_login_email_rate_limit,
+    check_register_ip_rate_limit,
+    check_forgot_password_ip_rate_limit,
+    check_forgot_password_email_rate_limit,
+    login_email_limiter,
+)
 from utils.htmx import is_htmx_request
 logger = getLogger("uvicorn.error")
 
@@ -220,6 +228,8 @@ async def delete_account(
 
 @router.post("/register", response_class=RedirectResponse)
 async def register(
+    request: Request,
+    _ip_check: None = Depends(check_register_ip_rate_limit),
     name: str = Form(...),
     email: EmailStr = Form(...),
     session: Session = Depends(get_session),
@@ -336,6 +346,9 @@ async def register(
 
 @router.post("/login", response_class=RedirectResponse)
 async def login(
+    request: Request,
+    _ip_check: None = Depends(check_login_ip_rate_limit),
+    _email_check: EmailStr = Depends(check_login_email_rate_limit),
     account_and_session: Tuple[Account, Session] = Depends(get_account_from_credentials),
     invitation_token: Optional[str] = Form(None)
 ) -> RedirectResponse:
@@ -343,6 +356,10 @@ async def login(
     Log in a user with valid credentials and process invitation if token is provided.
     """
     account, session = account_and_session
+
+    # Successful login: reset the per-email rate limiter so legitimate users
+    # are not penalised for earlier mistyped attempts.
+    login_email_limiter.reset(f"email:{account.email.lower().strip()}")
 
     # Default redirect target
     redirect_url = dashboard_router.url_path_for("read_dashboard")
@@ -478,7 +495,8 @@ async def refresh_token(
 async def forgot_password(
     background_tasks: BackgroundTasks,
     request: Request,
-    email: EmailStr = Form(...),
+    _ip_check: None = Depends(check_forgot_password_ip_rate_limit),
+    email: EmailStr = Depends(check_forgot_password_email_rate_limit),
     session: Session = Depends(get_session)
 ):
     """
@@ -489,7 +507,7 @@ async def forgot_password(
         Account.email == email)).one_or_none()
 
     if account:
-        background_tasks.add_task(send_reset_email, email, session)
+        background_tasks.add_task(send_reset_email_task, email)
 
     # Get the referer header, default to /forgot_password if not present
     referer = request.headers.get("referer", "/forgot_password")
