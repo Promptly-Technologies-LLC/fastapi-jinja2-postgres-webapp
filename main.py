@@ -17,7 +17,8 @@ from utils.htmx import is_htmx_request
 from exceptions.http_exceptions import (
     AuthenticationError,
     PasswordValidationError,
-    CredentialsError
+    CredentialsError,
+    RateLimitError
 )
 from exceptions.exceptions import (
     NeedsNewTokens
@@ -72,6 +73,29 @@ async def authentication_error_handler(request: Request, exc: AuthenticationErro
         url=app.url_path_for("read_login"),
         status_code=status.HTTP_303_SEE_OTHER
     )
+
+
+# Handle RateLimitError (429 Too Many Requests)
+@app.exception_handler(RateLimitError)
+async def rate_limit_error_handler(request: Request, exc: RateLimitError):
+    if is_htmx_request(request):
+        response = templates.TemplateResponse(
+            request,
+            "base/partials/toast.html",
+            {"message": exc.detail, "level": "danger"},
+            status_code=429,
+        )
+        response.headers["Retry-After"] = str(exc.retry_after)
+        return response
+    user = await get_user_from_request(request)
+    response = templates.TemplateResponse(
+        request,
+        "errors/error.html",
+        {"status_code": 429, "detail": exc.detail, "user": user},
+        status_code=429,
+    )
+    response.headers["Retry-After"] = str(exc.retry_after)
+    return response
 
 
 # Handle CredentialsError (invalid email/password) with toast for HTMX

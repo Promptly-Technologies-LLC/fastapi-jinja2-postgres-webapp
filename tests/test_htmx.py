@@ -11,6 +11,27 @@ import pytest
 from starlette.requests import Request
 from tests.conftest import htmx_headers, is_html_partial
 from utils.htmx import is_htmx_request
+from utils.core.rate_limit import (
+    login_ip_limiter,
+    login_email_limiter,
+    register_ip_limiter,
+    forgot_password_ip_limiter,
+    forgot_password_email_limiter,
+)
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limiters():
+    """Reset all rate limiter state between tests."""
+    yield
+    for limiter in (
+        login_ip_limiter,
+        login_email_limiter,
+        register_ip_limiter,
+        forgot_password_ip_limiter,
+        forgot_password_email_limiter,
+    ):
+        limiter._attempts.clear()
 
 
 # ---------------------------------------------------------------------------
@@ -326,3 +347,47 @@ def test_update_role_htmx_refreshes_modal_container(auth_client_owner, test_orga
     # OOB-refreshed modal container includes updated edit modal title
     assert "Edit Role: NewName" in response.text
     assert 'id="role-modals-container"' in response.text
+
+
+# ---------------------------------------------------------------------------
+# 5.1 — Rate limit 429 toast responses
+# ---------------------------------------------------------------------------
+
+def test_login_rate_limit_htmx_returns_toast(unauth_client):
+    """Rate-limited HTMX login returns a 429 toast partial with Retry-After."""
+    for _ in range(login_ip_limiter.max_attempts):
+        unauth_client.post(
+            "/account/login",
+            data={"email": "nobody@example.com", "password": "wrongpass"},
+            headers=htmx_headers(),
+        )
+
+    response = unauth_client.post(
+        "/account/login",
+        data={"email": "nobody@example.com", "password": "wrongpass"},
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 429
+    assert "toast" in response.text
+    assert "<!DOCTYPE html>" not in response.text
+    assert "Retry-After" in response.headers
+
+
+def test_forgot_password_rate_limit_htmx_returns_toast(unauth_client):
+    """Rate-limited HTMX forgot-password returns a 429 toast partial."""
+    for _ in range(forgot_password_ip_limiter.max_attempts):
+        unauth_client.post(
+            "/account/forgot_password",
+            data={"email": f"user@example.com"},
+            headers=htmx_headers(),
+            follow_redirects=False,
+        )
+
+    response = unauth_client.post(
+        "/account/forgot_password",
+        data={"email": "user@example.com"},
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 429
+    assert "toast" in response.text
+    assert "<!DOCTYPE html>" not in response.text
