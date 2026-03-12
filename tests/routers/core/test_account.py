@@ -297,8 +297,10 @@ def test_request_email_update_success(auth_client: TestClient, test_account: Acc
     )
 
     assert response.status_code == 303
-    assert f"{app.url_path_for('read_profile')}?email_update_requested=true" in response.headers["location"]
-    
+    assert response.headers["location"] == str(app.url_path_for("read_profile"))
+    # Flash cookie should be set
+    assert "flash_message" in response.headers.get("set-cookie", "")
+
     # Verify email was "sent"
     mock_resend_send.assert_called_once()
     call_args = mock_resend_send.call_args[0][0]
@@ -372,8 +374,10 @@ def test_confirm_email_update_success(unauth_client: TestClient, session: Sessio
     )
     
     assert response.status_code == 303
-    assert f"{app.url_path_for('read_profile')}?email_updated=true" in response.headers["location"]
-    
+    assert response.headers["location"] == str(app.url_path_for("read_profile"))
+    # Flash cookie should be set
+    assert "flash_message" in response.headers.get("set-cookie", "")
+
     # Verify email was updated
     session.refresh(test_account)
     assert test_account.email == new_email

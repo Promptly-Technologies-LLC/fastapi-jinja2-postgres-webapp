@@ -20,7 +20,7 @@ from exceptions.http_exceptions import (
     InvalidInvitationTokenError,
 )
 from exceptions.exceptions import EmailSendFailedError
-from utils.htmx import is_htmx_request
+from utils.htmx import is_htmx_request, append_toast
 # Import the account router to generate URLs for login/register
 from routers.core.account import router as account_router
 from routers.core.organization import router as org_router # Already imported, check usage
@@ -134,11 +134,12 @@ async def create_invitation(
     # HTMX: return partial; non-HTMX: PRG redirect
     if is_htmx_request(request):
         active_invitations = Invitation.get_active_for_org(session, organization_id)
-        return templates.TemplateResponse(
+        response = templates.TemplateResponse(
             request,
             "organization/partials/invitations_list.html",
             {"active_invitations": active_invitations},
         )
+        return append_toast(response, request, templates, "Invitation sent successfully.")
     return RedirectResponse(url=f"/organizations/{organization_id}", status_code=303)
 
 

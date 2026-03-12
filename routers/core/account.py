@@ -3,7 +3,7 @@ from logging import getLogger
 from typing import Optional, Tuple
 from urllib.parse import urlparse
 from fastapi import APIRouter, Depends, BackgroundTasks, Form, Request, Query
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from starlette.datastructures import URLPath
 from pydantic import EmailStr
@@ -13,6 +13,7 @@ from utils.core.dependencies import get_session
 from utils.core.auth import (
     HTML_PASSWORD_PATTERN,
     COMPILED_PASSWORD_PATTERN,
+    COOKIE_SECURE,
     oauth2_scheme_cookie,
     get_password_hash,
     verify_password,
@@ -49,7 +50,7 @@ from utils.core.rate_limit import (
     check_forgot_password_email_rate_limit,
     login_email_limiter,
 )
-from utils.htmx import is_htmx_request
+from utils.htmx import is_htmx_request, toast_response, set_flash_cookie
 logger = getLogger("uvicorn.error")
 
 router = APIRouter(prefix="/account", tags=["account"])
@@ -111,7 +112,6 @@ def logout():
 async def read_login(
     request: Request,
     user: Optional[User] = Depends(get_optional_user),
-    email_updated: Optional[str] = Query("false"),
     invitation_token: Optional[str] = Query(None)
 ):
     """
@@ -124,7 +124,6 @@ async def read_login(
         {
             "request": request,
             "user": user,
-            "email_updated": email_updated,
             "invitation_token": invitation_token
         }
     )
@@ -323,21 +322,25 @@ async def register(
     # Create access token using the committed account's email
     access_token = create_access_token(data={"sub": account.email, "fresh": True})
     refresh_token = create_refresh_token(data={"sub": account.email})
-    
-    # Set cookie
-    response = RedirectResponse(url=str(redirect_url), status_code=303) # Use determined redirect_url
+
+    # Set cookie — use HX-Redirect for HTMX, 303 for regular form submissions
+    if is_htmx_request(request):
+        response = Response(status_code=200)
+        response.headers["HX-Redirect"] = str(redirect_url)
+    else:
+        response = RedirectResponse(url=str(redirect_url), status_code=303)
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="strict"
     )
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="strict"
     )
 
@@ -421,20 +424,24 @@ async def login(
     )
     refresh_token = create_refresh_token(data={"sub": account.email})
 
-    # Set cookie
-    response = RedirectResponse(url=str(redirect_url), status_code=303)
+    # Set cookie — use HX-Redirect for HTMX, 303 for regular form submissions
+    if is_htmx_request(request):
+        response = Response(status_code=200)
+        response.headers["HX-Redirect"] = str(redirect_url)
+    else:
+        response = RedirectResponse(url=str(redirect_url), status_code=303)
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="strict",
     )
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="strict",
     )
 
@@ -477,14 +484,14 @@ async def refresh_token(
         key="access_token",
         value=new_access_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="strict",
     )
     response.set_cookie(
         key="refresh_token",
         value=new_refresh_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="strict",
     )
 
@@ -515,12 +522,18 @@ async def forgot_password(
     # Extract the path from the full URL
     redirect_path = urlparse(referer).path
 
-    # Add the query parameter to the redirect path
-    return RedirectResponse(url=f"{redirect_path}?show_form=false", status_code=303)
+    if is_htmx_request(request):
+        response = Response(status_code=200)
+        response.headers["HX-Redirect"] = f"{redirect_path}?show_form=false"
+    else:
+        response = RedirectResponse(url=f"{redirect_path}?show_form=false", status_code=303)
+    set_flash_cookie(response, "If an account exists with this email, a password reset link will be sent.")
+    return response
 
 
 @router.post("/reset_password")
 async def reset_password(
+    request: Request,
     email: EmailStr = Form(...),
     token: str = Form(...),
     new_password: str = Depends(validate_password_strength_and_match),
@@ -529,7 +542,7 @@ async def reset_password(
     """
     Reset a user's password using a valid token.
     """
-    
+
     # Get account from reset token
     authorized_account, reset_token = get_account_from_reset_token(
         email, token, session
@@ -545,6 +558,11 @@ async def reset_password(
     session.commit()
     session.refresh(authorized_account)
 
+    if is_htmx_request(request):
+        response = Response(status_code=200)
+        response.headers["HX-Redirect"] = str(router.url_path_for("read_login"))
+        set_flash_cookie(response, "Password reset successfully. Please log in.")
+        return response
     return RedirectResponse(url=router.url_path_for("read_login"), status_code=303)
 
 
@@ -586,19 +604,14 @@ async def request_email_update(
     )
 
     if is_htmx_request(request):
-        return templates.TemplateResponse(
-            request,
-            "base/partials/toast.html",
-            {"message": "Confirmation email sent. Check your inbox.", "level": "success"},
+        return toast_response(
+            request, templates,
+            "Confirmation email sent. Check your inbox.", level="success",
         )
-    # Generate URL with query parameters separately
     profile_path: URLPath = user_router.url_path_for("read_profile")
-    redirect_url = f"{profile_path}?email_update_requested=true"
-
-    return RedirectResponse(
-        url=redirect_url,
-        status_code=303
-    )
+    response = RedirectResponse(url=str(profile_path), status_code=303)
+    set_flash_cookie(response, "Confirmation email sent. Check your inbox.")
+    return response
 
 
 @router.get("/confirm_email_update")
@@ -627,29 +640,23 @@ async def confirm_email_update(
     access_token = create_access_token(data={"sub": new_email, "fresh": True})
     refresh_token = create_refresh_token(data={"sub": new_email})
 
-    # Generate URL with query parameters separately
     profile_path: URLPath = user_router.url_path_for("read_profile")
-    redirect_url = f"{profile_path}?email_updated=true"
-    
-    # Set cookies before redirecting
-    response = RedirectResponse(
-        url=redirect_url,
-        status_code=303
-    )
+    response = RedirectResponse(url=str(profile_path), status_code=303)
+    set_flash_cookie(response, "Your email address has been successfully updated.")
 
     # Add secure cookie attributes
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="lax"
     )
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="lax"
     )
     return response
