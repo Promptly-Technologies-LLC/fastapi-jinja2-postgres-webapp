@@ -84,6 +84,7 @@ async def update_profile(
             user.avatar.avatar_data = processed_image
             user.avatar.avatar_content_type = content_type
         else:
+            assert user.id is not None
             user.avatar = UserAvatar(
                 user_id=user.id,
                 avatar_data=processed_image,

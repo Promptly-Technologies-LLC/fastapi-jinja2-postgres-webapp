@@ -41,5 +41,14 @@ dev = [
 # decorator on pytest.fail, nor resend library type stubs.
 invalid-argument-type = "warn"
 unresolved-attribute = "warn"
-invalid-assignment = "warn"
 missing-argument = "warn"
+
+[[tool.ty.overrides]]
+include = ["tests/**"]
+[tool.ty.overrides.rules]
+# pytest.fail uses @_with_exception decorator that ty doesn't understand,
+# SQLModel constructors have metaclass-generated parameters, and
+# Response.body type is overly broad in stubs.
+invalid-argument-type = "ignore"
+unresolved-attribute = "ignore"
+missing-argument = "ignore"

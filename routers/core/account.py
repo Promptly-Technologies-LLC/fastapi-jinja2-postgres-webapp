@@ -235,7 +235,7 @@ async def register(
     _: None = Depends(validate_password_strength_and_match),
     password: str = Form(...),
     invitation_token: Optional[str] = Form(None)
-) -> RedirectResponse:
+) -> Response:
     """
     Register a new user account, optionally processing an invitation.
     """
@@ -354,7 +354,7 @@ async def login(
     _email_check: EmailStr = Depends(check_login_email_rate_limit),
     account_and_session: Tuple[Account, Session] = Depends(get_account_from_credentials),
     invitation_token: Optional[str] = Form(None)
-) -> RedirectResponse:
+) -> Response:
     """
     Log in a user with valid credentials and process invitation if token is provided.
     """
