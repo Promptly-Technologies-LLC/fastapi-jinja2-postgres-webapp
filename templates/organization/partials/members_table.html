@@ -90,8 +90,7 @@
           <form method="POST" action="{{ url_for('update_user_role') }}"
                 hx-post="{{ url_for('update_user_role') }}"
                 hx-target="#members-card-content"
-                hx-swap="innerHTML"
-                hx-on::after-request="if(event.detail.successful) { bootstrap.Modal.getInstance(document.getElementById('editUserRoleModal{{ member.id }}'))?.hide(); }">
+                hx-swap="innerHTML">
             <div class="modal-header">
               <h5 class="modal-title" id="editUserRoleModalLabel{{ member.id }}">Edit Roles for {{ member.name }}</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

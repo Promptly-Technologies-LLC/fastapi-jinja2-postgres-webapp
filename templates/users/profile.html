@@ -39,8 +39,7 @@
                   hx-post="{{ url_for('update_profile') }}"
                   hx-target="#profile-display"
                   hx-swap="innerHTML"
-                  hx-encoding="multipart/form-data"
-                  hx-on::after-request="if(event.detail.successful) { document.getElementById('edit-profile').style.display='none'; document.getElementById('basic-info').style.display='block'; }">
+                  hx-encoding="multipart/form-data">
                 <div class="mb-3">
                     <label for="name" class="form-label">Name</label>
                     <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}">
@@ -131,7 +130,7 @@
     function toggleEditProfile() {
         var basicInfo = document.getElementById('basic-info');
         var editProfile = document.getElementById('edit-profile');
-        
+
         if (basicInfo.style.display === 'none') {
             basicInfo.style.display = 'block';
             editProfile.style.display = 'none';
@@ -140,6 +139,15 @@
             editProfile.style.display = 'block';
         }
     }
+
+    // After a successful profile update the server sends an HX-Trigger
+    // header with "profileUpdated".  Toggle back to the display card.
+    // (We cannot use hx-on::after-request on the form because the OOB
+    // swap for #profile-form replaces it before afterRequest fires.)
+    document.body.addEventListener('profileUpdated', function() {
+        document.getElementById('edit-profile').style.display = 'none';
+        document.getElementById('basic-info').style.display = 'block';
+    });
 
     document.getElementById('avatar_file').addEventListener('change', function(e) {
         const file = e.target.files[0];

@@ -691,6 +691,23 @@ def test_update_profile_htmx_includes_success_toast(auth_client):
     assert "toast" in response.text
 
 
+def test_update_profile_htmx_triggers_profile_updated_event(auth_client):
+    """The response must include an HX-Trigger header so the client can
+    toggle display of the basic-info / edit-profile cards.  Using
+    hx-on::after-request on the form is unreliable because the OOB swap
+    for #profile-form replaces the form element before afterRequest fires
+    (HTMX 2.0 fires afterRequest AFTER the swap)."""
+    response = auth_client.post(
+        "/user/update",
+        data={"name": "Trigger Name"},
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 200
+    trigger = response.headers.get("HX-Trigger")
+    assert trigger is not None, "Missing HX-Trigger response header"
+    assert "profileUpdated" in trigger
+
+
 def test_create_role_htmx_includes_success_toast(auth_client_owner, test_organization):
     response = auth_client_owner.post(
         "/roles/create",
@@ -743,6 +760,93 @@ def test_update_role_htmx_includes_success_toast(auth_client_owner, test_organiz
     assert "Role updated successfully" in response.text
 
 
+def test_update_role_htmx_triggers_modal_cleanup(auth_client_owner, test_organization, session):
+    """The response must include an HX-Trigger header so the client can
+    dismiss the Bootstrap modal and its backdrop.  The OOB swap for
+    #role-modals-container replaces the modal element before afterRequest
+    fires, leaving the backdrop stuck on screen."""
+    from utils.core.models import Role
+    custom_role = Role(name="TriggerRole", organization_id=test_organization.id)
+    session.add(custom_role)
+    session.commit()
+    session.refresh(custom_role)
+
+    response = auth_client_owner.post(
+        "/roles/update",
+        data={
+            "id": str(custom_role.id),
+            "name": "TriggerRenamed",
+            "organization_id": str(test_organization.id),
+        },
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 200
+    trigger = response.headers.get("HX-Trigger")
+    assert trigger is not None, "Missing HX-Trigger response header"
+    assert "modalDismiss" in trigger
+
+
+def test_create_role_htmx_triggers_modal_cleanup(auth_client_owner, test_organization):
+    """create_role must send HX-Trigger: modalDismiss to close the
+    create-role Bootstrap modal after the swap."""
+    response = auth_client_owner.post(
+        "/roles/create",
+        data={
+            "name": "ModalCleanupRole",
+            "organization_id": str(test_organization.id),
+        },
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 200
+    trigger = response.headers.get("HX-Trigger")
+    assert trigger is not None, "Missing HX-Trigger response header"
+    assert "modalDismiss" in trigger
+
+
+def test_create_invitation_htmx_triggers_modal_cleanup(
+    auth_client_owner, test_organization, member_role, mock_resend_send
+):
+    """create_invitation must send HX-Trigger: modalDismiss to close
+    the invite-member Bootstrap modal after the swap."""
+    response = auth_client_owner.post(
+        "/invitations/",
+        data={
+            "invitee_email": "modaldismiss@example.com",
+            "role_id": str(member_role.id),
+            "organization_id": str(test_organization.id),
+        },
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 200
+    trigger = response.headers.get("HX-Trigger")
+    assert trigger is not None, "Missing HX-Trigger response header"
+    assert "modalDismiss" in trigger
+
+
+def test_update_user_role_htmx_triggers_modal_cleanup(
+    auth_client_owner, org_member_user, test_organization, member_role
+):
+    """update_user_role must send HX-Trigger: modalDismiss to close
+    the edit-user-role Bootstrap modal after the swap."""
+    assert org_member_user.id is not None
+    assert test_organization.id is not None
+    assert member_role.id is not None
+
+    response = auth_client_owner.post(
+        "/user/role/update",
+        data={
+            "user_id": str(org_member_user.id),
+            "organization_id": str(test_organization.id),
+            "roles": [str(member_role.id)],
+        },
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 200
+    trigger = response.headers.get("HX-Trigger")
+    assert trigger is not None, "Missing HX-Trigger response header"
+    assert "modalDismiss" in trigger
+
+
 def test_create_invitation_htmx_includes_success_toast(
     auth_client_owner, test_organization, member_role, mock_resend_send
 ):
@@ -788,3 +892,30 @@ def test_remove_user_htmx_includes_success_toast(
     )
     assert response.status_code == 200
     assert "User removed from organization" in response.text
+
+
+# ---------------------------------------------------------------------------
+# 7 — Architectural guard: ban hx-on::after-request in templates
+# ---------------------------------------------------------------------------
+
+def test_no_templates_use_hx_on_after_request():
+    """In HTMX 2.0 afterRequest fires AFTER the swap, so any handler
+    on an element that is replaced by an OOB swap will silently fail.
+    Use HX-Trigger response headers instead."""
+    import pathlib
+    import re
+
+    # Match the attribute in HTML tags, not in JS comments or prose.
+    attr_pattern = re.compile(r'hx-on::after-request=|hx-on:htmx:after-request=')
+
+    templates_dir = pathlib.Path(__file__).resolve().parent.parent / "templates"
+    violations = []
+    for path in templates_dir.rglob("*.html"):
+        text = path.read_text()
+        if attr_pattern.search(text):
+            violations.append(str(path.relative_to(templates_dir)))
+
+    assert violations == [], (
+        f"Templates must not use hx-on::after-request (unreliable in HTMX 2.0). "
+        f"Use HX-Trigger response headers instead. Violations: {violations}"
+    )
