@@ -9,7 +9,7 @@ Convention: HTMX requests send the HX-Request: true header.
 """
 import pytest
 from starlette.requests import Request
-from tests.conftest import htmx_headers, is_html_partial
+from tests.conftest import htmx_headers
 from utils.htmx import is_htmx_request
 from utils.core.rate_limit import (
     login_ip_limiter,
@@ -378,7 +378,7 @@ def test_forgot_password_rate_limit_htmx_returns_toast(unauth_client):
     for _ in range(forgot_password_ip_limiter.max_attempts):
         unauth_client.post(
             "/account/forgot_password",
-            data={"email": f"user@example.com"},
+            data={"email": "user@example.com"},
             headers=htmx_headers(),
             follow_redirects=False,
         )

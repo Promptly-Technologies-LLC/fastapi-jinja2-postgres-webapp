@@ -1,12 +1,11 @@
 import pytest
 from datetime import datetime, timedelta, UTC
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from sqlmodel import Session, select
 from tests.conftest import SetupError
 from utils.core.models import Role, Permission, ValidPermissions, User, Invitation, Organization, Account
 from main import app
 from utils.core.invitations import generate_invitation_link
-from exceptions.exceptions import EmailSendFailedError
 
 @pytest.fixture
 def invite_user_permission(session: Session) -> Permission:

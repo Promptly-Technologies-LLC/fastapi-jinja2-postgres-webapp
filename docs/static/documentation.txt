@@ -40,7 +40,7 @@ The design philosophy of the template is to prefer low-level, best-in-class open
 - [Docker](https://www.docker.com/): development containerization
 - [Github Actions](https://docs.github.com/en/actions): CI/CD pipeline
 - [Quarto](https://quarto.org/docs/): simple documentation website renderer
-- [MyPy](https://mypy.readthedocs.io/en/stable/): static type checker for Python
+- [ty](https://docs.astral.sh/ty/): static type checker for Python
 - [Bootstrap](https://getbootstrap.com/): HTML/CSS styler
 - [Resend](https://resend.com/): zero- or low-cost email service used for password recovery
 
@@ -134,10 +134,10 @@ uv run python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 Navigate to http://localhost:8000/
 
-### Lint types with mypy
+### Type check with ty
 
 ``` bash
-uv run mypy .
+uv run ty check .
 ```
 
 ## Developing with LLMs
@@ -575,10 +575,10 @@ Navigate to http://localhost:8000/.
 
 (Note: If startup fails with a sqlalchemy/psycopg2 connection error, make sure that Docker Desktop and the database service are running and that the environment variables in the `.env` file are correctly populated, and then try again.)
 
-## Lint types with mypy
+## Type check with ty
 
 ``` bash
-mypy .
+uv run ty check .
 ```
 
 
@@ -627,15 +627,15 @@ To run the tests, use these commands:
 - Run particular test files by name: `uv run pytest <test_file_name>`
 - Run particular tests by name: `uv run pytest -k <test_name>`
 
-### Type checking with mypy
+### Type checking with ty
 
-The project uses type annotations and mypy for static type checking. To run mypy, use this command from the root directory:
+The project uses type annotations and [ty](https://docs.astral.sh/ty/) for static type checking. To run ty, use this command from the root directory:
 
 ```bash
-mypy .
+uv run ty check .
 ```
 
-We find that mypy is an enormous time-saver, catching many errors early and greatly reducing time spent debugging unit tests. However, note that mypy requires you type annotate every variable, function, and method in your code base, so taking advantage of it requires a lifestyle change!
+We find that static type checking is an enormous time-saver, catching many errors early and greatly reducing time spent debugging unit tests. However, note that it requires you type annotate every variable, function, and method in your code base, so taking advantage of it requires a lifestyle change!
 
 ### Developing with LLMs
 
@@ -1201,7 +1201,7 @@ To contribute code to the project:
 1. Fork the repository and clone your fork locally
 2. Create a new branch from `main` with a descriptive name
 3. Review the [customization](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/customization.html), [architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/architecture.html), and [authentication](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/authentication.html) pages for guidance on design patterns and code structure and style
-4. Ensure all tests pass, including `mypy` type checking
+4. Ensure all tests pass, including `ty` type checking
 5. Stage, commit, and push your changes to the branch:
    - Use clear, descriptive commit messages
    - Keep commits focused and atomic

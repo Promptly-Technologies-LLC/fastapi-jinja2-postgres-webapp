@@ -258,7 +258,7 @@ def get_account_from_email_update_token(
             Account.id == account_id,
             EmailUpdateToken.token == token,
             EmailUpdateToken.expires_at > datetime.now(UTC),
-            EmailUpdateToken.used == False,
+            EmailUpdateToken.used == False,  # noqa: E712
             EmailUpdateToken.account_id == Account.id
         )
     ).first()
@@ -292,7 +292,7 @@ def get_account_from_reset_token(
             Account.email == email,
             PasswordResetToken.token == token,
             PasswordResetToken.expires_at > datetime.now(UTC),
-            PasswordResetToken.used == False,
+            PasswordResetToken.used == False,  # noqa: E712
             PasswordResetToken.account_id == Account.id
         )
     ).first()

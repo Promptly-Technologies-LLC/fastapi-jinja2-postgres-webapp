@@ -518,7 +518,6 @@ def mock_resend_send(mock_email_response):
     """
     # Ensure patch and resend are imported
     from unittest.mock import patch
-    import resend
     with patch('resend.Emails.send', return_value=mock_email_response) as mock:
         yield mock
 

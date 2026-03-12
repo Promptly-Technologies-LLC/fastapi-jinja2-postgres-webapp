@@ -311,6 +311,6 @@ class Invitation(SQLModel, table=True):
 
     @classmethod
     def get_active_for_org(cls, session: Session, organization_id: int) -> list["Invitation"]:
-        statement = select(cls).where(cls.organization_id == organization_id, cls.used == False)
+        statement = select(cls).where(cls.organization_id == organization_id, cls.used == False)  # noqa: E712
         results = session.exec(statement).all()
         return [inv for inv in results if not inv.is_expired()]

@@ -18,7 +18,6 @@ from exceptions.http_exceptions import (
     OrganizationNotFoundError,
     InvitationEmailSendError,
     InvalidInvitationTokenError,
-    InvitationEmailMismatchError,
 )
 from exceptions.exceptions import EmailSendFailedError
 from utils.htmx import is_htmx_request
