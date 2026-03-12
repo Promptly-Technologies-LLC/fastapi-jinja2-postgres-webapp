@@ -96,6 +96,7 @@ def create_role(
                 "ValidPermissions": ValidPermissions,
             },
         )
+        response.headers["HX-Trigger"] = "modalDismiss"
         return append_toast(response, request, templates, "Role created successfully.")
     return RedirectResponse(
         url=organization_router.url_path_for("read_organization", org_id=organization_id),
@@ -185,6 +186,7 @@ def update_role(
                 "ValidPermissions": ValidPermissions,
             },
         )
+        response.headers["HX-Trigger"] = "modalDismiss"
         return append_toast(response, request, templates, "Role updated successfully.")
     return RedirectResponse(
         url=organization_router.url_path_for("read_organization", org_id=organization_id),

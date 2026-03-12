@@ -139,6 +139,7 @@ async def create_invitation(
             "organization/partials/invitations_list.html",
             {"active_invitations": active_invitations},
         )
+        response.headers["HX-Trigger"] = "modalDismiss"
         return append_toast(response, request, templates, "Invitation sent successfully.")
     return RedirectResponse(url=f"/organizations/{organization_id}", status_code=303)
 

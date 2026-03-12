@@ -109,6 +109,7 @@ async def update_profile(
                 "allowed_formats": list(ALLOWED_CONTENT_TYPES.keys()),
             },
         )
+        response.headers["HX-Trigger"] = "profileUpdated"
         return append_toast(response, request, templates, "Profile updated successfully.")
     return RedirectResponse(url=router.url_path_for("read_profile"), status_code=303)
 
@@ -193,6 +194,7 @@ def update_user_role(
                 "ValidPermissions": ValidPermissions,
             },
         )
+        response.headers["HX-Trigger"] = "modalDismiss"
         return append_toast(response, request, templates, "User role updated successfully.")
     return RedirectResponse(
         url=organization_router.url_path_for("read_organization", org_id=organization_id),

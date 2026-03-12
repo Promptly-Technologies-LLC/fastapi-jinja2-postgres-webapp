@@ -66,8 +66,7 @@
           <form method="POST" action="{{ url_for('update_role') }}"
                 hx-post="{{ url_for('update_role') }}"
                 hx-target="#roles-card-content"
-                hx-swap="innerHTML"
-                hx-on::after-request="if(event.detail.successful) { bootstrap.Modal.getInstance(document.getElementById('editRoleModal{{ role.id }}'))?.hide(); }">
+                hx-swap="innerHTML">
             <div class="modal-header">
               <h5 class="modal-title" id="editRoleModalLabel{{ role.id }}">Edit Role: {{ role.name }}</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

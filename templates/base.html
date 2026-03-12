@@ -93,6 +93,15 @@
             if (flash && flash.message) showToast(flash.message, flash.level);
         } catch(e) {}
     })();
+    // Global handler: when a server response includes HX-Trigger: modalDismiss,
+    // clean up any Bootstrap modal backdrop left behind by OOB swaps that
+    // replaced the modal element before afterRequest could call .hide().
+    document.body.addEventListener('modalDismiss', function() {
+        document.querySelectorAll('.modal-backdrop').forEach(function(el) { el.remove(); });
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+    });
     </script>
     {% block extra_scripts %}{% endblock %}
 </body>
