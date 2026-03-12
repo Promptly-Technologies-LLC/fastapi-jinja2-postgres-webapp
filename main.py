@@ -13,7 +13,8 @@ from utils.core.dependencies import (
     get_optional_user,
     get_user_from_request
 )
-from utils.htmx import is_htmx_request
+from utils.core.auth import COOKIE_SECURE
+from utils.htmx import is_htmx_request, toast_response
 from exceptions.http_exceptions import (
     AuthenticationError,
     PasswordValidationError,
@@ -79,14 +80,10 @@ async def authentication_error_handler(request: Request, exc: AuthenticationErro
 @app.exception_handler(RateLimitError)
 async def rate_limit_error_handler(request: Request, exc: RateLimitError):
     if is_htmx_request(request):
-        response = templates.TemplateResponse(
-            request,
-            "base/partials/toast.html",
-            {"message": exc.detail, "level": "danger"},
-            status_code=429,
+        return toast_response(
+            request, templates, exc.detail, level="danger",
+            status_code=429, headers={"Retry-After": str(exc.retry_after)},
         )
-        response.headers["Retry-After"] = str(exc.retry_after)
-        return response
     user = await get_user_from_request(request)
     response = templates.TemplateResponse(
         request,
@@ -102,11 +99,9 @@ async def rate_limit_error_handler(request: Request, exc: RateLimitError):
 @app.exception_handler(CredentialsError)
 async def credentials_exception_handler(request: Request, exc: CredentialsError):
     if is_htmx_request(request):
-        return templates.TemplateResponse(
-            request,
-            "base/partials/toast.html",
-            {"message": exc.detail or "Invalid email or password.", "level": "danger"},
-            status_code=401,
+        return toast_response(
+            request, templates, exc.detail or "Invalid email or password.",
+            level="danger", status_code=401,
         )
     user = await get_user_from_request(request)
     return templates.TemplateResponse(
@@ -126,14 +121,14 @@ async def needs_new_tokens_handler(request: Request, exc: NeedsNewTokens):
         key="access_token",
         value=exc.access_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="strict"
     )
     response.set_cookie(
         key="refresh_token",
         value=exc.refresh_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="strict"
     )
     return response
@@ -151,26 +146,30 @@ async def password_validation_exception_handler(
             message = detail.get("message", str(detail))
         else:
             message = str(detail)
-        return templates.TemplateResponse(
-            request,
-            "base/partials/toast.html",
-            {"message": message, "level": "danger"},
-            status_code=422,
+        return toast_response(
+            request, templates, message, level="danger", status_code=422,
         )
+    detail = exc.detail
+    if isinstance(detail, dict):
+        field = detail.get("field", "Error")
+        message = detail.get("message", str(detail))
+    else:
+        field = "Error"
+        message = str(detail)
     user = await get_user_from_request(request)
     return templates.TemplateResponse(
         request,
-        "errors/validation_error.html",
+        "errors/error.html",
         {
             "status_code": 422,
-            "errors": {"error": exc.detail},
+            "errors": {field.replace("_", " ").title(): message},
             "user": user
         },
         status_code=422,
     )
 
 
-# Handle RequestValidationError by rendering the validation_error page
+# Handle RequestValidationError by rendering the error page
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(
     request: Request,
@@ -217,17 +216,14 @@ async def validation_exception_handler(
         message = "; ".join(
             f"{k}: {v}" for k, v in errors.items()
         ) if errors else "Validation error"
-        return templates.TemplateResponse(
-            request,
-            "base/partials/toast.html",
-            {"message": message, "level": "danger"},
-            status_code=422,
+        return toast_response(
+            request, templates, message, level="danger", status_code=422,
         )
 
     user = await get_user_from_request(request)
     return templates.TemplateResponse(
         request,
-        "errors/validation_error.html",
+        "errors/error.html",
         {
             "status_code": 422,
             "errors": errors,
@@ -242,10 +238,8 @@ async def validation_exception_handler(
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     if is_htmx_request(request):
         detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
-        return templates.TemplateResponse(
-            request,
-            "base/partials/toast.html",
-            {"message": detail, "level": "danger"},
+        return toast_response(
+            request, templates, detail, level="danger",
             status_code=exc.status_code,
         )
     user = await get_user_from_request(request)
@@ -264,11 +258,9 @@ async def general_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
 
     if is_htmx_request(request):
-        return templates.TemplateResponse(
-            request,
-            "base/partials/toast.html",
-            {"message": "Internal Server Error", "level": "danger"},
-            status_code=500,
+        return toast_response(
+            request, templates, "Internal Server Error",
+            level="danger", status_code=500,
         )
 
     user = await get_user_from_request(request)

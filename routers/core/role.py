@@ -12,7 +12,7 @@ from utils.core.dependencies import get_authenticated_user, get_session
 from utils.core.models import Role, Permission, ValidPermissions, utc_now, User, DataIntegrityError, Organization
 from exceptions.http_exceptions import InsufficientPermissionsError, InvalidPermissionError, RoleAlreadyExistsError, RoleNotFoundError, RoleHasUsersError, CannotModifyDefaultRoleError
 from routers.core.organization import router as organization_router
-from utils.htmx import is_htmx_request
+from utils.htmx import is_htmx_request, append_toast
 
 logger = getLogger("uvicorn.error")
 
@@ -86,7 +86,7 @@ def create_role(
 
     if is_htmx_request(request):
         organization, user_permissions = _load_org_for_roles_partial(session, organization_id, user)
-        return templates.TemplateResponse(
+        response = templates.TemplateResponse(
             request,
             "organization/partials/roles_table.html",
             {
@@ -96,6 +96,7 @@ def create_role(
                 "ValidPermissions": ValidPermissions,
             },
         )
+        return append_toast(response, request, templates, "Role created successfully.")
     return RedirectResponse(
         url=organization_router.url_path_for("read_organization", org_id=organization_id),
         status_code=303
@@ -174,7 +175,7 @@ def update_role(
 
     if is_htmx_request(request):
         organization, user_permissions = _load_org_for_roles_partial(session, organization_id, user)
-        return templates.TemplateResponse(
+        response = templates.TemplateResponse(
             request,
             "organization/partials/roles_table.html",
             {
@@ -184,6 +185,7 @@ def update_role(
                 "ValidPermissions": ValidPermissions,
             },
         )
+        return append_toast(response, request, templates, "Role updated successfully.")
     return RedirectResponse(
         url=organization_router.url_path_for("read_organization", org_id=organization_id),
         status_code=303
@@ -226,7 +228,7 @@ def delete_role(
 
     if is_htmx_request(request):
         organization, user_permissions = _load_org_for_roles_partial(session, organization_id, user)
-        return templates.TemplateResponse(
+        response = templates.TemplateResponse(
             request,
             "organization/partials/roles_table.html",
             {
@@ -236,6 +238,7 @@ def delete_role(
                 "ValidPermissions": ValidPermissions,
             },
         )
+        return append_toast(response, request, templates, "Role deleted successfully.")
     return RedirectResponse(
         url=organization_router.url_path_for("read_organization", org_id=organization_id),
         status_code=303

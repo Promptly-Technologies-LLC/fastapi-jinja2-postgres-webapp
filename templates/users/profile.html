@@ -8,18 +8,6 @@
 <div class="container mt-5">
     <h1 class="mb-4">User Profile</h1>
     
-    {% if email_update_requested == "true" %}
-    <div class="alert alert-info" role="alert">
-        Please check your current email address for a confirmation link to complete the email update.
-    </div>
-    {% endif %}
-
-    {% if email_updated == "true" %}
-    <div class="alert alert-success" role="alert">
-        Your email address has been successfully updated.
-    </div>
-    {% endif %}
-
     <!-- Basic Information -->
     <div class="card mb-4" id="basic-info">
         <div class="card-header">
@@ -167,7 +155,7 @@
         // Check file size
         const fileSizeMB = file.size / (1024 * 1024);
         if (fileSizeMB > maxSizeMB) {
-            alert(`File size must be less than ${maxSizeMB}MB`);
+            showToast(`File size must be less than ${maxSizeMB}MB`, 'danger');
             this.value = '';
             return;
         }
@@ -175,7 +163,7 @@
         // Check file format
         const fileFormat = file.type.split('/')[1];
         if (!allowedFormats.includes(fileFormat)) {
-            alert(`File format must be one of: ${allowedFormats.join(', ')}`);
+            showToast(`File format must be one of: ${allowedFormats.join(', ')}`, 'danger');
             this.value = '';
             return;
         }
@@ -183,18 +171,18 @@
         // Check dimensions
         const img = new Image();
         img.src = URL.createObjectURL(file);
-        
+
         img.onload = function() {
             URL.revokeObjectURL(this.src);
-            
+
             if (this.width < minDimension || this.height < minDimension) {
-                alert(`Image dimensions must be at least ${minDimension}x${minDimension} pixels`);
+                showToast(`Image dimensions must be at least ${minDimension}x${minDimension} pixels`, 'danger');
                 e.target.value = '';
                 return;
             }
-            
+
             if (this.width > maxDimension || this.height > maxDimension) {
-                alert(`Image dimensions must not exceed ${maxDimension}x${maxDimension} pixels`);
+                showToast(`Image dimensions must not exceed ${maxDimension}x${maxDimension} pixels`, 'danger');
                 e.target.value = '';
                 return;
             }

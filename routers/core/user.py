@@ -14,7 +14,7 @@ from exceptions.http_exceptions import (
     OrganizationNotFoundError
 )
 from routers.core.organization import router as organization_router
-from utils.htmx import is_htmx_request
+from utils.htmx import is_htmx_request, append_toast
 
 router = APIRouter(prefix="/user", tags=["user"])
 templates = Jinja2Templates(directory="templates")
@@ -47,8 +47,6 @@ def _load_org_for_members_partial(session: Session, organization_id: int, user: 
 async def read_profile(
     request: Request,
     user: User = Depends(get_user_with_relations),
-    email_update_requested: Optional[str] = "false",
-    email_updated: Optional[str] = "false",
     show_form: Optional[str] = "true"
 ):
     # Add image constraints to the template context
@@ -59,8 +57,6 @@ async def read_profile(
             "min_dimension": MIN_DIMENSION,
             "max_dimension": MAX_DIMENSION,
             "allowed_formats": list(ALLOWED_CONTENT_TYPES.keys()),
-            "email_update_requested": email_update_requested,
-            "email_updated": email_updated,
             "show_form": show_form == "true",
             "user": user
         }
@@ -101,7 +97,7 @@ async def update_profile(
     session.refresh(user)
 
     if is_htmx_request(request):
-        return templates.TemplateResponse(
+        response = templates.TemplateResponse(
             request,
             "users/partials/profile_display.html",
             {
@@ -112,6 +108,7 @@ async def update_profile(
                 "allowed_formats": list(ALLOWED_CONTENT_TYPES.keys()),
             },
         )
+        return append_toast(response, request, templates, "Profile updated successfully.")
     return RedirectResponse(url=router.url_path_for("read_profile"), status_code=303)
 
 
@@ -184,7 +181,7 @@ def update_user_role(
 
     if is_htmx_request(request):
         organization, user_permissions, active_invitations = _load_org_for_members_partial(session, organization_id, user)
-        return templates.TemplateResponse(
+        response = templates.TemplateResponse(
             request,
             "organization/partials/members_table.html",
             {
@@ -195,6 +192,7 @@ def update_user_role(
                 "ValidPermissions": ValidPermissions,
             },
         )
+        return append_toast(response, request, templates, "User role updated successfully.")
     return RedirectResponse(
         url=organization_router.url_path_for("read_organization", org_id=organization_id),
         status_code=303
@@ -249,7 +247,7 @@ def remove_user_from_organization(
 
     if is_htmx_request(request):
         organization, user_permissions, active_invitations = _load_org_for_members_partial(session, organization_id, user)
-        return templates.TemplateResponse(
+        response = templates.TemplateResponse(
             request,
             "organization/partials/members_table.html",
             {
@@ -260,6 +258,7 @@ def remove_user_from_organization(
                 "ValidPermissions": ValidPermissions,
             },
         )
+        return append_toast(response, request, templates, "User removed from organization.")
     return RedirectResponse(
         url=organization_router.url_path_for("read_organization", org_id=organization_id),
         status_code=303

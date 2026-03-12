@@ -9,8 +9,9 @@ Convention: HTMX requests send the HX-Request: true header.
 """
 import pytest
 from starlette.requests import Request
+from fastapi.templating import Jinja2Templates
 from tests.conftest import htmx_headers
-from utils.htmx import is_htmx_request
+from utils.htmx import is_htmx_request, toast_response, append_toast
 from utils.core.rate_limit import (
     login_ip_limiter,
     login_email_limiter,
@@ -66,6 +67,44 @@ def test_is_htmx_request_false():
 # 1.4 — Exception handler branches
 # ---------------------------------------------------------------------------
 
+def _assert_htmx_error_is_oob_only(response):
+    """Assert an HTMX error response contains only OOB-swapped content.
+
+    If the response contained non-OOB HTML, HTMX would replace the main
+    swap target with that content, clobbering whatever widget triggered
+    the request (e.g. a roles table).
+    """
+    from html.parser import HTMLParser
+
+    class TopLevelChecker(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.depth = 0
+            self.top_level_tags = []
+            self.top_level_has_oob = []
+
+        def handle_starttag(self, tag, attrs):
+            if self.depth == 0:
+                attrs_dict = dict(attrs)
+                self.top_level_tags.append(tag)
+                self.top_level_has_oob.append("hx-swap-oob" in attrs_dict)
+            self.depth += 1
+
+        def handle_endtag(self, tag):
+            self.depth -= 1
+
+    checker = TopLevelChecker()
+    checker.feed(response.text.strip())
+    assert checker.top_level_tags, "HTMX error response body is empty"
+    for i, (tag, has_oob) in enumerate(
+        zip(checker.top_level_tags, checker.top_level_has_oob)
+    ):
+        assert has_oob, (
+            f"Top-level element #{i} (<{tag}>) lacks hx-swap-oob — "
+            "it would replace the HTMX swap target on error responses"
+        )
+
+
 def test_validation_error_returns_toast_for_htmx(unauth_client):
     """RequestValidationError from an HTMX request returns a 422 toast partial."""
     response = unauth_client.post(
@@ -76,6 +115,29 @@ def test_validation_error_returns_toast_for_htmx(unauth_client):
     assert response.status_code == 422
     assert "<!DOCTYPE html>" not in response.text
     assert "toast" in response.text
+    _assert_htmx_error_is_oob_only(response)
+
+
+def test_credentials_error_htmx_is_oob_only(unauth_client):
+    """CredentialsError HTMX response must be OOB-only to avoid clobbering targets."""
+    response = unauth_client.post(
+        "/account/login",
+        data={"email": "nobody@example.com", "password": "wrongpass"},
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 401
+    _assert_htmx_error_is_oob_only(response)
+
+
+def test_http_exception_htmx_is_oob_only(auth_client, test_organization):
+    """HTTPException HTMX response (e.g. duplicate org name) must be OOB-only."""
+    response = auth_client.post(
+        "/organizations/create",
+        data={"name": test_organization.name},
+        headers=htmx_headers(),
+    )
+    assert response.status_code in (400, 422)
+    _assert_htmx_error_is_oob_only(response)
 
 
 def test_validation_error_returns_full_page_for_non_htmx(unauth_client):
@@ -85,6 +147,161 @@ def test_validation_error_returns_full_page_for_non_htmx(unauth_client):
     )
     assert response.status_code == 422
     assert "<!DOCTYPE html>" in response.text
+
+
+# ---------------------------------------------------------------------------
+# 1.5 — Non-HTMX error pages: human-readable, consistent navigation
+# ---------------------------------------------------------------------------
+
+def test_password_validation_error_non_htmx_shows_readable_message(unauth_client):
+    """PasswordValidationError must render human-readable text, not raw dicts."""
+    from html import unescape
+    response = unauth_client.post(
+        "/account/register",
+        data={
+            "name": "T",
+            "email": "t@t.com",
+            "password": "Abcdef1!",
+            "confirm_password": "wrong",
+        },
+    )
+    assert response.status_code == 422
+    # Unescape so HTML entities don't hide raw dict syntax
+    text = unescape(response.text)
+    # Must contain the actual message, not the raw dict
+    assert "password" in text.lower()
+    assert "{'field'" not in text, "Raw dict rendered in error page"
+    assert "{'message'" not in text, "Raw dict rendered in error page"
+
+
+def test_non_htmx_error_pages_have_go_back_and_home_links(unauth_client):
+    """All non-HTMX error pages should have both Go Back and Return to Home."""
+    # Validation error (422)
+    response = unauth_client.post(
+        "/account/login",
+        data={"email": "", "password": ""},
+    )
+    assert response.status_code == 422
+    assert "Go Back" in response.text
+    assert "Return to Home" in response.text
+
+    # Credentials error (401)
+    response = unauth_client.post(
+        "/account/login",
+        data={"email": "nobody@example.com", "password": "wrongpass"},
+    )
+    assert response.status_code == 401
+    assert "Go Back" in response.text
+    assert "Return to Home" in response.text
+
+
+# ---------------------------------------------------------------------------
+# 1.6 — Auth forms include hx-post for HTMX submission
+# ---------------------------------------------------------------------------
+
+def test_login_form_has_hx_post(unauth_client):
+    """Login form must include hx-post so submissions go through HTMX."""
+    response = unauth_client.get("/account/login")
+    assert response.status_code == 200
+    assert 'hx-post' in response.text
+
+
+def test_register_form_has_hx_post(unauth_client):
+    """Register form must include hx-post so submissions go through HTMX."""
+    response = unauth_client.get("/account/register")
+    assert response.status_code == 200
+    assert 'hx-post' in response.text
+
+
+def test_forgot_password_form_has_hx_post(unauth_client):
+    """Forgot password form must include hx-post so submissions go through HTMX."""
+    response = unauth_client.get("/account/forgot_password")
+    assert response.status_code == 200
+    assert 'hx-post' in response.text
+
+
+def test_reset_password_form_has_hx_post(unauth_client, session, test_account):
+    """Reset password form must include hx-post so submissions go through HTMX."""
+    from utils.core.models import PasswordResetToken
+    token = PasswordResetToken(account_id=test_account.id)
+    session.add(token)
+    session.commit()
+    response = unauth_client.get(
+        "/account/reset_password",
+        params={"email": test_account.email, "token": token.token},
+    )
+    assert response.status_code == 200
+    assert 'hx-post' in response.text
+
+
+# ---------------------------------------------------------------------------
+# 1.7 — Auth form HTMX success returns HX-Redirect (not 303)
+# ---------------------------------------------------------------------------
+
+def test_login_htmx_success_returns_hx_redirect(unauth_client, test_account):
+    """HTMX login success must return HX-Redirect header, not a 303."""
+    response = unauth_client.post(
+        "/account/login",
+        data={"email": test_account.email, "password": "Test123!@#"},
+        headers=htmx_headers(),
+        follow_redirects=False,
+    )
+    assert response.status_code == 200
+    assert "HX-Redirect" in response.headers
+
+
+def test_register_htmx_success_returns_hx_redirect(unauth_client):
+    """HTMX register success must return HX-Redirect header, not a 303."""
+    response = unauth_client.post(
+        "/account/register",
+        data={
+            "name": "HTMX User",
+            "email": "htmxuser@example.com",
+            "password": "Test123!@#",
+            "confirm_password": "Test123!@#",
+        },
+        headers=htmx_headers(),
+        follow_redirects=False,
+    )
+    assert response.status_code == 200
+    assert "HX-Redirect" in response.headers
+
+
+def test_forgot_password_htmx_success_returns_hx_redirect(
+    unauth_client, test_account, mock_resend_send
+):
+    """HTMX forgot-password success must return HX-Redirect, not a 303."""
+    response = unauth_client.post(
+        "/account/forgot_password",
+        data={"email": test_account.email},
+        headers=htmx_headers(),
+        follow_redirects=False,
+    )
+    assert response.status_code == 200
+    assert "HX-Redirect" in response.headers
+
+
+def test_reset_password_htmx_success_returns_hx_redirect(
+    unauth_client, session, test_account
+):
+    """HTMX reset-password success must return HX-Redirect, not a 303."""
+    from utils.core.models import PasswordResetToken
+    token = PasswordResetToken(account_id=test_account.id)
+    session.add(token)
+    session.commit()
+    response = unauth_client.post(
+        "/account/reset_password",
+        data={
+            "email": test_account.email,
+            "token": token.token,
+            "password": "NewPass123!@#",
+            "confirm_password": "NewPass123!@#",
+        },
+        headers=htmx_headers(),
+        follow_redirects=False,
+    )
+    assert response.status_code == 200
+    assert "HX-Redirect" in response.headers
 
 
 # ---------------------------------------------------------------------------
@@ -105,6 +322,7 @@ def test_password_mismatch_htmx_returns_toast(unauth_client):
     assert response.status_code == 422
     assert "toast" in response.text
     assert "<!DOCTYPE html>" not in response.text
+    _assert_htmx_error_is_oob_only(response)
 
 
 # ---------------------------------------------------------------------------
@@ -120,6 +338,7 @@ def test_bad_login_htmx_returns_toast(unauth_client):
     assert response.status_code == 401
     assert "toast" in response.text
     assert "<!DOCTYPE html>" not in response.text
+    _assert_htmx_error_is_oob_only(response)
 
 
 # ---------------------------------------------------------------------------
@@ -267,6 +486,7 @@ def test_duplicate_org_name_htmx_returns_toast(auth_client, test_organization):
     assert response.status_code in (400, 422)
     assert "toast" in response.text
     assert "<!DOCTYPE html>" not in response.text
+    _assert_htmx_error_is_oob_only(response)
 
 
 def test_update_user_role_htmx_returns_member_modal_markup(
@@ -371,6 +591,7 @@ def test_login_rate_limit_htmx_returns_toast(unauth_client):
     assert "toast" in response.text
     assert "<!DOCTYPE html>" not in response.text
     assert "Retry-After" in response.headers
+    _assert_htmx_error_is_oob_only(response)
 
 
 def test_forgot_password_rate_limit_htmx_returns_toast(unauth_client):
@@ -391,3 +612,180 @@ def test_forgot_password_rate_limit_htmx_returns_toast(unauth_client):
     assert response.status_code == 429
     assert "toast" in response.text
     assert "<!DOCTYPE html>" not in response.text
+    _assert_htmx_error_is_oob_only(response)
+
+
+# ---------------------------------------------------------------------------
+# 6.1 — toast_response helper
+# ---------------------------------------------------------------------------
+
+def test_toast_response_helper():
+    """toast_response returns a TemplateResponse with toast HTML."""
+    templates = Jinja2Templates(directory="templates")
+    scope = {
+        "type": "http",
+        "headers": [],
+        "method": "GET",
+        "path": "/",
+        "query_string": b"",
+    }
+    request = Request(scope)
+    resp = toast_response(request, templates, "Hello", level="success", status_code=200)
+    body = resp.body.decode()
+    assert "toast" in body
+    assert "Hello" in body
+    assert resp.status_code == 200
+
+
+def test_toast_response_with_headers():
+    """toast_response forwards extra headers."""
+    templates = Jinja2Templates(directory="templates")
+    scope = {
+        "type": "http",
+        "headers": [],
+        "method": "GET",
+        "path": "/",
+        "query_string": b"",
+    }
+    request = Request(scope)
+    resp = toast_response(
+        request, templates, "Rate limited", level="danger",
+        status_code=429, headers={"Retry-After": "60"},
+    )
+    assert resp.headers["Retry-After"] == "60"
+
+
+def test_append_toast_helper():
+    """append_toast appends toast HTML to an existing TemplateResponse."""
+    templates = Jinja2Templates(directory="templates")
+    scope = {
+        "type": "http",
+        "headers": [],
+        "method": "GET",
+        "path": "/",
+        "query_string": b"",
+    }
+    request = Request(scope)
+    original = templates.TemplateResponse(
+        request,
+        "base/partials/toast.html",
+        {"message": "original", "level": "info"},
+    )
+    result = append_toast(original, request, templates, "appended", level="success")
+    body = result.body.decode()
+    assert "original" in body
+    assert "appended" in body
+
+
+# ---------------------------------------------------------------------------
+# 6.2 — Success toasts in HTMX mutation responses
+# ---------------------------------------------------------------------------
+
+def test_update_profile_htmx_includes_success_toast(auth_client):
+    response = auth_client.post(
+        "/user/update",
+        data={"name": "Toast Name"},
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 200
+    assert "Profile updated successfully" in response.text
+    assert "toast" in response.text
+
+
+def test_create_role_htmx_includes_success_toast(auth_client_owner, test_organization):
+    response = auth_client_owner.post(
+        "/roles/create",
+        data={
+            "name": "ToastRole",
+            "organization_id": str(test_organization.id),
+        },
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 200
+    assert "Role created successfully" in response.text
+
+
+def test_delete_role_htmx_includes_success_toast(auth_client_owner, test_organization, session):
+    from utils.core.models import Role
+    custom_role = Role(name="ToDeleteToast", organization_id=test_organization.id)
+    session.add(custom_role)
+    session.commit()
+    session.refresh(custom_role)
+
+    response = auth_client_owner.post(
+        "/roles/delete",
+        data={
+            "id": str(custom_role.id),
+            "organization_id": str(test_organization.id),
+        },
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 200
+    assert "Role deleted successfully" in response.text
+
+
+def test_update_role_htmx_includes_success_toast(auth_client_owner, test_organization, session):
+    from utils.core.models import Role
+    custom_role = Role(name="RenameMe", organization_id=test_organization.id)
+    session.add(custom_role)
+    session.commit()
+    session.refresh(custom_role)
+
+    response = auth_client_owner.post(
+        "/roles/update",
+        data={
+            "id": str(custom_role.id),
+            "name": "Renamed",
+            "organization_id": str(test_organization.id),
+        },
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 200
+    assert "Role updated successfully" in response.text
+
+
+def test_create_invitation_htmx_includes_success_toast(
+    auth_client_owner, test_organization, member_role, mock_resend_send
+):
+    response = auth_client_owner.post(
+        "/invitations/",
+        data={
+            "invitee_email": "toastinvite@example.com",
+            "role_id": str(member_role.id),
+            "organization_id": str(test_organization.id),
+        },
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 200
+    assert "Invitation sent successfully" in response.text
+
+
+def test_update_user_role_htmx_includes_success_toast(
+    auth_client_owner, org_member_user, test_organization, member_role
+):
+    response = auth_client_owner.post(
+        "/user/role/update",
+        data={
+            "user_id": str(org_member_user.id),
+            "organization_id": str(test_organization.id),
+            "roles": [str(member_role.id)],
+        },
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 200
+    assert "User role updated successfully" in response.text
+
+
+def test_remove_user_htmx_includes_success_toast(
+    auth_client_owner, org_member_user, test_organization
+):
+    response = auth_client_owner.post(
+        "/user/organization/remove",
+        data={
+            "user_id": str(org_member_user.id),
+            "organization_id": str(test_organization.id),
+        },
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 200
+    assert "User removed from organization" in response.text
