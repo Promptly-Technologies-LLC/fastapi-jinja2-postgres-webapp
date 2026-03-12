@@ -49,7 +49,7 @@ def validate_and_process_image(
         # Open and validate image
         image: Image.Image = Image.open(io.BytesIO(image_data))
         width, height = image.size
-    except Exception as e:
+    except Exception:
         raise InvalidImageError(
             message="Invalid image file"
         )

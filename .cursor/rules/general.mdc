@@ -11,8 +11,8 @@ When building out features, always keep changes atomic and make sure to write an
 uv run pytest tests   # or the path to a specific test file
 ```
 
-All code should be rigorously type hinted so as to pass a static type check with `mypy`. To run a `mypy` check, use:
+All code should be rigorously type hinted so as to pass a static type check with `ty`. To run a `ty` check, use:
 
 ```bash
-uv run mypy .
+uv run ty check .
 ```

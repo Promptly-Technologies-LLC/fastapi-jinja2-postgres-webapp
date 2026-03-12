@@ -31,5 +31,15 @@ dev = [
     "notebook<8.0.0,>=7.2.2",
     "pytest<9.0.0,>=8.3.3",
     "sqlalchemy-schemadisplay<3.0,>=2.0",
-    "mypy>=1.18.2",
+    "ty>=0.0.21",
+    "ruff>=0.15.5",
 ]
+
+[tool.ty.rules]
+# SQLModel/SQLAlchemy metaclass attributes (__table__) and constructor
+# patterns are not understood by ty, nor is pytest's @_with_exception
+# decorator on pytest.fail, nor resend library type stubs.
+invalid-argument-type = "warn"
+unresolved-attribute = "warn"
+invalid-assignment = "warn"
+missing-argument = "warn"

@@ -45,8 +45,11 @@ jobs:
       - name: Install project
         run: uv sync --all-extras --dev
 
-      - name: Run type checking with mypy
-        run: uv run mypy .
+      - name: Run linting with ruff
+        run: uv run ruff check .
+
+      - name: Run type checking with ty
+        run: uv run ty check .
 
       - name: Run tests with pytest
         run: uv run pytest tests/

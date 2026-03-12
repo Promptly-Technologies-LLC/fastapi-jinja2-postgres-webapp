@@ -7,7 +7,6 @@ from main import app
 from utils.core.models import User, Role, Organization
 from utils.core.images import InvalidImageError
 import re
-import pytest
 
 # Mock data for consistent testing
 MOCK_IMAGE_DATA = b"processed fake image data"

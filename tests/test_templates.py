@@ -138,9 +138,6 @@ def test_template_required_variables(template_file: Path):
 # HTMX-specific template assertions (Phase 1-5)
 # ---------------------------------------------------------------------------
 
-from pathlib import Path
-import pytest
-
 
 def test_base_template_includes_htmx():
     content = Path("templates/base.html").read_text()

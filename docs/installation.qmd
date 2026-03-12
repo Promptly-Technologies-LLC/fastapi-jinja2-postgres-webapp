@@ -169,8 +169,8 @@ Navigate to http://localhost:8000/.
 
 (Note: If startup fails with a sqlalchemy/psycopg2 connection error, make sure that Docker Desktop and the database service are running and that the environment variables in the `.env` file are correctly populated, and then try again.)
 
-## Lint types with mypy
+## Type check with ty
 
 ``` bash
-mypy .
+uv run ty check .
 ```

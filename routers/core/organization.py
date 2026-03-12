@@ -285,7 +285,7 @@ def invite_member(
     try:
         member_role.users.append(invited_user)
         session.commit()
-    except Exception as e:
+    except Exception:
         session.rollback()
         raise
 
