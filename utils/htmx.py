@@ -47,7 +47,7 @@ def _render_toast_html(
         "base/partials/toast.html",
         {"message": message, "level": level},
     )
-    return resp.body.decode()
+    return bytes(resp.body).decode()
 
 
 def append_toast(
@@ -59,7 +59,7 @@ def append_toast(
 ) -> TemplateResponse:
     """Append an OOB toast partial to an existing TemplateResponse body."""
     toast_html = _render_toast_html(request, templates, message, level)
-    original_body = response.body.decode()
+    original_body = bytes(response.body).decode()
     response.body = (original_body + toast_html).encode()
     # Update content-length header
     response.headers["content-length"] = str(len(response.body))
