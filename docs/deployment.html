@@ -183,6 +183,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#deploying-and-configuring-the-fastapi-app" id="toc-deploying-and-configuring-the-fastapi-app" class="nav-link" data-scroll-target="#deploying-and-configuring-the-fastapi-app">Deploying and Configuring the FastAPI App</a>
   <ul class="collapse">
   <li><a href="#on-modal.com" id="toc-on-modal.com" class="nav-link" data-scroll-target="#on-modal.com">On Modal.com</a></li>
+  <li><a href="#on-hetzner-cloud" id="toc-on-hetzner-cloud" class="nav-link" data-scroll-target="#on-hetzner-cloud">On Hetzner Cloud</a></li>
   </ul></li>
   <li><a href="#connection-pooling" id="toc-connection-pooling" class="nav-link" data-scroll-target="#connection-pooling">Connection Pooling</a>
   <ul class="collapse">
@@ -222,6 +223,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>A FastAPI app (the application layer)</li>
 </ol>
 <p>There are <em>many</em> hosting options available for each of these services; this guide will cover only a few of them.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Deployment artifacts (Dockerfiles, deploy scripts, compose files, etc.) are kept on separate git branches — one per deployment target — to avoid cluttering the main branch. See the <code>modal</code> branch for Modal deployment files and the <code>hetzner</code> branch for Hetzner Cloud deployment files. The documentation below describes how to use them.</p>
+</div>
+</div>
 <section id="deploying-and-configuring-the-postgresql-database" class="level2">
 <h2 class="anchored" data-anchor-id="deploying-and-configuring-the-postgresql-database">Deploying and Configuring the PostgreSQL Database</h2>
 <section id="on-digital-ocean" class="level3">
@@ -371,6 +385,129 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Access the provided Modal URL in your browser. Browse the site and test the registration and password reset features to ensure database and Resend connections work.</p>
 </section>
 </section>
+<section id="on-hetzner-cloud" class="level3">
+<h3 class="anchored" data-anchor-id="on-hetzner-cloud">On Hetzner Cloud</h3>
+<p>Hetzner Cloud offers affordable, dedicated VMs with predictable pricing. Unlike Modal, Hetzner runs both the database and application on the same server, giving you a self-contained deployment with a static IP and automatic TLS via Caddy.</p>
+<p><strong>Advantages:</strong></p>
+<ol type="1">
+<li>Very affordable — a 2 vCPU / 2GB server starts at ~€4/month</li>
+<li>Full control over the server, static IP included</li>
+<li>Runs both the app and database on a single server (no external database needed)</li>
+<li>Automatic HTTPS via Caddy and Let’s Encrypt</li>
+</ol>
+<p><strong>Disadvantages:</strong></p>
+<ol type="1">
+<li>No automatic scaling — you get a fixed-size server</li>
+<li>You are responsible for server maintenance and updates</li>
+<li>You pay a fixed cost even with zero traffic</li>
+</ol>
+<section id="getting-started-2" class="level4">
+<h4 class="anchored" data-anchor-id="getting-started-2">Getting Started</h4>
+<ul>
+<li>Create a <a href="https://www.hetzner.com/cloud">Hetzner Cloud</a> account</li>
+<li>Generate an API token in the Cloud Console under <strong>Security &gt; API Tokens</strong></li>
+<li>Install the <a href="https://github.com/hetznercloud/cli"><code>hcloud</code> CLI</a> and create a context:</li>
+</ul>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">hcloud</span> context create myproject</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Paste your API token when prompted</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="preparing-the-environment-file" class="level4">
+<h4 class="anchored" data-anchor-id="preparing-the-environment-file">Preparing the Environment File</h4>
+<p>Copy <code>.env.example</code> to <code>.env.production</code> and fill in your production values:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="va">SECRET_KEY</span><span class="op">=</span>your-secret-key</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="va">BASE_URL</span><span class="op">=</span>https://your-domain.com</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="va">DOMAIN</span><span class="op">=</span>your-domain.com</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="va">USE_POOL</span><span class="op">=</span>0</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="va">DB_HOST</span><span class="op">=</span>db</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="va">DB_PORT</span><span class="op">=</span>5432</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="va">DB_USER</span><span class="op">=</span>postgres</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="va">DB_PASSWORD</span><span class="op">=</span>a-strong-password</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="va">DB_NAME</span><span class="op">=</span>webapp</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="va">DB_SSLMODE</span><span class="op">=</span>disable</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="va">RESEND_API_KEY</span><span class="op">=</span>your-resend-key</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="va">EMAIL_FROM</span><span class="op">=</span>noreply@your-domain.com</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Note that <code>DB_HOST=db</code> refers to the Docker Compose service name — the database runs on the same server as the app.</p>
+</section>
+<section id="deploying" class="level4">
+<h4 class="anchored" data-anchor-id="deploying">Deploying</h4>
+<p>Run the included deploy script:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./deploy-hetzner.sh</span> .env.production</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The script will:</p>
+<ol type="1">
+<li>Create (or reuse) an SSH key and register it with Hetzner</li>
+<li>Create a firewall allowing SSH, HTTP, and HTTPS</li>
+<li>Provision a server with Docker pre-installed via cloud-init</li>
+<li>Rsync the project files to the server</li>
+<li>Start the app, database, and Caddy reverse proxy via Docker Compose</li>
+</ol>
+</section>
+<section id="dns-setup" class="level4">
+<h4 class="anchored" data-anchor-id="dns-setup">DNS Setup</h4>
+<p>After deployment, the script prints the server’s IP address. Create a DNS <strong>A record</strong> pointing your domain to this IP. Once DNS propagates, Caddy will automatically provision a TLS certificate from Let’s Encrypt.</p>
+</section>
+<section id="configuration" class="level4">
+<h4 class="anchored" data-anchor-id="configuration">Configuration</h4>
+<p>You can customize the server by setting environment variables before running the script:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>HETZNER_SERVER_NAME</code></td>
+<td><code>fastapi-webapp</code></td>
+<td>Server name in Hetzner</td>
+</tr>
+<tr class="even">
+<td><code>HETZNER_SERVER_TYPE</code></td>
+<td><code>cpx11</code></td>
+<td>Server type (2 shared vCPU, 2GB RAM)</td>
+</tr>
+<tr class="odd">
+<td><code>HETZNER_IMAGE</code></td>
+<td><code>ubuntu-24.04</code></td>
+<td>OS image</td>
+</tr>
+<tr class="even">
+<td><code>HETZNER_LOCATION</code></td>
+<td><code>ash</code></td>
+<td>Datacenter location (Ashburn, VA)</td>
+</tr>
+<tr class="odd">
+<td><code>HETZNER_SSH_KEY_NAME</code></td>
+<td><code>deploy-key</code></td>
+<td>SSH key name in Hetzner</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="managing-the-deployment" class="level4">
+<h4 class="anchored" data-anchor-id="managing-the-deployment">Managing the Deployment</h4>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># SSH into the server</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> root@<span class="op">&lt;</span>server-ip<span class="op">&gt;</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co"># View logs</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> root@<span class="op">&lt;</span>server-ip<span class="op">&gt;</span> <span class="st">'cd /opt/app &amp;&amp; docker compose -f docker-compose.prod.yml logs -f'</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Restart services</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> root@<span class="op">&lt;</span>server-ip<span class="op">&gt;</span> <span class="st">'cd /opt/app &amp;&amp; docker compose -f docker-compose.prod.yml restart'</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Redeploy after code changes (run locally)</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="ex">./deploy-hetzner.sh</span> .env.production</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Tear down the server</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="ex">hcloud</span> server delete fastapi-webapp</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
 </section>
 <section id="connection-pooling" class="level2">
 <h2 class="anchored" data-anchor-id="connection-pooling">Connection Pooling</h2>
@@ -406,39 +543,39 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Extract the host, port, database, user, and password from the connection string</li>
 <li>Configure your environment:</li>
 </ol>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="va">USE_POOL</span><span class="op">=</span>1</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="va">DB_HOST</span><span class="op">=</span>aws-0-us-east-1.pooler.supabase.com</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="va">DB_POOL_PORT</span><span class="op">=</span>6543</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="va">DB_POOL_NAME</span><span class="op">=</span>postgres</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="va">DB_APPUSER</span><span class="op">=</span>postgres.yourproject</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="va">DB_APPUSER_PASSWORD</span><span class="op">=</span>your-password</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="va">DB_SSLMODE</span><span class="op">=</span>require</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="va">USE_POOL</span><span class="op">=</span>1</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="va">DB_HOST</span><span class="op">=</span>aws-0-us-east-1.pooler.supabase.com</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="va">DB_POOL_PORT</span><span class="op">=</span>6543</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="va">DB_POOL_NAME</span><span class="op">=</span>postgres</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="va">DB_APPUSER</span><span class="op">=</span>postgres.yourproject</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="va">DB_APPUSER_PASSWORD</span><span class="op">=</span>your-password</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="va">DB_SSLMODE</span><span class="op">=</span>require</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="setting-up-a-restricted-application-user" class="level3">
 <h3 class="anchored" data-anchor-id="setting-up-a-restricted-application-user">Setting Up a Restricted Application User</h3>
 <p>When using connection pooling, it’s a security best practice to create a separate database user with restricted permissions for your application’s runtime connections. This follows the principle of least privilege - the app user can only perform the operations it needs, limiting potential damage from SQL injection or other vulnerabilities.</p>
 <p>Connect to your database as the admin user and run:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Create the application user</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="fu">USER</span> appuser <span class="kw">WITH</span> <span class="kw">PASSWORD</span> <span class="st">'your-secure-password'</span>;</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- Grant connect permission</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="kw">GRANT</span> <span class="kw">CONNECT</span> <span class="kw">ON</span> <span class="kw">DATABASE</span> yourdb <span class="kw">TO</span> appuser;</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co">-- Grant usage on the public schema</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="kw">GRANT</span> <span class="kw">USAGE</span> <span class="kw">ON</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">TO</span> appuser;</span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="co">-- Grant permissions on all existing tables</span></span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="kw">GRANT</span> <span class="kw">SELECT</span>, <span class="kw">INSERT</span>, <span class="kw">UPDATE</span>, <span class="kw">DELETE</span> <span class="kw">ON</span> <span class="kw">ALL</span> <span class="kw">TABLES</span> <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">TO</span> appuser;</span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="co">-- Grant permissions on sequences (needed for auto-incrementing IDs)</span></span>
-<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="kw">GRANT</span> <span class="kw">USAGE</span>, <span class="kw">SELECT</span> <span class="kw">ON</span> <span class="kw">ALL</span> SEQUENCES <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">TO</span> appuser;</span>
-<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a><span class="co">-- Ensure future tables also get these permissions</span></span>
-<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">DEFAULT</span> <span class="kw">PRIVILEGES</span> <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">GRANT</span> <span class="kw">SELECT</span>, <span class="kw">INSERT</span>, <span class="kw">UPDATE</span>, <span class="kw">DELETE</span> <span class="kw">ON</span> <span class="kw">TABLES</span> <span class="kw">TO</span> appuser;</span>
-<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">DEFAULT</span> <span class="kw">PRIVILEGES</span> <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">GRANT</span> <span class="kw">USAGE</span>, <span class="kw">SELECT</span> <span class="kw">ON</span> SEQUENCES <span class="kw">TO</span> appuser;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Create the application user</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="fu">USER</span> appuser <span class="kw">WITH</span> <span class="kw">PASSWORD</span> <span class="st">'your-secure-password'</span>;</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- Grant connect permission</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="kw">GRANT</span> <span class="kw">CONNECT</span> <span class="kw">ON</span> <span class="kw">DATABASE</span> yourdb <span class="kw">TO</span> appuser;</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="co">-- Grant usage on the public schema</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="kw">GRANT</span> <span class="kw">USAGE</span> <span class="kw">ON</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">TO</span> appuser;</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="co">-- Grant permissions on all existing tables</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="kw">GRANT</span> <span class="kw">SELECT</span>, <span class="kw">INSERT</span>, <span class="kw">UPDATE</span>, <span class="kw">DELETE</span> <span class="kw">ON</span> <span class="kw">ALL</span> <span class="kw">TABLES</span> <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">TO</span> appuser;</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="co">-- Grant permissions on sequences (needed for auto-incrementing IDs)</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="kw">GRANT</span> <span class="kw">USAGE</span>, <span class="kw">SELECT</span> <span class="kw">ON</span> <span class="kw">ALL</span> SEQUENCES <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">TO</span> appuser;</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="co">-- Ensure future tables also get these permissions</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">DEFAULT</span> <span class="kw">PRIVILEGES</span> <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">GRANT</span> <span class="kw">SELECT</span>, <span class="kw">INSERT</span>, <span class="kw">UPDATE</span>, <span class="kw">DELETE</span> <span class="kw">ON</span> <span class="kw">TABLES</span> <span class="kw">TO</span> appuser;</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">DEFAULT</span> <span class="kw">PRIVILEGES</span> <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">GRANT</span> <span class="kw">USAGE</span>, <span class="kw">SELECT</span> <span class="kw">ON</span> SEQUENCES <span class="kw">TO</span> appuser;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Then configure your environment to use this user for pooled connections:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="va">DB_APPUSER</span><span class="op">=</span>appuser</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="va">DB_APPUSER_PASSWORD</span><span class="op">=</span>your-secure-password</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="va">DB_APPUSER</span><span class="op">=</span>appuser</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="va">DB_APPUSER_PASSWORD</span><span class="op">=</span>your-secure-password</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Keep your admin credentials (<code>DB_USER</code>, <code>DB_PASSWORD</code>) for direct connections used during schema migrations or administrative tasks.</p>
 </section>
 <section id="when-to-use-connection-pooling" class="level3">

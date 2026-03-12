@@ -190,7 +190,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#set-environment-variables" id="toc-set-environment-variables" class="nav-link" data-scroll-target="#set-environment-variables">Set environment variables</a></li>
   <li><a href="#start-development-database" id="toc-start-development-database" class="nav-link" data-scroll-target="#start-development-database">Start development database</a></li>
   <li><a href="#run-the-development-server" id="toc-run-the-development-server" class="nav-link" data-scroll-target="#run-the-development-server">Run the development server</a></li>
-  <li><a href="#lint-types-with-mypy" id="toc-lint-types-with-mypy" class="nav-link" data-scroll-target="#lint-types-with-mypy">Lint types with mypy</a></li>
+  <li><a href="#type-check-with-ty" id="toc-type-check-with-ty" class="nav-link" data-scroll-target="#type-check-with-ty">Type check with ty</a></li>
   </ul></li>
   <li><a href="#developing-with-llms" id="toc-developing-with-llms" class="nav-link" data-scroll-target="#developing-with-llms">Developing with LLMs</a></li>
   <li><a href="#contributing" id="toc-contributing" class="nav-link" data-scroll-target="#contributing">Contributing</a></li>
@@ -265,7 +265,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><a href="https://www.docker.com/">Docker</a>: development containerization</li>
 <li><a href="https://docs.github.com/en/actions">Github Actions</a>: CI/CD pipeline</li>
 <li><a href="https://quarto.org/docs/">Quarto</a>: simple documentation website renderer</li>
-<li><a href="https://mypy.readthedocs.io/en/stable/">MyPy</a>: static type checker for Python</li>
+<li><a href="https://docs.astral.sh/ty/">ty</a>: static type checker for Python</li>
 <li><a href="https://getbootstrap.com/">Bootstrap</a>: HTML/CSS styler</li>
 <li><a href="https://resend.com/">Resend</a>: zero- or low-cost email service used for password recovery</li>
 </ul>
@@ -327,9 +327,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python <span class="at">-m</span> uvicorn main:app <span class="at">--host</span> 0.0.0.0 <span class="at">--port</span> 8000 <span class="at">--reload</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Navigate to http://localhost:8000/</p>
 </section>
-<section id="lint-types-with-mypy" class="level3">
-<h3 class="anchored" data-anchor-id="lint-types-with-mypy">Lint types with mypy</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run mypy .</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="type-check-with-ty" class="level3">
+<h3 class="anchored" data-anchor-id="type-check-with-ty">Type check with ty</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run ty check .</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 <section id="developing-with-llms" class="level2">

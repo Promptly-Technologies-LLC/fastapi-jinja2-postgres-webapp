@@ -182,7 +182,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#ide-configuration" id="toc-ide-configuration" class="nav-link" data-scroll-target="#ide-configuration">IDE configuration</a></li>
   <li><a href="#extending-the-template" id="toc-extending-the-template" class="nav-link" data-scroll-target="#extending-the-template">Extending the template</a></li>
   <li><a href="#testing" id="toc-testing" class="nav-link" data-scroll-target="#testing">Testing</a></li>
-  <li><a href="#type-checking-with-mypy" id="toc-type-checking-with-mypy" class="nav-link" data-scroll-target="#type-checking-with-mypy">Type checking with mypy</a></li>
+  <li><a href="#type-checking-with-ty" id="toc-type-checking-with-ty" class="nav-link" data-scroll-target="#type-checking-with-ty">Type checking with ty</a></li>
   <li><a href="#developing-with-llms" id="toc-developing-with-llms" class="nav-link" data-scroll-target="#developing-with-llms">Developing with LLMs</a></li>
   </ul></li>
   <li><a href="#application-architecture" id="toc-application-architecture" class="nav-link" data-scroll-target="#application-architecture">Application architecture</a>
@@ -283,11 +283,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Run particular tests by name: <code>uv run pytest -k &lt;test_name&gt;</code></li>
 </ul>
 </section>
-<section id="type-checking-with-mypy" class="level3">
-<h3 class="anchored" data-anchor-id="type-checking-with-mypy">Type checking with mypy</h3>
-<p>The project uses type annotations and mypy for static type checking. To run mypy, use this command from the root directory:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">mypy</span> .</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>We find that mypy is an enormous time-saver, catching many errors early and greatly reducing time spent debugging unit tests. However, note that mypy requires you type annotate every variable, function, and method in your code base, so taking advantage of it requires a lifestyle change!</p>
+<section id="type-checking-with-ty" class="level3">
+<h3 class="anchored" data-anchor-id="type-checking-with-ty">Type checking with ty</h3>
+<p>The project uses type annotations and <a href="https://docs.astral.sh/ty/">ty</a> for static type checking. To run ty, use this command from the root directory:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run ty check .</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>We find that static type checking is an enormous time-saver, catching many errors early and greatly reducing time spent debugging unit tests. However, note that it requires you type annotate every variable, function, and method in your code base, so taking advantage of it requires a lifestyle change!</p>
 </section>
 <section id="developing-with-llms" class="level3">
 <h3 class="anchored" data-anchor-id="developing-with-llms">Developing with LLMs</h3>

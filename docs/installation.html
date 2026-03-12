@@ -194,7 +194,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#set-environment-variables" id="toc-set-environment-variables" class="nav-link" data-scroll-target="#set-environment-variables">Set environment variables</a></li>
   <li><a href="#start-development-database" id="toc-start-development-database" class="nav-link" data-scroll-target="#start-development-database">Start development database</a></li>
   <li><a href="#run-the-development-server" id="toc-run-the-development-server" class="nav-link" data-scroll-target="#run-the-development-server">Run the development server</a></li>
-  <li><a href="#lint-types-with-mypy" id="toc-lint-types-with-mypy" class="nav-link" data-scroll-target="#lint-types-with-mypy">Lint types with mypy</a></li>
+  <li><a href="#type-check-with-ty" id="toc-type-check-with-ty" class="nav-link" data-scroll-target="#type-check-with-ty">Type check with ty</a></li>
   </ul>
 </nav>
     </div>
@@ -328,9 +328,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Navigate to http://localhost:8000/.</p>
 <p>(Note: If startup fails with a sqlalchemy/psycopg2 connection error, make sure that Docker Desktop and the database service are running and that the environment variables in the <code>.env</code> file are correctly populated, and then try again.)</p>
 </section>
-<section id="lint-types-with-mypy" class="level2">
-<h2 class="anchored" data-anchor-id="lint-types-with-mypy">Lint types with mypy</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">mypy</span> .</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="type-check-with-ty" class="level2">
+<h2 class="anchored" data-anchor-id="type-check-with-ty">Type check with ty</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run ty check .</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 
 </section>
