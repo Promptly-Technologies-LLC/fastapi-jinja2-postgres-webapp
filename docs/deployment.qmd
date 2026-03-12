@@ -9,6 +9,10 @@ This application requires two services to be deployed and connected to each othe
 
 There are *many* hosting options available for each of these services; this guide will cover only a few of them.
 
+::: {.callout-note}
+Deployment artifacts (Dockerfiles, deploy scripts, compose files, etc.) are kept on separate git branches — one per deployment target — to avoid cluttering the main branch. See the `modal` branch for Modal deployment files and the `hetzner` branch for Hetzner Cloud deployment files. The documentation below describes how to use them.
+:::
+
 ## Deploying and Configuring the PostgreSQL Database
 
 ### On Digital Ocean
@@ -189,6 +193,106 @@ modal secret create your-app-name-secret \
 #### Testing the Deployment
 
 Access the provided Modal URL in your browser. Browse the site and test the registration and password reset features to ensure database and Resend connections work.
+
+### On Hetzner Cloud
+
+Hetzner Cloud offers affordable, dedicated VMs with predictable pricing. Unlike Modal, Hetzner runs both the database and application on the same server, giving you a self-contained deployment with a static IP and automatic TLS via Caddy.
+
+**Advantages:**
+
+1. Very affordable — a 2 vCPU / 2GB server starts at ~€4/month
+2. Full control over the server, static IP included
+3. Runs both the app and database on a single server (no external database needed)
+4. Automatic HTTPS via Caddy and Let's Encrypt
+
+**Disadvantages:**
+
+1. No automatic scaling — you get a fixed-size server
+2. You are responsible for server maintenance and updates
+3. You pay a fixed cost even with zero traffic
+
+#### Getting Started
+
+- Create a [Hetzner Cloud](https://www.hetzner.com/cloud) account
+- Generate an API token in the Cloud Console under **Security > API Tokens**
+- Install the [`hcloud` CLI](https://github.com/hetznercloud/cli) and create a context:
+
+```bash
+hcloud context create myproject
+# Paste your API token when prompted
+```
+
+#### Preparing the Environment File
+
+Copy `.env.example` to `.env.production` and fill in your production values:
+
+```bash
+SECRET_KEY=your-secret-key
+BASE_URL=https://your-domain.com
+DOMAIN=your-domain.com
+USE_POOL=0
+DB_HOST=db
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=a-strong-password
+DB_NAME=webapp
+DB_SSLMODE=disable
+RESEND_API_KEY=your-resend-key
+EMAIL_FROM=noreply@your-domain.com
+```
+
+Note that `DB_HOST=db` refers to the Docker Compose service name — the database runs on the same server as the app.
+
+#### Deploying
+
+Run the included deploy script:
+
+```bash
+./deploy-hetzner.sh .env.production
+```
+
+The script will:
+
+1. Create (or reuse) an SSH key and register it with Hetzner
+2. Create a firewall allowing SSH, HTTP, and HTTPS
+3. Provision a server with Docker pre-installed via cloud-init
+4. Rsync the project files to the server
+5. Start the app, database, and Caddy reverse proxy via Docker Compose
+
+#### DNS Setup
+
+After deployment, the script prints the server's IP address. Create a DNS **A record** pointing your domain to this IP. Once DNS propagates, Caddy will automatically provision a TLS certificate from Let's Encrypt.
+
+#### Configuration
+
+You can customize the server by setting environment variables before running the script:
+
+| Variable | Default | Description |
+|---|---|---|
+| `HETZNER_SERVER_NAME` | `fastapi-webapp` | Server name in Hetzner |
+| `HETZNER_SERVER_TYPE` | `cpx11` | Server type (2 shared vCPU, 2GB RAM) |
+| `HETZNER_IMAGE` | `ubuntu-24.04` | OS image |
+| `HETZNER_LOCATION` | `ash` | Datacenter location (Ashburn, VA) |
+| `HETZNER_SSH_KEY_NAME` | `deploy-key` | SSH key name in Hetzner |
+
+#### Managing the Deployment
+
+```bash
+# SSH into the server
+ssh root@<server-ip>
+
+# View logs
+ssh root@<server-ip> 'cd /opt/app && docker compose -f docker-compose.prod.yml logs -f'
+
+# Restart services
+ssh root@<server-ip> 'cd /opt/app && docker compose -f docker-compose.prod.yml restart'
+
+# Redeploy after code changes (run locally)
+./deploy-hetzner.sh .env.production
+
+# Tear down the server
+hcloud server delete fastapi-webapp
+```
 
 ## Connection Pooling
 
