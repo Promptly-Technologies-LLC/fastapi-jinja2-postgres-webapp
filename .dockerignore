@@ -1,0 +1,15 @@
+.venv
+__pycache__
+.mypy_cache
+.pytest_cache
+.git
+.specstory
+_docs
+_environment
+artifacts
+node_modules
+tests
+docs
+*.ipynb
+.env*
+!.env.example
