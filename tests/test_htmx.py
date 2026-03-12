@@ -150,9 +150,9 @@ def test_create_role_non_htmx_redirects(auth_client_owner, test_organization):
             "name": "Viewer2",
             "organization_id": str(test_organization.id),
         },
-        follow_redirects=False,
     )
     assert response.status_code == 303
+    assert response.headers["location"] == f"/organizations/{test_organization.id}"
 
 
 def test_delete_role_htmx_returns_partial(auth_client_owner, test_organization, session):
@@ -248,9 +248,9 @@ def test_update_profile_non_htmx_redirects(auth_client):
     response = auth_client.post(
         "/user/update",
         data={"name": "Updated Name"},
-        follow_redirects=False,
     )
     assert response.status_code == 303
+    assert response.headers["location"] == "/user/profile"
 
 
 # ---------------------------------------------------------------------------
@@ -380,7 +380,6 @@ def test_forgot_password_rate_limit_htmx_returns_toast(unauth_client):
             "/account/forgot_password",
             data={"email": "user@example.com"},
             headers=htmx_headers(),
-            follow_redirects=False,
         )
 
     response = unauth_client.post(

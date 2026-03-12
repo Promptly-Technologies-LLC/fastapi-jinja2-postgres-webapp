@@ -16,7 +16,7 @@ MOCK_CONTENT_TYPE = "image/png"
 def test_read_profile_unauthorized(unauth_client: TestClient):
     """Test that unauthorized users cannot view profile"""
     response = unauth_client.get(app.url_path_for(
-        "read_profile"), follow_redirects=False)
+        "read_profile"))
     assert response.status_code == 303  # Redirect to login
     assert response.headers["location"] == app.url_path_for("read_login")
 
@@ -51,7 +51,6 @@ def test_update_profile_unauthorized(unauth_client: TestClient):
         files={
             "avatar_file": ("test_avatar.jpg", b"fake image data", "image/jpeg")
         },
-        follow_redirects=False
     )
     assert response.status_code == 303  # Redirect to login
     assert response.headers["location"] == app.url_path_for("read_login")
@@ -75,7 +74,6 @@ def test_update_profile_authorized(
         files={
             "avatar_file": ("test_avatar.jpg", b"fake image data", "image/jpeg")
         },
-        follow_redirects=False
     )
     assert response.status_code == 303
     assert response.headers["location"] == app.url_path_for("read_profile")
@@ -98,7 +96,6 @@ def test_update_profile_without_avatar(auth_client: TestClient, test_user: User,
         data={
             "name": "Updated Name"
         },
-        follow_redirects=False
     )
     assert response.status_code == 303
     assert response.headers["location"] == app.url_path_for("read_profile")
@@ -113,7 +110,6 @@ def test_delete_account_unauthorized(unauth_client: TestClient):
     response: Response = unauth_client.post(
         app.url_path_for("delete_account"),
         data={"confirm_delete_password": "Test123!@#"},
-        follow_redirects=False
     )
     assert response.status_code == 303  # Redirect to login
     assert response.headers["location"] == app.url_path_for("read_login")
@@ -127,7 +123,6 @@ def test_delete_account_wrong_password(auth_client: TestClient, test_user: User)
             "email": test_user.account.email if test_user.account else "",
             "password": "WrongPassword123!"
         },
-        follow_redirects=False
     )
     assert response.status_code == 422
     assert "Password is incorrect" in response.text.strip()
@@ -146,7 +141,6 @@ def test_delete_account_success(auth_client: TestClient, test_user: User, sessio
             "email": test_user.account.email if test_user.account else "",
             "password": "Test123!@#"
         },
-        follow_redirects=False
     )
     assert response.status_code == 303
     assert response.headers["location"] == app.url_path_for("logout")
@@ -192,7 +186,6 @@ def test_get_avatar_unauthorized(unauth_client: TestClient):
     """Test getting avatar for non-existent user"""
     response = unauth_client.get(
         app.url_path_for("get_avatar"),
-        follow_redirects=False
     )
     assert response.status_code == 303
     assert response.headers["location"] == app.url_path_for("read_login")
