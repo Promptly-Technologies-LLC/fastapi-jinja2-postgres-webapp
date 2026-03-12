@@ -18,7 +18,6 @@ def test_accept_invitation_new_user_get_redirects_to_register(
     response = unauth_client.get(
         app.url_path_for("accept_invitation"),
         params={"token": test_invitation.token},
-        follow_redirects=False
     )
     assert response.status_code == 303
     redirect_location = response.headers["location"]
@@ -46,7 +45,6 @@ def test_accept_invitation_new_user_post_registers_and_accepts(
     response = unauth_client.post(
         app.url_path_for("register"),
         data=register_data,
-        follow_redirects=False
     )
 
     assert response.status_code == 303
@@ -89,7 +87,6 @@ def test_accept_invitation_existing_user_logged_out_get_redirects_to_login(
     response = unauth_client.get(
         app.url_path_for("accept_invitation"),
         params={"token": test_invitation.token},
-        follow_redirects=False
     )
     assert response.status_code == 303
     redirect_location = response.headers["location"]
@@ -116,7 +113,6 @@ def test_accept_invitation_existing_user_post_logs_in_and_accepts(
     response = unauth_client.post(
         app.url_path_for("login"),
         data=login_data,
-        follow_redirects=False
     )
 
     assert response.status_code == 303
@@ -151,7 +147,6 @@ def test_accept_invitation_logged_in_correct_user_get_accepts_and_redirects(
     response = auth_client_invitee.get(
         app.url_path_for("accept_invitation"),
         params={"token": test_invitation.token},
-        follow_redirects=False
     )
 
     assert response.status_code == 303
@@ -193,7 +188,6 @@ def test_accept_invitation_get_invalid_token_fails(
     response = unauth_client.get(
         app.url_path_for("accept_invitation"),
         params={"token": token_value},
-        follow_redirects=False
     )
     assert response.status_code == 404 # InvalidInvitationTokenError maps to 404
 
@@ -229,7 +223,6 @@ def test_accept_invitation_register_post_invalid_token_fails(
     response = unauth_client.post(
         app.url_path_for("register"),
         data=register_data,
-        follow_redirects=False
     )
     assert response.status_code == 404 # InvalidInvitationTokenError
 
@@ -261,7 +254,6 @@ def test_accept_invitation_login_post_invalid_token_fails(
     response = unauth_client.post(
         app.url_path_for("login"),
         data=login_data,
-        follow_redirects=False
     )
     assert response.status_code == 404 # InvalidInvitationTokenError
 
@@ -281,7 +273,6 @@ def test_accept_invitation_register_email_mismatch_fails(
     response = unauth_client.post(
         app.url_path_for("register"),
         data=register_data,
-        follow_redirects=False
     )
     assert response.status_code == 403 # InvitationEmailMismatchError
 
@@ -300,7 +291,6 @@ def test_accept_invitation_login_email_mismatch_fails(
     response = unauth_client.post(
         app.url_path_for("login"),
         data=login_data,
-        follow_redirects=False
     )
     assert response.status_code == 403 # InvitationEmailMismatchError
 
@@ -315,7 +305,6 @@ def test_accept_invitation_logged_in_wrong_user_get_redirects_to_login(
     response = auth_client_non_member.get(
         app.url_path_for("accept_invitation"),
         params={"token": test_invitation.token},
-        follow_redirects=False
     )
     assert response.status_code == 303
     redirect_location = response.headers["location"]
