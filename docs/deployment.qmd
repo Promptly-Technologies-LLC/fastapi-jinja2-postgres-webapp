@@ -13,71 +13,9 @@ There are *many* hosting options available for each of these services; this guid
 Deployment artifacts (Dockerfiles, deploy scripts, compose files, etc.) are kept on separate git branches — one per deployment target — to avoid cluttering the main branch. See the `modal` branch for Modal deployment files and the `hetzner` branch for Hetzner Cloud deployment files. The documentation below describes how to use them.
 :::
 
-## Deploying and Configuring the PostgreSQL Database
-
-### On Digital Ocean
-
-#### Getting Started
-
-- Create a [DigitalOcean](https://www.digitalocean.com) account
-- Install the [`doctl` CLI tool](https://docs.digitalocean.com/reference/doctl) and authenticate with `doctl auth init`
-- Install the [`psql` client](https://www.postgresql.org/download)
-
-#### Create a Project
-
-Create a new project to organize your resources:
-
-```bash
-# List existing projects
-doctl projects list
-
-# Create a new project
-doctl projects create --name "YOUR-PROJECT-NAME" --purpose "YOUR-PROJECT-PURPOSE" --environment "Production"
-```
-
-#### Set Up a Managed PostgreSQL Database
-
-Create a managed, serverless PostgreSQL database instance:
-
-```bash
-doctl databases create your-db-name --engine pg --version 17 --size db-s-1vcpu-1gb --num-nodes 1 --wait
-```
-
-Get the database ID from the output of the create command and use it to retrieve the database connection details:
-
-```bash
-# Get the database connection details
-doctl databases connection "your-database-id" --format Host,Port,User,Password,Database
-```
-
-Store these details securely in a `.env.production` file (you will need to set them later in application deployment as production secrets):
-
-```bash
-# Database connection parameters
-DB_HOST=your-host
-DB_PORT=your-port
-DB_USER=your-user
-DB_PASS=your-password
-DB_NAME=your-database
-```
-
-You may also want to save your database id, although you can always find it again later by listing your databases with `doctl databases list`.
-
-#### Setting Up a Firewall Rule (after Deploying Your Application Layer)
-
-Note that by default your database is publicly accessible from the Internet, so you should create a firewall rule to restrict access to only your application's IP address once you have deployed the application. The command to do this is:
-
-```bash
-doctl databases firewalls append <database-cluster-id> --rule <type>:<value>
-```
-
-where `<type>` is `ip_addr` and `<value>` is the IP address of the application server. See the [DigitalOcean documentation](https://docs.digitalocean.com/reference/doctl/reference/databases/firewalls/append/) for more details.
-
-**Note:** You can only complete this step after you have deployed your application layer and obtained a static IP address for the application server.
-
 ## Deploying and Configuring the FastAPI App
 
-### On Modal.com
+### On Modal.com, with separately hosted PostgreSQL
 
 The big advantages of deploying on Modal.com are:
 1. that they offer $30/month of free credits for each user, plus generous additional free credit allotments for startups and researchers, and
@@ -190,11 +128,71 @@ modal secret create your-app-name-secret \
 
 **Important:** Ensure `DB_HOST` points to your *cloud* database host address, not `localhost` or `host.docker.internal`.
 
+#### Deploying and Configuring the PostgreSQL Database on Digital Ocean to work with Modal
+
+##### Getting Started
+
+- Create a [DigitalOcean](https://www.digitalocean.com) account
+- Install the [`doctl` CLI tool](https://docs.digitalocean.com/reference/doctl) and authenticate with `doctl auth init`
+- Install the [`psql` client](https://www.postgresql.org/download)
+
+##### Create a Project
+
+Create a new project to organize your resources:
+
+```bash
+# List existing projects
+doctl projects list
+
+# Create a new project
+doctl projects create --name "YOUR-PROJECT-NAME" --purpose "YOUR-PROJECT-PURPOSE" --environment "Production"
+```
+
+##### Set Up a Managed PostgreSQL Database
+
+Create a managed, serverless PostgreSQL database instance:
+
+```bash
+doctl databases create your-db-name --engine pg --version 17 --size db-s-1vcpu-1gb --num-nodes 1 --wait
+```
+
+Get the database ID from the output of the create command and use it to retrieve the database connection details:
+
+```bash
+# Get the database connection details
+doctl databases connection "your-database-id" --format Host,Port,User,Password,Database
+```
+
+Store these details securely in a `.env.production` file (you will need to set them later in application deployment as production secrets):
+
+```bash
+# Database connection parameters
+DB_HOST=your-host
+DB_PORT=your-port
+DB_USER=your-user
+DB_PASS=your-password
+DB_NAME=your-database
+```
+
+You may also want to save your database id, although you can always find it again later by listing your databases with `doctl databases list`.
+
+##### Setting Up a Firewall Rule (after Deploying Your Application Layer)
+
+Note that by default your database is publicly accessible from the Internet, so you should create a firewall rule to restrict access to only your application's IP address once you have deployed the application. The command to do this is:
+
+```bash
+doctl databases firewalls append <database-cluster-id> --rule <type>:<value>
+```
+
+where `<type>` is `ip_addr` and `<value>` is the IP address of the application server. See the [DigitalOcean documentation](https://docs.digitalocean.com/reference/doctl/reference/databases/firewalls/append/) for more details.
+
+**Note:** You can only complete this step after you have deployed your application layer and obtained a static IP address for the application server.
+
 #### Testing the Deployment
 
 Access the provided Modal URL in your browser. Browse the site and test the registration and password reset features to ensure database and Resend connections work.
 
-### On Hetzner Cloud
+### On Hetzner Cloud, with Same-Server PostgreSQL
 
 Hetzner Cloud offers affordable, dedicated VMs with predictable pricing. Unlike Modal, Hetzner runs both the database and application on the same server, giving you a self-contained deployment with a static IP and automatic TLS via Caddy.
 
@@ -321,25 +319,6 @@ This template supports switching between direct and pooled database connections 
 - `DB_APPUSER_PASSWORD` - Application user password
 
 Both modes support `DB_SSLMODE` (defaults to `prefer`) for configuring SSL connections.
-
-### Example: Supabase with Connection Pooling
-
-Supabase provides a built-in PgBouncer pooler. To use it:
-
-1. In your Supabase dashboard, go to Settings > Database
-2. Find the "Connection pooling" section and copy the pooler connection string
-3. Extract the host, port, database, user, and password from the connection string
-4. Configure your environment:
-
-```bash
-USE_POOL=1
-DB_HOST=aws-0-us-east-1.pooler.supabase.com
-DB_POOL_PORT=6543
-DB_POOL_NAME=postgres
-DB_APPUSER=postgres.yourproject
-DB_APPUSER_PASSWORD=your-password
-DB_SSLMODE=require
-```
 
 ### Setting Up a Restricted Application User
 
