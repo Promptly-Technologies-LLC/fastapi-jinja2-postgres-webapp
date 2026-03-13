@@ -17,10 +17,22 @@
 
         <div class="collapse navbar-collapse" id="navbarContent">
             {% include 'base/partials/nav.html' %}
-            
-            <!-- User Profile Dropdown -->
-            <ul class="navbar-nav ms-auto mb-lg-0">
-                {% if user %}
+
+            {% if user %}
+            <!-- Mobile-only nav items: Profile and Logout as plain links -->
+            <ul class="navbar-nav d-lg-none">
+                <li class="nav-item" id="mobile-nav-profile">
+                    <a class="nav-link" href="{{ url_for('read_profile') }}">Profile</a>
+                </li>
+                <li class="nav-item" id="mobile-nav-logout">
+                    <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                </li>
+            </ul>
+            {% endif %}
+
+            {% if user %}
+            <!-- Desktop-only: User Profile Dropdown with avatar -->
+            <ul class="navbar-nav ms-auto mb-lg-0 d-none d-lg-flex">
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <button class="profile-button btn p-0 border-0 bg-transparent">
@@ -37,15 +49,18 @@
                         <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
                     </ul>
                 </li>
-                {% else %}
+            </ul>
+            {% else %}
+            <!-- Login/Register links (all screen sizes) -->
+            <ul class="navbar-nav ms-auto mb-lg-0">
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('read_login') }}">Login</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('read_register') }}">Register</a>
                 </li>
-                {% endif %}
             </ul>
+            {% endif %}
         </div>
     </div>
 </header>
