@@ -182,6 +182,77 @@ def test_logout_endpoint(auth_client: TestClient):
 # --- Error Case Tests ---
 
 
+def test_register_page_shows_password_requirements(unauth_client: TestClient):
+    """Issue #156: Register page must display password requirements visibly."""
+    response = unauth_client.get(app.url_path_for("read_register"))
+    assert response.status_code == 200
+    html = response.text
+    # Requirements should be visible as text (not just in hidden pattern/title attributes)
+    assert "8" in html, "Page should mention minimum 8 characters"
+    assert "uppercase" in html.lower(), "Page should mention uppercase requirement"
+    assert "lowercase" in html.lower(), "Page should mention lowercase requirement"
+    assert "number" in html.lower() or "digit" in html.lower(), "Page should mention digit requirement"
+    assert "special" in html.lower(), "Page should mention special character requirement"
+
+
+def test_register_page_confirm_password_has_autocomplete(unauth_client: TestClient):
+    """Issue #156: Both password fields must have autocomplete='new-password' for Chrome autofill."""
+    response = unauth_client.get(app.url_path_for("read_register"))
+    assert response.status_code == 200
+    html = response.text
+    # The confirm_password field should have autocomplete="new-password"
+    assert 'id="confirm_password"' in html
+    # Find the confirm_password input and check it has autocomplete="new-password"
+    import re
+    confirm_input = re.search(r'<input[^>]*id="confirm_password"[^>]*>', html)
+    assert confirm_input is not None
+    assert 'autocomplete="new-password"' in confirm_input.group(0), \
+        "confirm_password field must have autocomplete='new-password' for Chrome autofill"
+
+
+def test_register_weak_password_error_restates_requirements(unauth_client: TestClient, session: Session):
+    """Issue #156: Error toast for weak password must restate the security policy requirements."""
+    response = unauth_client.post(
+        app.url_path_for("register"),
+        data={
+            "name": "Test User",
+            "email": "weak@example.com",
+            "password": "weak",
+            "confirm_password": "weak"
+        },
+    )
+    assert response.status_code == 422
+    text = response.text
+    # The error message must include the actual requirements, not just a generic message
+    assert "8" in text, "Error should mention minimum 8 characters"
+    assert "uppercase" in text.lower() or "upper" in text.lower(), \
+        "Error should mention uppercase requirement"
+    assert "lowercase" in text.lower() or "lower" in text.lower(), \
+        "Error should mention lowercase requirement"
+
+
+def test_register_weak_password_htmx_error_restates_requirements(unauth_client: TestClient, session: Session):
+    """Issue #156: HTMX error toast for weak password must restate the security policy requirements."""
+    response = unauth_client.post(
+        app.url_path_for("register"),
+        data={
+            "name": "Test User",
+            "email": "weak@example.com",
+            "password": "weak",
+            "confirm_password": "weak"
+        },
+        headers={"HX-Request": "true"},
+    )
+    assert response.status_code == 422
+    text = response.text
+    # The toast message must include the actual requirements
+    assert "8" in text, "Toast should mention minimum 8 characters"
+    assert "uppercase" in text.lower() or "upper" in text.lower(), \
+        "Toast should mention uppercase requirement"
+    assert "lowercase" in text.lower() or "lower" in text.lower(), \
+        "Toast should mention lowercase requirement"
+
+
 def test_register_with_existing_email(unauth_client: TestClient, test_account: Account):
     response = unauth_client.post(
         app.url_path_for("register"),

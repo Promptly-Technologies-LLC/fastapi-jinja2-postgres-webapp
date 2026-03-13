@@ -81,7 +81,7 @@ def validate_password_strength_and_match(
     if not COMPILED_PASSWORD_PATTERN.match(password):
         raise PasswordValidationError(
             field="password",
-            message="Password does not satisfy the security policy"
+            message="Password must contain at least 8 characters, including one uppercase letter, one lowercase letter, one number, and one special character"
         )
     
     # Validate passwords match
