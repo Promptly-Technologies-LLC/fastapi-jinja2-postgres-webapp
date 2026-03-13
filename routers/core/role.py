@@ -1,6 +1,6 @@
 # TODO: User with permission to create/edit roles can only assign permissions
 # they themselves have.
-from typing import List, Sequence, Optional
+from typing import Annotated, List, Sequence, Optional
 from logging import getLogger
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
@@ -43,9 +43,9 @@ def _load_org_for_roles_partial(session: Session, organization_id: int, user: Us
 @router.post("/create", response_class=RedirectResponse)
 def create_role(
     request: Request,
-    name: str = Form(...),
-    organization_id: int = Form(...),
-    permissions: List[ValidPermissions] = Form(default=[]),
+    name: Annotated[str, Form(min_length=1, strip_whitespace=True, title="Role name", description="Name for the new role")],
+    organization_id: int = Form(..., title="Organization ID", description="ID of the organization this role belongs to"),
+    permissions: List[ValidPermissions] = Form(default=[], title="Permissions", description="List of permissions to assign to this role"),
     user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session)
 ):
@@ -107,10 +107,10 @@ def create_role(
 @router.post("/update", response_class=RedirectResponse)
 def update_role(
     request: Request,
-    id: int = Form(...),
-    name: str = Form(...),
-    organization_id: int = Form(...),
-    permissions: List[ValidPermissions] = Form(default=[]),
+    id: int = Form(..., title="Role ID", description="ID of the role to update"),
+    name: str = Form(..., min_length=1, strip_whitespace=True, title="Role name", description="Updated name for the role"),
+    organization_id: int = Form(..., title="Organization ID", description="ID of the organization this role belongs to"),
+    permissions: List[ValidPermissions] = Form(default=[], title="Permissions", description="Updated list of permissions for this role"),
     user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session)
 ):
@@ -197,8 +197,8 @@ def update_role(
 @router.post("/delete", response_class=RedirectResponse)
 def delete_role(
     request: Request,
-    id: int = Form(...),
-    organization_id: int = Form(...),
+    id: int = Form(..., title="Role ID", description="ID of the role to delete"),
+    organization_id: int = Form(..., title="Organization ID", description="ID of the organization this role belongs to"),
     user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session)
 ):

@@ -66,7 +66,7 @@ async def read_profile(
 @router.post("/update", response_class=RedirectResponse)
 async def update_profile(
     request: Request,
-    name: Optional[str] = Form(None),
+    name: Optional[str] = Form(None, strip_whitespace=True, title="Name", description="Updated display name"),
     avatar_file: Optional[UploadFile] = File(None),
     user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session)
@@ -133,9 +133,9 @@ async def get_avatar(
 @router.post("/role/update", response_class=RedirectResponse)
 def update_user_role(
     request: Request,
-    user_id: int = Form(...),
-    organization_id: int = Form(...),
-    roles: Optional[List[int]] = Form(None),
+    user_id: int = Form(..., title="User ID", description="ID of the user whose roles are being updated"),
+    organization_id: int = Form(..., title="Organization ID", description="ID of the organization"),
+    roles: Optional[List[int]] = Form(None, title="Role IDs", description="List of role IDs to assign to the user"),
     user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session)
 ) -> Response:
@@ -205,8 +205,8 @@ def update_user_role(
 @router.post("/organization/remove", response_class=RedirectResponse)
 def remove_user_from_organization(
     request: Request,
-    user_id: int = Form(...),
-    organization_id: int = Form(...),
+    user_id: int = Form(..., title="User ID", description="ID of the user to remove"),
+    organization_id: int = Form(..., title="Organization ID", description="ID of the organization to remove the user from"),
     user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session)
 ) -> Response:

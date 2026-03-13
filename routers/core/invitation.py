@@ -54,9 +54,9 @@ async def create_invitation(
     request: Request,
     current_user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session),
-    invitee_email: EmailStr = Form(...),
-    role_id: int = Form(...),
-    organization_id: int = Form(...),
+    invitee_email: EmailStr = Form(..., title="Invitee email", description="Email address of the person to invite"),
+    role_id: int = Form(..., title="Role ID", description="ID of the role to assign to the invitee"),
+    organization_id: int = Form(..., title="Organization ID", description="ID of the organization to invite the user to"),
 ):
     # Fetch the organization
     organization = session.get(Organization, organization_id)
