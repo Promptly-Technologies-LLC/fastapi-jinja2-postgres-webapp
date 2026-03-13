@@ -216,3 +216,39 @@ def test_delete_organization_form_has_hx_post():
 def test_nav_has_hx_boost():
     content = Path("templates/base/partials/header.html").read_text()
     assert 'hx-boost="true"' in content
+
+
+class TestMobileNavConsolidation:
+    """Tests for consolidated mobile navigation (issue #80).
+
+    On mobile, profile dropdown items should appear as regular nav links
+    in the hamburger menu, and the dropdown should be hidden.
+    """
+
+    def setup_method(self):
+        self.content = Path("templates/base/partials/header.html").read_text()
+
+    def test_mobile_profile_link_exists(self):
+        """Mobile-only Profile link should exist with d-lg-none visibility."""
+        assert 'd-lg-none' in self.content
+        # There should be a mobile-only nav item linking to profile
+        assert 'mobile-nav-profile' in self.content
+
+    def test_mobile_logout_link_exists(self):
+        """Mobile-only Logout link should exist with d-lg-none visibility."""
+        assert 'mobile-nav-logout' in self.content
+
+    def test_desktop_dropdown_hidden_on_mobile(self):
+        """The profile dropdown should be hidden on mobile (d-none d-lg-flex)."""
+        # The dropdown container should have classes to hide on mobile
+        assert 'd-lg-flex' in self.content
+        # Verify the dropdown is inside a container hidden on mobile
+        assert 'd-none d-lg-flex' in self.content
+
+    def test_mobile_nav_items_inside_collapsible(self):
+        """Mobile nav items should be inside the navbarContent collapsible."""
+        # Find the collapsible section and verify mobile nav items are inside it
+        collapse_start = self.content.index('id="navbarContent"')
+        collapse_section = self.content[collapse_start:]
+        assert 'mobile-nav-profile' in collapse_section
+        assert 'mobile-nav-logout' in collapse_section
