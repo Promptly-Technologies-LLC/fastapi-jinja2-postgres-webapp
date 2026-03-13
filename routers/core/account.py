@@ -61,8 +61,8 @@ templates = Jinja2Templates(directory="templates")
 
 
 def validate_password_strength_and_match(
-    password: str = Form(...),
-    confirm_password: str = Form(...)
+    password: str = Form(..., title="Password", description="Account password"),
+    confirm_password: str = Form(..., title="Confirm password", description="Re-enter password to confirm")
 ) -> str:
     """
     Validates password strength and confirms passwords match.
@@ -120,9 +120,9 @@ async def read_login(
     if user:
         return RedirectResponse(url=dashboard_router.url_path_for("read_dashboard"), status_code=302)
     return templates.TemplateResponse(
+        request,
         "account/login.html",
         {
-            "request": request,
             "user": user,
             "invitation_token": invitation_token
         }
@@ -143,9 +143,9 @@ async def read_register(
         return RedirectResponse(url=dashboard_router.url_path_for("read_dashboard"), status_code=302)
 
     return templates.TemplateResponse(
+        request,
         "account/register.html",
         {
-            "request": request,
             "user": user,
             "password_pattern": HTML_PASSWORD_PATTERN,
             "email": email,
@@ -167,8 +167,9 @@ async def read_forgot_password(
         return RedirectResponse(url=dashboard_router.url_path_for("read_dashboard"), status_code=302)
 
     return templates.TemplateResponse(
+        request,
         "account/forgot_password.html",
-        {"request": request, "user": user, "show_form": show_form == "true"}
+        {"user": user, "show_form": show_form == "true"}
     )
 
 
@@ -190,15 +191,16 @@ async def read_reset_password(
         raise CredentialsError(message="Invalid or expired token")
 
     return templates.TemplateResponse(
+        request,
         "account/reset_password.html",
-        {"request": request, "user": user, "email": email, "token": token, "password_pattern": HTML_PASSWORD_PATTERN}
+        {"user": user, "email": email, "token": token, "password_pattern": HTML_PASSWORD_PATTERN}
     )
 
 
 @router.post("/delete", response_class=RedirectResponse)
 async def delete_account(
-    email: EmailStr = Form(...),
-    password: str = Form(...),
+    email: EmailStr = Form(..., title="Email", description="Account email address for verification"),
+    password: str = Form(..., title="Password", description="Account password for verification"),
     account: Account = Depends(get_authenticated_account),
     session: Session = Depends(get_session)
 ):
@@ -229,12 +231,12 @@ async def delete_account(
 async def register(
     request: Request,
     _ip_check: None = Depends(check_register_ip_rate_limit),
-    name: str = Form(...),
-    email: EmailStr = Form(...),
+    name: str = Form(..., min_length=1, strip_whitespace=True, title="Name", description="Your full name"),
+    email: EmailStr = Form(..., title="Email", description="Email address for the new account"),
     session: Session = Depends(get_session),
     _: None = Depends(validate_password_strength_and_match),
-    password: str = Form(...),
-    invitation_token: Optional[str] = Form(None)
+    password: str = Form(..., title="Password", description="Account password"),
+    invitation_token: Optional[str] = Form(None, title="Invitation token", description="Optional invitation token to join an organization")
 ) -> Response:
     """
     Register a new user account, optionally processing an invitation.
@@ -353,7 +355,7 @@ async def login(
     _ip_check: None = Depends(check_login_ip_rate_limit),
     _email_check: EmailStr = Depends(check_login_email_rate_limit),
     account_and_session: Tuple[Account, Session] = Depends(get_account_from_credentials),
-    invitation_token: Optional[str] = Form(None)
+    invitation_token: Optional[str] = Form(None, title="Invitation token", description="Optional invitation token to join an organization after login")
 ) -> Response:
     """
     Log in a user with valid credentials and process invitation if token is provided.
@@ -534,8 +536,8 @@ async def forgot_password(
 @router.post("/reset_password")
 async def reset_password(
     request: Request,
-    email: EmailStr = Form(...),
-    token: str = Form(...),
+    email: EmailStr = Form(..., title="Email", description="Account email address"),
+    token: str = Form(..., title="Reset token", description="Password reset token from email"),
     new_password: str = Depends(validate_password_strength_and_match),
     session: Session = Depends(get_session)
 ):
@@ -569,8 +571,8 @@ async def reset_password(
 @router.post("/update_email")
 async def request_email_update(
     request: Request,
-    email: EmailStr = Form(...),
-    new_email: EmailStr = Form(...),
+    email: EmailStr = Form(..., title="Current email", description="Current account email address"),
+    new_email: EmailStr = Form(..., title="New email", description="New email address to update to"),
     account: Account = Depends(get_authenticated_account),
     session: Session = Depends(get_session)
 ):
