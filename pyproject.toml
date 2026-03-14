@@ -1,6 +1,6 @@
 [project]
 name = "fastapi-jinja2-postgres-webapp"
-version = "0.1.13"
+version = "0.1.14"
 description = "A template webapp with a pure-Python FastAPI backend, frontend templating with Jinja2, and a Postgres database to power user auth"
 readme = "README.md"
 package-mode = false
@@ -35,6 +35,7 @@ dev = [
     "ty>=0.0.21",
     "ruff>=0.15.5",
     "pytest-jinja-check[fastapi]>=1.0.2",
+    "pytest-playwright>=0.7.2",
 ]
 
 [tool.ty.rules]

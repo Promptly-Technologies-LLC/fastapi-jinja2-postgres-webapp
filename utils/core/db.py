@@ -1,10 +1,13 @@
 import os
 import logging
+from itertools import chain
 from typing import Union, Sequence
 from sqlalchemy.engine import URL
 from sqlmodel import create_engine, Session, SQLModel, select, text
 from utils.core.models import Role, Permission, RolePermissionLink
 from utils.core.enums import ValidPermissions
+from utils.app.enums import AppPermissions
+from utils.app.models import *  # noqa: F401, F403 — registers app models with SQLModel.metadata
 
 # Set up a logger for error reporting
 logger = logging.getLogger("uvicorn.error")
@@ -188,16 +191,17 @@ def create_default_roles(session: Session, organization_id: int, check_first: bo
 
 def create_permissions(session: Session) -> None:
     """
-    Creates default permissions in the database if they do not already exist.
+    Creates permissions in the database from both core (ValidPermissions)
+    and app-specific (AppPermissions) enums if they do not already exist.
 
     Args:
         session (Session): The database session to use for operations.
     """
-    for permission in ValidPermissions:
+    for permission in chain(ValidPermissions, AppPermissions):
         db_permission = session.exec(select(Permission).where(
-            Permission.name == permission)).first()
+            Permission.name == str(permission))).first()
         if not db_permission:
-            db_permission = Permission(name=permission)
+            db_permission = Permission(name=str(permission))
             session.add(db_permission)
 
 

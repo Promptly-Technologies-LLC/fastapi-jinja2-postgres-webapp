@@ -13,8 +13,9 @@ from utils.core.models import (
     RolePermissionLink,
     User,
     UserRoleLink,
-    ValidPermissions,
 )
+from utils.core.enums import ValidPermissions
+from utils.app.enums import AppPermissions
 from tests.conftest import SetupError
 
 
@@ -43,7 +44,7 @@ def test_permissions_persist_after_role_deletion(session: Session):
     """
     # Verify all ValidPermissions exist in database
     all_permissions = session.exec(select(Permission)).all()
-    assert len(all_permissions) == len(ValidPermissions)
+    assert len(all_permissions) == len(ValidPermissions) + len(AppPermissions)
 
     # Create an organization
     organization = Organization(name="Test Organization")
@@ -81,7 +82,7 @@ def test_permissions_persist_after_role_deletion(session: Session):
 
     # Verify that all permissions still exist
     remaining_permissions = session.exec(select(Permission)).all()
-    assert len(remaining_permissions) == len(ValidPermissions)
+    assert len(remaining_permissions) == len(ValidPermissions) + len(AppPermissions)
     assert delete_org_permission in remaining_permissions
     assert edit_org_permission in remaining_permissions
 

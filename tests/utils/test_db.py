@@ -9,7 +9,9 @@ from utils.core.db import (
     tear_down_db,
     set_up_db,
 )
-from utils.core.models import Role, Permission, Organization, RolePermissionLink, ValidPermissions
+from utils.core.models import Role, Permission, Organization, RolePermissionLink
+from utils.core.enums import ValidPermissions
+from utils.app.enums import AppPermissions
 from tests.conftest import SetupError
 
 
@@ -111,8 +113,9 @@ def test_create_permissions(session: Session):
 
     # Check all permissions were created
     db_permissions = session.exec(select(Permission)).all()
-    assert len(db_permissions) == len(ValidPermissions)
-    assert {p.name for p in db_permissions} == {p for p in ValidPermissions}
+    all_perms = list(ValidPermissions) + list(AppPermissions)
+    assert len(db_permissions) == len(all_perms)
+    assert {p.name for p in db_permissions} == {str(p) for p in all_perms}
 
 
 def test_create_default_roles(session: Session, test_organization: Organization):
@@ -139,7 +142,8 @@ def test_create_default_roles(session: Session, test_organization: Organization)
         .join(RolePermissionLink)
         .where(RolePermissionLink.role_id == owner_role.id)
     ).all()
-    assert len(owner_permissions) == len(ValidPermissions)
+    all_perms = list(ValidPermissions) + list(AppPermissions)
+    assert len(owner_permissions) == len(all_perms)
 
     # Check Administrator role permissions
     admin_role = next(r for r in roles if r.name == "Administrator")
@@ -149,8 +153,8 @@ def test_create_default_roles(session: Session, test_organization: Organization)
         .where(RolePermissionLink.role_id == admin_role.id)
     ).all()
     # Admin should have all permissions except DELETE_ORGANIZATION
-    assert len(admin_permissions) == len(ValidPermissions) - 1
-    assert ValidPermissions.DELETE_ORGANIZATION not in {
+    assert len(admin_permissions) == len(all_perms) - 1
+    assert str(ValidPermissions.DELETE_ORGANIZATION) not in {
         p.name for p in admin_permissions}
 
 
@@ -159,13 +163,16 @@ def test_assign_permissions_to_role(session: Session, test_organization: Organiz
     # Create a test role with the organization from fixture
     role = Role(name="Test Role", organization_id=test_organization.id)
     session.add(role)
-
-    # Create test permissions
-    perm1 = Permission(name=ValidPermissions.CREATE_ROLE)
-    perm2 = Permission(name=ValidPermissions.DELETE_ROLE)
-    session.add(perm1)
-    session.add(perm2)
     session.commit()
+
+    # Get existing permissions
+    perm1 = session.exec(
+        select(Permission).where(Permission.name == str(ValidPermissions.CREATE_ROLE))
+    ).first()
+    perm2 = session.exec(
+        select(Permission).where(Permission.name == str(ValidPermissions.DELETE_ROLE))
+    ).first()
+    assert perm1 is not None and perm2 is not None
 
     # Assign permissions
     permissions = [perm1, perm2]
@@ -181,17 +188,20 @@ def test_assign_permissions_to_role(session: Session, test_organization: Organiz
 
     assert len(db_permissions) == 2
     assert {p.name for p in db_permissions} == {
-        ValidPermissions.CREATE_ROLE, ValidPermissions.DELETE_ROLE}
+        str(ValidPermissions.CREATE_ROLE), str(ValidPermissions.DELETE_ROLE)}
 
 
 def test_assign_permissions_to_role_duplicate_check(session: Session, test_organization: Organization):
     """Test that assign_permissions_to_role doesn't create duplicates"""
     # Create a test role with the organization from fixture
     role = Role(name="Test Role", organization_id=test_organization.id)
-    perm = Permission(name=ValidPermissions.CREATE_ROLE)
     session.add(role)
-    session.add(perm)
     session.commit()
+
+    perm = session.exec(
+        select(Permission).where(Permission.name == str(ValidPermissions.CREATE_ROLE))
+    ).first()
+    assert perm is not None
 
     # Assign same permission twice
     assign_permissions_to_role(session, role, [perm], check_first=True)
@@ -243,7 +253,7 @@ def test_set_up_db_creates_tables(engine: Engine, session: Session):
 
     # Verify permissions were created
     permissions = session.exec(select(Permission)).all()
-    assert len(permissions) == len(ValidPermissions)
+    assert len(permissions) == len(ValidPermissions) + len(AppPermissions)
 
 
 def test_private_schema_exists_after_setup(engine: Engine):
@@ -278,7 +288,7 @@ def test_set_up_db_drop_flag(engine: Engine, session: Session):
 
     # Verify valid permissions exist
     permissions = session.exec(select(Permission)).all()
-    assert len(permissions) == len(ValidPermissions)
+    assert len(permissions) == len(ValidPermissions) + len(AppPermissions)
 
     # Create an organization
     org = Organization(name="Test Organization")

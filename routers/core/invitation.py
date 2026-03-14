@@ -9,7 +9,8 @@ from sqlmodel import Session, select
 from logging import getLogger
 
 from utils.core.dependencies import get_authenticated_user, get_optional_user, get_session
-from utils.core.models import User, Role, Account, Invitation, ValidPermissions, Organization
+from utils.core.models import User, Role, Account, Invitation, Organization
+from utils.core.enums import ValidPermissions
 from utils.core.invitations import send_invitation_email, process_invitation
 from exceptions.http_exceptions import (
     UserIsAlreadyMemberError,
