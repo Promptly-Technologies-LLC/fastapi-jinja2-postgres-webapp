@@ -100,7 +100,7 @@ async def rate_limit_error_handler(request: Request, exc: RateLimitError):
     response = templates.TemplateResponse(
         request,
         "errors/error.html",
-        {"status_code": 429, "detail": exc.detail, "user": user},
+        {"status_code": 429, "detail": exc.detail, "errors": None, "user": user},
         status_code=429,
     )
     response.headers["Retry-After"] = str(exc.retry_after)
@@ -119,7 +119,7 @@ async def credentials_exception_handler(request: Request, exc: CredentialsError)
     return templates.TemplateResponse(
         request,
         "errors/error.html",
-        {"status_code": exc.status_code, "detail": exc.detail, "user": user},
+        {"status_code": exc.status_code, "detail": exc.detail, "errors": None, "user": user},
         status_code=exc.status_code,
     )
 
@@ -174,6 +174,7 @@ async def password_validation_exception_handler(
         "errors/error.html",
         {
             "status_code": 422,
+            "detail": None,
             "errors": {field.replace("_", " ").title(): message},
             "user": user
         },
@@ -238,6 +239,7 @@ async def validation_exception_handler(
         "errors/error.html",
         {
             "status_code": 422,
+            "detail": None,
             "errors": errors,
             "user": user
         },
@@ -258,7 +260,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     return templates.TemplateResponse(
         request,
         "errors/error.html",
-        {"status_code": exc.status_code, "detail": exc.detail, "user": user},
+        {"status_code": exc.status_code, "detail": exc.detail, "errors": None, "user": user},
         status_code=exc.status_code,
     )
 
@@ -283,6 +285,7 @@ async def general_exception_handler(request: Request, exc: Exception):
         {
             "status_code": 500,
             "detail": "Internal Server Error",
+            "errors": None,
             "user": user
         },
         status_code=500,
