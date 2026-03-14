@@ -213,6 +213,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#database-configuration-and-access-with-sqlmodel" id="toc-database-configuration-and-access-with-sqlmodel" class="nav-link" data-scroll-target="#database-configuration-and-access-with-sqlmodel">Database configuration and access with SQLModel</a>
   <ul class="collapse">
   <li><a href="#models-and-relationships" id="toc-models-and-relationships" class="nav-link" data-scroll-target="#models-and-relationships">Models and relationships</a></li>
+  <li><a href="#example-application-data-model" id="toc-example-application-data-model" class="nav-link" data-scroll-target="#example-application-data-model">Example application data model</a></li>
   <li><a href="#database-helpers" id="toc-database-helpers" class="nav-link" data-scroll-target="#database-helpers">Database helpers</a></li>
   <li><a href="#cascade-deletes" id="toc-cascade-deletes" class="nav-link" data-scroll-target="#cascade-deletes">Cascade deletes</a></li>
   </ul></li>
@@ -469,6 +470,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>To extend the database schema, define your own models in <code>utils/app/models.py</code> and import them in <code>utils/core/db.py</code> to make sure they are included in the <code>metadata</code> object in the <code>create_all</code> function.</p>
 </section>
+<section id="example-application-data-model" class="level3">
+<h3 class="anchored" data-anchor-id="example-application-data-model">Example application data model</h3>
+<p>The template ships with an illustrative data model, <code>OrganizationResource</code>, in <code>utils/app/models.py</code>. This model demonstrates how to create an organization-scoped database table and is used by the dashboard to display example resources. It is <strong>meant to be replaced</strong> with your own application-specific models.</p>
+<p>To replace it:</p>
+<ol type="1">
+<li>Edit <code>utils/app/models.py</code> — remove <code>OrganizationResource</code> and define your own SQLModel table classes. Any table class defined in this file will be automatically created in the database on startup.</li>
+<li>Update <code>routers/core/dashboard.py</code> — replace the <code>OrganizationResource</code> query and template context with your own data.</li>
+<li>Update <code>templates/dashboard/index.html</code> — replace the example resource list with your own application UI.</li>
+<li>Optionally add new permission values to <code>AppPermissions</code> in <code>utils/app/enums.py</code> if your models need custom permission checks. These are automatically registered alongside the core <code>ValidPermissions</code> during database setup.</li>
+</ol>
+</section>
 <section id="database-helpers" class="level3">
 <h3 class="anchored" data-anchor-id="database-helpers">Database helpers</h3>
 <p>Database operations are facilitated by helper functions in <code>utils/core/db.py</code> (for core logic) and <code>utils/app/</code> (for app-specific helpers). Key functions in the core utils include:</p>
@@ -483,12 +495,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    users <span class="op">=</span> session.<span class="bu">exec</span>(select(User)).<span class="bu">all</span>()</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> users</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The session automatically handles transaction management, ensuring that database operations are atomic and consistent.</p>
-<p>There is also a helper method on the <code>User</code> model that checks if a user has a specific permission for a given organization. Its first argument must be a <code>ValidPermissions</code> enum value (from <code>utils/core/models.py</code>), and its second argument must be an <code>Organization</code> object or an <code>int</code> representing an organization ID:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>permission <span class="op">=</span> ValidPermissions.CREATE_ROLE</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>organization <span class="op">=</span> session.<span class="bu">exec</span>(select(Organization).where(Organization.name <span class="op">==</span> <span class="st">"Acme Inc."</span>)).first()</span>
+<p>There is also a helper method on the <code>User</code> model that checks if a user has a specific permission for a given organization. Its first argument must be a <code>StrEnum</code> value (either from <code>ValidPermissions</code> in <code>utils/core/enums.py</code> or <code>AppPermissions</code> in <code>utils/app/enums.py</code>), and its second argument must be an <code>Organization</code> object or an <code>int</code> representing an organization ID:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils.core.enums <span class="im">import</span> ValidPermissions</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils.app.enums <span class="im">import</span> AppPermissions</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>user.has_permission(permission, organization)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>You can add custom permission enum values to the <code>ValidPermissions</code> enum in <code>utils/core/enums.py</code> (below the core permissions section) and validate that users have the necessary permissions before allowing them to modify organization data resources.</p>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Check a core permission</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>user.has_permission(ValidPermissions.CREATE_ROLE, organization)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Check an app-specific permission</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>user.has_permission(AppPermissions.READ_ORGANIZATION_RESOURCES, organization)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Core permissions used by the template’s built-in features are defined in <code>ValidPermissions</code> (<code>utils/core/enums.py</code>). To add your own app-specific permissions, define them in <code>AppPermissions</code> (<code>utils/app/enums.py</code>). Both enum types are automatically registered in the database during setup and work interchangeably with <code>User.has_permission()</code>.</p>
 </section>
 <section id="cascade-deletes" class="level3">
 <h3 class="anchored" data-anchor-id="cascade-deletes">Cascade deletes</h3>
