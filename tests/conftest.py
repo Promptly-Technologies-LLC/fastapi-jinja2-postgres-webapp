@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from dotenv import load_dotenv
 from utils.core.db import get_connection_url, tear_down_db, set_up_db, create_default_roles, ensure_database_exists
 from utils.core.models import User, Organization, Role, Account, Invitation
-from utils.core.auth import get_password_hash, create_access_token, create_refresh_token
+from utils.core.auth import get_password_hash, create_access_token, create_tracked_refresh_token
 from main import app
 from datetime import datetime, UTC, timedelta
 
@@ -115,7 +115,8 @@ def auth_client(session: Session, test_account: Account, test_user: User) -> Gen
 
     # Create and set valid tokens
     access_token = create_access_token({"sub": test_account.email})
-    refresh_token = create_refresh_token({"sub": test_account.email})
+    refresh_token = create_tracked_refresh_token(test_account.id, test_account.email, session)
+    session.commit()
 
     client.cookies.set("access_token", access_token)
     client.cookies.set("refresh_token", refresh_token)
@@ -284,11 +285,12 @@ def auth_client_owner(session: Session, org_owner: User) -> Generator[TestClient
     # Create and set valid tokens
     if org_owner.account:
         access_token = create_access_token({"sub": org_owner.account.email})
-        refresh_token = create_refresh_token({"sub": org_owner.account.email})
-        
+        refresh_token = create_tracked_refresh_token(org_owner.account.id, org_owner.account.email, session)
+        session.commit()
+
     client.cookies.set("access_token", access_token)
     client.cookies.set("refresh_token", refresh_token)
-    
+
     yield client
 
 
@@ -304,11 +306,12 @@ def auth_client_admin(session: Session, org_admin_user: User) -> Generator[TestC
     # Create and set valid tokens
     if org_admin_user.account:
         access_token = create_access_token({"sub": org_admin_user.account.email})
-        refresh_token = create_refresh_token({"sub": org_admin_user.account.email})
-        
+        refresh_token = create_tracked_refresh_token(org_admin_user.account.id, org_admin_user.account.email, session)
+        session.commit()
+
     client.cookies.set("access_token", access_token)
     client.cookies.set("refresh_token", refresh_token)
-    
+
     yield client
 
 
@@ -324,11 +327,12 @@ def auth_client_member(session: Session, org_member_user: User) -> Generator[Tes
     # Create and set valid tokens
     if org_member_user.account:
         access_token = create_access_token({"sub": org_member_user.account.email})
-        refresh_token = create_refresh_token({"sub": org_member_user.account.email})
-        
+        refresh_token = create_tracked_refresh_token(org_member_user.account.id, org_member_user.account.email, session)
+        session.commit()
+
     client.cookies.set("access_token", access_token)
     client.cookies.set("refresh_token", refresh_token)
-    
+
     yield client
 
 
@@ -344,11 +348,12 @@ def auth_client_non_member(session: Session, non_member_user: User) -> Generator
     # Create and set valid tokens
     if non_member_user.account:
         access_token = create_access_token({"sub": non_member_user.account.email})
-        refresh_token = create_refresh_token({"sub": non_member_user.account.email})
-        
+        refresh_token = create_tracked_refresh_token(non_member_user.account.id, non_member_user.account.email, session)
+        session.commit()
+
     client.cookies.set("access_token", access_token)
     client.cookies.set("refresh_token", refresh_token)
-    
+
     yield client
 
 
@@ -478,11 +483,12 @@ def auth_client_invitee(session: Session, existing_invitee_user: User) -> Genera
     # Create and set valid tokens
     if existing_invitee_user.account:
         access_token = create_access_token({"sub": existing_invitee_user.account.email})
-        refresh_token = create_refresh_token({"sub": existing_invitee_user.account.email})
-        
+        refresh_token = create_tracked_refresh_token(existing_invitee_user.account.id, existing_invitee_user.account.email, session)
+        session.commit()
+
     client.cookies.set("access_token", access_token)
     client.cookies.set("refresh_token", refresh_token)
-    
+
     yield client
 
 # --- Email Mocking Fixtures ---
