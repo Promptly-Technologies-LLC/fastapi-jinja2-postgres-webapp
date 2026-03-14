@@ -173,7 +173,7 @@ Middleware functions are decorated with `@app.exception_handler(ExceptionType)` 
 Here's a middleware for handling the `PasswordValidationError` exception, which returns a toast partial for HTMX requests or a full error page for non-HTMX requests:
 
 ```python
-from utils.htmx import is_htmx_request
+from utils.core.htmx import is_htmx_request
 
 @app.exception_handler(PasswordValidationError)
 async def password_validation_exception_handler(request: Request, exc: PasswordValidationError):

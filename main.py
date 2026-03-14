@@ -13,7 +13,7 @@ from utils.core.dependencies import (
     require_unauthenticated_client
 )
 from utils.core.auth import COOKIE_SECURE
-from utils.htmx import is_htmx_request, toast_response
+from utils.core.htmx import is_htmx_request, toast_response
 from exceptions.http_exceptions import (
     AlreadyAuthenticatedError,
     AuthenticationError,

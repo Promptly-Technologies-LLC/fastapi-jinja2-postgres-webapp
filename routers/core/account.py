@@ -51,7 +51,7 @@ from utils.core.rate_limit import (
     check_forgot_password_email_rate_limit,
     login_email_limiter,
 )
-from utils.htmx import is_htmx_request, toast_response, set_flash_cookie
+from utils.core.htmx import is_htmx_request, toast_response, set_flash_cookie
 logger = getLogger("uvicorn.error")
 
 router = APIRouter(prefix="/account", tags=["account"])
