@@ -1,6 +1,9 @@
-# FastAPI, Jinja2, PostgreSQL Webapp Template
+---
+title: "FastAPI, Jinja2, PostgreSQL Webapp Template"
+description: "A production-ready web application template combining FastAPI, Jinja2, and PostgreSQL with secure authentication, role-based access control, and easy cloud deployment."
+---
 
-![Screenshot of homepage](docs/static/screenshot.jpg)
+![Screenshot of the FastAPI webapp template homepage](docs/static/screenshot.jpg)
 
 ## Quickstart
 
@@ -216,11 +219,21 @@ Your contributions are welcome! See the [issues page](https://github.com/promptl
 This project is created and maintained by [Promptly Technologies, LLC](https://promptlytechnologies.com/) and licensed under the MIT License. See the LICENSE file for more details.
 
 
-# Architecture
+---
+title: "Architecture"
+description: "Overview of the FastAPI webapp template architecture including data flow, database schema, project structure, and routing."
+---
 
 ## Data flow
 
-This application uses a Post-Redirect-Get (PRG) pattern. The user submits a form, which sends a POST request to a FastAPI endpoint on the server. The database is updated, and the user is redirected to a GET endpoint, which fetches the updated data and re-renders the Jinja2 page template with the new data.
+This application uses a **hybrid Post-Redirect-Get (PRG) + HTMX** architecture. Every mutating endpoint supports both paths simultaneously:
+
+- **Non-HTMX path (PRG):** A standard browser form submission sends a POST request. On success the server issues a `303 See Other` redirect to a GET endpoint, which re-renders the full page with updated data. On error a full-page error template is returned.
+- **HTMX path:** When the browser sends the `HX-Request: true` header (added automatically by [htmx.org](https://htmx.org)), the same POST endpoint detects the header via `utils/htmx.py:is_htmx_request()` and instead returns a `200` HTML partial that HTMX swaps into the relevant section of the page. On error a toast partial is returned and swapped into `#toast-container` via out-of-band (OOB) swap.
+
+The HTMX rollout keeps the existing POST route contract intact — dedicated `PUT`/`PATCH`/`DELETE` routes may be introduced in a future iteration.
+
+### PRG path
 
 ``` {python}
 #| echo: false
@@ -270,16 +283,86 @@ dot.edge('K', 'J', label='Return HTML')
 dot.edge('F', 'G')
 dot.edge('G', 'J', label='Return HTML')
 
-dot.render('static/data_flow', format='png', cleanup=True)
+dot.render('static/data_flow_prg', format='png', cleanup=True)
 ```
 
-![Data flow diagram](static/data_flow.png)
+![PRG data flow diagram](static/data_flow_prg.png)
 
-The advantage of the PRG pattern is that it is very straightforward to implement and keeps most of the rendering logic on the server side. One disadvantage is that it requires an extra round trip to the database to fetch the updated data, and re-rendering the entire page template may be less efficient than a partial page update on the client side. Another disadvantage is that it if the user makes an invalid form submission, they will see an error page and will have to click the browser's "back" button to get back to the form with their original form inputs.
+### HTMX path
 
-A future iteration of this application will use HTMX to update the page in place, so that on an invalid submission an error toast is displayed without a page reload (thus preserving the user's scroll position and form inputs).
+``` {python}
+#| echo: false
+#| include: false
+from graphviz import Digraph
 
-# Authentication
+dot = Digraph()
+dot.attr(rankdir='TB')
+dot.attr('node', shape='box', style='rounded')
+
+with dot.subgraph(name='cluster_client_htmx') as client:
+    client.attr(label='Client (HTMX)')
+    client.node('A2', 'User submits form', fillcolor='lightblue', style='rounded,filled')
+    client.node('B2', 'HTML/JS form validation', fillcolor='lightblue', style='rounded,filled')
+
+with dot.subgraph(name='cluster_server_htmx') as server:
+    server.attr(label='Server')
+    server.node('C2', 'FastAPI request validation\n(HX-Request: true detected)', fillcolor='lightgreen', style='rounded,filled')
+    server.node('D2', 'Business logic validation', fillcolor='lightgreen', style='rounded,filled')
+    server.node('E2', 'Update database', fillcolor='lightgreen', style='rounded,filled')
+    server.node('F2', 'Exception handler\n(is_htmx_request branch)', fillcolor='lightgreen', style='rounded,filled')
+    server.node('G2', 'Render toast partial\n(#toast-container OOB swap)', fillcolor='lightgreen', style='rounded,filled')
+    server.node('H2', 'Render HTML partial\n(target element swap)', fillcolor='lightgreen', style='rounded,filled')
+
+with dot.subgraph(name='cluster_client_post_htmx') as client_post:
+    client_post.attr(label='Client (HTMX)')
+    client_post.node('J2', 'HTMX swaps partial\ninto DOM', fillcolor='lightblue', style='rounded,filled')
+    client_post.node('K2', 'Toast displayed\n(no page reload)', fillcolor='lightyellow', style='rounded,filled')
+
+dot.edge('A2', 'B2')
+dot.edge('B2', 'A2')
+dot.edge('B2', 'C2', label='POST + HX-Request: true')
+dot.edge('C2', 'D2')
+dot.edge('C2', 'F2', label='RequestValidationError')
+dot.edge('D2', 'E2', label='Valid data')
+dot.edge('D2', 'F2', label='Custom Validation Error')
+dot.edge('E2', 'H2', label='Data updated')
+dot.edge('H2', 'J2', label='200 HTML partial')
+dot.edge('F2', 'G2')
+dot.edge('G2', 'K2', label='422/400/401 toast partial')
+
+dot.render('static/data_flow_htmx', format='png', cleanup=True)
+```
+
+![HTMX data flow diagram](static/data_flow_htmx.png)
+
+The PRG path is preserved for all non-HTMX clients (e.g. browsers with JavaScript disabled, automated tests that do not send `HX-Request`). The HTMX path adds in-place partial updates and toast-based error handling on top of the same POST endpoints, with no change to the route URLs or form field contracts.
+
+### Form validation and error handling
+
+| Scenario | Non-HTMX (PRG) | HTMX |
+|---|---|---|
+| `RequestValidationError` (missing/invalid field) | Full-page error template, `422` | Toast partial via `#toast-container` OOB swap, `422` |
+| Business logic error (`HTTPException`) | Full-page error template | Toast partial, `400`/`401`/`403`/`404` |
+| Login failure (`CredentialsError`) | Full-page error template, `401` | Toast partial, `401` |
+| Success | `303` redirect → GET → full page | `200` HTML partial swapped into target element |
+
+Toast partials are rendered from `templates/base/partials/toast.html` and injected into the persistent `#toast-container` div in `base.html` using `hx-swap-oob="true"`. The toast is displayed using Bootstrap's toast component and can be dismissed by the user.
+
+### HTMX request detection
+
+All HTMX-aware endpoints use the `is_htmx_request()` helper from `utils/htmx.py`:
+
+```python
+def is_htmx_request(request: Request) -> bool:
+    return request.headers.get("HX-Request") == "true"
+```
+
+HTMX automatically adds the `HX-Request: true` header to every request it initiates. Non-HTMX form submissions (standard browser POSTs) do not include this header, so they follow the PRG path unchanged.
+
+---
+title: "Authentication"
+description: "Guide to the FastAPI webapp template's authentication system including token-based auth, password recovery, and role-based access control."
+---
 
 ## Security features
 
@@ -406,7 +489,10 @@ reset.render('static/reset_flow', format='png', cleanup=True)
 ![Password reset flow](static/reset_flow.png)
 
 
-# Installation
+---
+title: "Installation"
+description: "Step-by-step installation guide for the FastAPI webapp template including Dev Container setup, manual installation, and environment configuration."
+---
 
 ## Install all development dependencies in a VSCode Dev Container
 
@@ -582,7 +668,10 @@ uv run ty check .
 ```
 
 
-# Customization
+---
+title: "Customization"
+description: "Guide to customizing the FastAPI webapp template including development workflow, code style conventions, and project structure."
+---
 
 ## Development workflow
 
@@ -603,6 +692,14 @@ The project uses `uv` to manage dependencies:
 If you are using VSCode or Cursor as your IDE, you will need to select the `uv`-managed Python version as your interpreter for the project. Go to `View > Command Palette`, search for `Python: Select Interpreter`, and select the Python version labeled `('.venv':venv)`.
 
 If your IDE does not automatically detect and display this option, you can manually select the interpreter by selecting "Enter interpreter path" and then navigating to the `.venv/bin/python` subfolder in your project directory.
+
+### Extending the template
+
+The `routers/core/` and `utils/core/` directories contain the core backend logic for the template. 
+
+Your custom Python backend code should go primarily in the `routers/app/` and `utils/app/` directories.
+
+For the frontend, you will also need to develop custom Jinja2 templates in the `templates/` folder and add custom static assets in `static/`.
 
 ### Testing
 
@@ -639,47 +736,57 @@ We find that static type checking is an enormous time-saver, catching many error
 
 ### Developing with LLMs
 
-The `.cursor/rules` folder contains a set of AI rules for working on this codebase in the Cursor IDE. We have also exposed the full Markdown-formatted project documentation as a [single text file](static/documentation.txt) for easy downloading and embedding for RAG.
+The `.cursor/rules` folder contains a set of AI rules for working on this codebase in the Cursor IDE. We have also exposed the full Markdown-formatted project documentation as a [single text file](docs/static/documentation.txt) for easy downloading and embedding for RAG.
 
 ## Application architecture
 
-### Post-Redirect-Get pattern
+### Hybrid PRG + HTMX pattern
 
 In this template, we use FastAPI to define the "API endpoints" of our application. An API endpoint is simply a URL that accepts user requests and returns responses. When a user visits a page, their browser sends what's called a "GET" request to an endpoint, and the server processes it (often querying a database), and returns a response (typically HTML). The browser renders the HTML, displaying the page.
 
-We also create POST endpoints, which accept form submissions so the user can create, update, and delete data in the database. This template follows the Post-Redirect-Get (PRG) pattern to handle POST requests. When a form is submitted, the server processes the data and then returns a "redirect" response, which sends the user to a GET endpoint to re-render the page with the updated data. (See [Architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html) for more details.)
+We also create POST endpoints, which accept form submissions so the user can create, update, and delete data in the database. This template uses a **hybrid Post-Redirect-Get (PRG) + HTMX** approach for POST requests:
 
-#### Customizable folders and files
+- **Non-HTMX (PRG):** When a form is submitted without HTMX, the server processes the data and returns a `303 See Other` redirect to a GET endpoint, which re-renders the full page with updated data.
+- **HTMX:** When HTMX submits the same form, the server detects the `HX-Request: true` header and instead returns a `200` HTML partial that HTMX swaps into the relevant part of the page — no full-page reload needed.
+
+Both paths use the same POST route URLs and form field contracts. (See [Architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html) for more details.)
+
+#### File structure
 
 - FastAPI application entry point and homepage GET route: `main.py`
-- FastAPI routes: `routers/`
+- Template FastAPI routes: `routers/core/`
     - Account and authentication endpoints: `account.py`
     - User profile management endpoints: `user.py`
     - Organization management endpoints: `organization.py`
     - Role management endpoints: `role.py`
     - Dashboard page: `dashboard.py`
     - Static pages (e.g., about, privacy policy, terms of service): `static_pages.py`
+- Custom FastAPI routes for your app: `routers/app/`
 - Jinja2 templates: `templates/`
 - Static assets: `static/`
 - Unit tests: `tests/`
 - Test database configuration: `docker-compose.yml`
-- Helper functions: `utils/`
+- Template helper functions: `utils/core/`
     - Auth helpers: `auth.py`
     - Database helpers: `db.py`
     - FastAPI dependencies: `dependencies.py`
     - Enums: `enums.py`
     - Image helpers: `images.py`
     - Database models: `models.py`
+- Shared helper functions: `utils/`
+    - HTMX request detection: `htmx.py`
+- Custom template helper functions for your app: `utils/app/`
 - Exceptions: `exceptions/`
     - HTTP exceptions: `http_exceptions.py`
     - Other custom exceptions: `exceptions.py`
-- Environment variables: `.env.example`
+- Environment variables: `.env.example`, `.env`
 - CI/CD configuration: `.github/`
 - Project configuration: `pyproject.toml`
 - Quarto documentation: 
     - README source: `index.qmd`
     - Website source: `index.qmd` + `docs/`
-    - Configuration: `_quarto.yml`
+    - Configuration: `_quarto.yml` + `_environment`
+- Rules for developing with LLMs in Cursor IDE: `.cursor/rules/`
 
 Most everything else is auto-generated and should not be manually modified.
 
@@ -687,7 +794,7 @@ Most everything else is auto-generated and should not be manually modified.
 
 ### Code conventions
 
-The GET route for the homepage is defined in the main entry point for the application, `main.py`. The entrypoint imports router modules from the `routers/` directory, which contain the other GET and POST routes for the application. In CRUD style, the router modules are named after the resource they manage, e.g., `account.py` for account management.
+The GET route for the homepage is defined in the main entry point for the application, `main.py`. The entrypoint imports router modules from the `routers/core/` directory (for core/template logic) and `routers/app/` directory (for app-specific logic). In CRUD style, the core router modules are named after the resource they manage, e.g., `account.py` for account management. You should place your own endpoints in `routers/app/`.
 
 We name our GET routes using the convention `read_<name>`, where `<name>` is the name of the resource, to indicate that they are read-only endpoints that do not modify the database. In POST routes that modify the database, you can use the `get_session` dependency as an argument to get a database session.
 
@@ -733,11 +840,20 @@ This template uses middlewares exclusively for global exception handling; they o
 
 Middleware functions are decorated with `@app.exception_handler(ExceptionType)` and are executed in the order they are defined in `main.py`, from most to least specific.
 
-Here's a middleware for handling the `PasswordMismatchError` exception from the previous example, which renders the `errors/validation_error.html` template with the error details:
+Here's a middleware for handling the `PasswordValidationError` exception, which returns a toast partial for HTMX requests or a full error page for non-HTMX requests:
 
 ```python
+from utils.htmx import is_htmx_request
+
 @app.exception_handler(PasswordValidationError)
 async def password_validation_exception_handler(request: Request, exc: PasswordValidationError):
+    if is_htmx_request(request):
+        return templates.TemplateResponse(
+            request,
+            "base/partials/toast.html",
+            {"message": exc.detail, "level": "danger"},
+            status_code=422,
+        )
     return templates.TemplateResponse(
         request,
         "errors/validation_error.html",
@@ -755,7 +871,7 @@ SQLModel is an Object-Relational Mapping (ORM) library that allows us to interac
 
 ### Models and relationships
 
-Our database models are defined in `utils/models.py`. Each model is a Python class that inherits from `SQLModel` and represents a database table. The key models are:
+Core database models are defined in `utils/core/models.py`. Each model is a Python class that inherits from `SQLModel` and represents a database table. The key core models are:
 
 - `Account`: Represents a user account with email and password hash
 - `User`: Represents a user profile with details like name and avatar; the email and password hash are stored in the related `Account` model
@@ -770,7 +886,7 @@ Two additional models are used by SQLModel to manage many-to-many relationships;
 - `UserRoleLink`: Maps users to their roles (many-to-many relationship)
 - `RolePermissionLink`: Maps roles to their permissions (many-to-many relationship)
 
-Here's an entity-relationship diagram (ERD) of the current database schema, automatically generated from our SQLModel definitions:
+Here's an entity-relationship diagram (ERD) of the current core database schema, automatically generated from our SQLModel definitions:
 
 ```{python}
 #| echo: false
@@ -778,13 +894,14 @@ Here's an entity-relationship diagram (ERD) of the current database schema, auto
 import sys
 sys.path.append("..")
 from utils.core.models import *
-from utils.core.db import engine
+from utils.core.db import get_connection_url
+from sqlmodel import create_engine
 from sqlalchemy import MetaData
 from sqlalchemy_schemadisplay import create_schema_graph
 
 # Create the directed graph
 graph = create_schema_graph(
-    engine=engine,
+    engine=create_engine(get_connection_url()),
     metadata=SQLModel.metadata,
     show_datatypes=True,
     show_indexes=True,
@@ -798,16 +915,17 @@ graph.write_png('static/schema.png')
 
 ![Database Schema](static/schema.png)
 
+To extend the database schema, define your own models in `utils/app/models.py` and import them in `utils/core/db.py` to make sure they are included in the `metadata` object in the `create_all` function.
 
 ### Database helpers
 
-Database operations are facilitated by helper functions in `utils/db.py`. Key functions include:
+Database operations are facilitated by helper functions in `utils/core/db.py` (for core logic) and `utils/app/` (for app-specific helpers). Key functions in the core utils include:
 
 - `set_up_db()`: Initializes the database schema and default data (which we do on every application start in `main.py`)
 - `get_connection_url()`: Creates a database connection URL from environment variables in `.env`
 - `get_session()`: Provides a database session for performing operations
 
-To perform database operations in route handlers, inject the database session as a dependency:
+To perform database operations in route handlers, inject the database session as a dependency (from `utils/core/db.py`):
 
 ```python
 @app.get("/users")
@@ -818,7 +936,7 @@ async def get_users(session: Session = Depends(get_session)):
 
 The session automatically handles transaction management, ensuring that database operations are atomic and consistent.
 
-There is also a helper method on the `User` model that checks if a user has a specific permission for a given organization. Its first argument must be a `ValidPermissions` enum value (from `utils/models.py`), and its second argument must be an `Organization` object or an `int` representing an organization ID:
+There is also a helper method on the `User` model that checks if a user has a specific permission for a given organization. Its first argument must be a `ValidPermissions` enum value (from `utils/core/models.py`), and its second argument must be an `Organization` object or an `int` representing an organization ID:
 
 ```python
 permission = ValidPermissions.CREATE_ROLE
@@ -827,7 +945,7 @@ organization = session.exec(select(Organization).where(Organization.name == "Acm
 user.has_permission(permission, organization)
 ```
 
-You should create custom `ValidPermissions` enum values for your application and validate that users have the necessary permissions before allowing them to modify organization data resources.
+You can add custom permission enum values to the `ValidPermissions` enum in `utils/core/enums.py` (below the core permissions section) and validate that users have the necessary permissions before allowing them to modify organization data resources.
 
 ### Cascade deletes
 
@@ -967,7 +1085,7 @@ Note that this will overwrite the existing `static/css/styles.css` file, so if y
 
 ### Client-side form validation
 
-While this template includes comprehensive server-side validation through Pydantic models and custom validators, it's important to note that server-side validation should be treated as a fallback security measure. If users ever see the `validation_error.html` template, it indicates that our client-side validation has failed to catch invalid input before it reaches the server.
+While this template includes comprehensive server-side validation through Pydantic models and custom validators, it's important to note that server-side validation should be treated as a fallback security measure. For HTMX requests, validation errors are surfaced as a toast notification without a page reload. For non-HTMX requests, they render the `validation_error.html` full-page error template. In either case, seeing a validation error means client-side validation has failed to catch invalid input before it reached the server.
 
 Best practices dictate implementing thorough client-side validation via JavaScript and/or HTML `input` element `pattern` attributes to:
 
@@ -978,7 +1096,10 @@ Best practices dictate implementing thorough client-side validation via JavaScri
 
 Server-side validation remains essential as a security measure against malicious requests that bypass client-side validation, but it should rarely be encountered during normal user interaction. See `templates/authentication/register.html` for a client-side form validation example involving both JavaScript and HTML regex `pattern` matching.
 
-# Deployment
+---
+title: "Deployment"
+description: "Guide to deploying the FastAPI webapp template to cloud platforms including Railway, Render, and other hosting services."
+---
 
 This application requires two services to be deployed and connected to each other:
 
@@ -987,71 +1108,13 @@ This application requires two services to be deployed and connected to each othe
 
 There are *many* hosting options available for each of these services; this guide will cover only a few of them.
 
-## Deploying and Configuring the PostgreSQL Database
-
-### On Digital Ocean
-
-#### Getting Started
-
-- Create a [DigitalOcean](https://www.digitalocean.com) account
-- Install the [`doctl` CLI tool](https://docs.digitalocean.com/reference/doctl) and authenticate with `doctl auth init`
-- Install the [`psql` client](https://www.postgresql.org/download)
-
-#### Create a Project
-
-Create a new project to organize your resources:
-
-```bash
-# List existing projects
-doctl projects list
-
-# Create a new project
-doctl projects create --name "YOUR-PROJECT-NAME" --purpose "YOUR-PROJECT-PURPOSE" --environment "Production"
-```
-
-#### Set Up a Managed PostgreSQL Database
-
-Create a managed, serverless PostgreSQL database instance:
-
-```bash
-doctl databases create your-db-name --engine pg --version 17 --size db-s-1vcpu-1gb --num-nodes 1 --wait
-```
-
-Get the database ID from the output of the create command and use it to retrieve the database connection details:
-
-```bash
-# Get the database connection details
-doctl databases connection "your-database-id" --format Host,Port,User,Password,Database
-```
-
-Store these details securely in a `.env.production` file (you will need to set them later in application deployment as production secrets):
-
-```bash
-# Database connection parameters
-DB_HOST=your-host
-DB_PORT=your-port
-DB_USER=your-user
-DB_PASS=your-password
-DB_NAME=your-database
-```
-
-You may also want to save your database id, although you can always find it again later by listing your databases with `doctl databases list`.
-
-#### Setting Up a Firewall Rule (after Deploying Your Application Layer)
-
-Note that by default your database is publicly accessible from the Internet, so you should create a firewall rule to restrict access to only your application's IP address once you have deployed the application. The command to do this is:
-
-```bash
-doctl databases firewalls append <database-cluster-id> --rule <type>:<value>
-```
-
-where `<type>` is `ip_addr` and `<value>` is the IP address of the application server. See the [DigitalOcean documentation](https://docs.digitalocean.com/reference/doctl/reference/databases/firewalls/append/) for more details.
-
-**Note:** You can only complete this step after you have deployed your application layer and obtained a static IP address for the application server.
+::: {.callout-note}
+Deployment artifacts (Dockerfiles, deploy scripts, compose files, etc.) are kept on separate git branches — one per deployment target — to avoid cluttering the main branch. See the `modal` branch for Modal deployment files and the `hetzner` branch for Hetzner Cloud deployment files. The documentation below describes how to use them.
+:::
 
 ## Deploying and Configuring the FastAPI App
 
-### On Modal.com
+### On Modal.com, with separately hosted PostgreSQL
 
 The big advantages of deploying on Modal.com are:
 1. that they offer $30/month of free credits for each user, plus generous additional free credit allotments for startups and researchers, and
@@ -1164,11 +1227,247 @@ modal secret create your-app-name-secret \
 
 **Important:** Ensure `DB_HOST` points to your *cloud* database host address, not `localhost` or `host.docker.internal`.
 
+#### Deploying and Configuring the PostgreSQL Database on Digital Ocean to work with Modal
+
+##### Getting Started
+
+- Create a [DigitalOcean](https://www.digitalocean.com) account
+- Install the [`doctl` CLI tool](https://docs.digitalocean.com/reference/doctl) and authenticate with `doctl auth init`
+- Install the [`psql` client](https://www.postgresql.org/download)
+
+##### Create a Project
+
+Create a new project to organize your resources:
+
+```bash
+# List existing projects
+doctl projects list
+
+# Create a new project
+doctl projects create --name "YOUR-PROJECT-NAME" --purpose "YOUR-PROJECT-PURPOSE" --environment "Production"
+```
+
+##### Set Up a Managed PostgreSQL Database
+
+Create a managed, serverless PostgreSQL database instance:
+
+```bash
+doctl databases create your-db-name --engine pg --version 17 --size db-s-1vcpu-1gb --num-nodes 1 --wait
+```
+
+Get the database ID from the output of the create command and use it to retrieve the database connection details:
+
+```bash
+# Get the database connection details
+doctl databases connection "your-database-id" --format Host,Port,User,Password,Database
+```
+
+Store these details securely in a `.env.production` file (you will need to set them later in application deployment as production secrets):
+
+```bash
+# Database connection parameters
+DB_HOST=your-host
+DB_PORT=your-port
+DB_USER=your-user
+DB_PASS=your-password
+DB_NAME=your-database
+```
+
+You may also want to save your database id, although you can always find it again later by listing your databases with `doctl databases list`.
+
+##### Setting Up a Firewall Rule (after Deploying Your Application Layer)
+
+Note that by default your database is publicly accessible from the Internet, so you should create a firewall rule to restrict access to only your application's IP address once you have deployed the application. The command to do this is:
+
+```bash
+doctl databases firewalls append <database-cluster-id> --rule <type>:<value>
+```
+
+where `<type>` is `ip_addr` and `<value>` is the IP address of the application server. See the [DigitalOcean documentation](https://docs.digitalocean.com/reference/doctl/reference/databases/firewalls/append/) for more details.
+
+**Note:** You can only complete this step after you have deployed your application layer and obtained a static IP address for the application server.
+
 #### Testing the Deployment
 
 Access the provided Modal URL in your browser. Browse the site and test the registration and password reset features to ensure database and Resend connections work.
 
-# Contributing
+### On Hetzner Cloud, with Same-Server PostgreSQL
+
+Hetzner Cloud offers affordable, dedicated VMs with predictable pricing. Unlike Modal, Hetzner runs both the database and application on the same server, giving you a self-contained deployment with a static IP and automatic TLS via Caddy.
+
+**Advantages:**
+
+1. Very affordable — a 2 vCPU / 2GB server starts at ~€4/month
+2. Full control over the server, static IP included
+3. Runs both the app and database on a single server (no external database needed)
+4. Automatic HTTPS via Caddy and Let's Encrypt
+
+**Disadvantages:**
+
+1. No automatic scaling — you get a fixed-size server
+2. You are responsible for server maintenance and updates
+3. You pay a fixed cost even with zero traffic
+
+#### Getting Started
+
+- Create a [Hetzner Cloud](https://www.hetzner.com/cloud) account
+- Generate an API token in the Cloud Console under **Security > API Tokens**
+- Install the [`hcloud` CLI](https://github.com/hetznercloud/cli) and create a context:
+
+```bash
+hcloud context create myproject
+# Paste your API token when prompted
+```
+
+#### Preparing the Environment File
+
+Copy `.env.example` to `.env.production` and fill in your production values:
+
+```bash
+SECRET_KEY=your-secret-key
+BASE_URL=https://your-domain.com
+DOMAIN=your-domain.com
+USE_POOL=0
+DB_HOST=db
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=a-strong-password
+DB_NAME=webapp
+DB_SSLMODE=disable
+RESEND_API_KEY=your-resend-key
+EMAIL_FROM=noreply@your-domain.com
+```
+
+Note that `DB_HOST=db` refers to the Docker Compose service name — the database runs on the same server as the app.
+
+#### Deploying
+
+Run the included deploy script:
+
+```bash
+./deploy-hetzner.sh .env.production
+```
+
+The script will:
+
+1. Create (or reuse) an SSH key and register it with Hetzner
+2. Create a firewall allowing SSH, HTTP, and HTTPS
+3. Provision a server with Docker pre-installed via cloud-init
+4. Rsync the project files to the server
+5. Start the app, database, and Caddy reverse proxy via Docker Compose
+
+#### DNS Setup
+
+After deployment, the script prints the server's IP address. Create a DNS **A record** pointing your domain to this IP. Once DNS propagates, Caddy will automatically provision a TLS certificate from Let's Encrypt.
+
+#### Configuration
+
+You can customize the server by setting environment variables before running the script:
+
+| Variable | Default | Description |
+|---|---|---|
+| `HETZNER_SERVER_NAME` | `fastapi-webapp` | Server name in Hetzner |
+| `HETZNER_SERVER_TYPE` | `cpx11` | Server type (2 shared vCPU, 2GB RAM) |
+| `HETZNER_IMAGE` | `ubuntu-24.04` | OS image |
+| `HETZNER_LOCATION` | `ash` | Datacenter location (Ashburn, VA) |
+| `HETZNER_SSH_KEY_NAME` | `deploy-key` | SSH key name in Hetzner |
+
+#### Managing the Deployment
+
+```bash
+# SSH into the server
+ssh root@<server-ip>
+
+# View logs
+ssh root@<server-ip> 'cd /opt/app && docker compose -f docker-compose.prod.yml logs -f'
+
+# Restart services
+ssh root@<server-ip> 'cd /opt/app && docker compose -f docker-compose.prod.yml restart'
+
+# Redeploy after code changes (run locally)
+./deploy-hetzner.sh .env.production
+
+# Tear down the server
+hcloud server delete fastapi-webapp
+```
+
+## Connection Pooling
+
+When deploying to production with many concurrent connections or in serverless environments, you may want to use an external connection pooler like [PgBouncer](https://www.pgbouncer.org/), [Supabase Pooler](https://supabase.com/docs/guides/database/connecting-to-postgres#connection-pooler), or [AWS RDS Proxy](https://aws.amazon.com/rds/proxy/).
+
+Connection poolers sit between your application and database, managing a pool of persistent connections. This reduces connection overhead and allows your application to handle more concurrent requests without exhausting database connections.
+
+### Configuring Pooled Connections
+
+This template supports switching between direct and pooled database connections via the `USE_POOL` environment variable.
+
+**Direct mode (default):** Set `USE_POOL=0` or leave it unset. The application connects directly to the database using:
+
+- `DB_HOST` - Database host
+- `DB_PORT` - Database port (typically 5432)
+- `DB_NAME` - Database name
+- `DB_USER` - Database username
+- `DB_PASSWORD` - Database password
+
+**Pooled mode:** Set `USE_POOL=1`. The application connects via the pooler using:
+
+- `DB_HOST` - Pooler host (may be the same as the database host)
+- `DB_POOL_PORT` - Pooler port (typically 6543 for PgBouncer)
+- `DB_POOL_NAME` - Database name for pooled connections
+- `DB_APPUSER` - Application-specific database user
+- `DB_APPUSER_PASSWORD` - Application user password
+
+Both modes support `DB_SSLMODE` (defaults to `prefer`) for configuring SSL connections.
+
+### Setting Up a Restricted Application User
+
+When using connection pooling, it's a security best practice to create a separate database user with restricted permissions for your application's runtime connections. This follows the principle of least privilege - the app user can only perform the operations it needs, limiting potential damage from SQL injection or other vulnerabilities.
+
+Connect to your database as the admin user and run:
+
+```sql
+-- Create the application user
+CREATE USER appuser WITH PASSWORD 'your-secure-password';
+
+-- Grant connect permission
+GRANT CONNECT ON DATABASE yourdb TO appuser;
+
+-- Grant usage on the public schema
+GRANT USAGE ON SCHEMA public TO appuser;
+
+-- Grant permissions on all existing tables
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO appuser;
+
+-- Grant permissions on sequences (needed for auto-incrementing IDs)
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO appuser;
+
+-- Ensure future tables also get these permissions
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO appuser;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO appuser;
+```
+
+Then configure your environment to use this user for pooled connections:
+
+```bash
+DB_APPUSER=appuser
+DB_APPUSER_PASSWORD=your-secure-password
+```
+
+Keep your admin credentials (`DB_USER`, `DB_PASSWORD`) for direct connections used during schema migrations or administrative tasks.
+
+### When to Use Connection Pooling
+
+Consider using a connection pooler when:
+
+- Running in serverless environments (Modal, AWS Lambda, Vercel) where cold starts create many new connections
+- Your application handles many concurrent requests
+- You're hitting database connection limits
+- You want to reduce connection latency for frequently-accessed queries
+
+---
+title: "Contributing"
+description: "How to contribute to the FastAPI webapp template project including guidelines for pull requests and development setup."
+---
 
 ## Contributors
 
