@@ -9,6 +9,7 @@ from utils.core.db import create_default_roles
 from utils.core.dependencies import get_authenticated_user, get_user_with_relations, get_session
 from utils.core.models import Organization, User, Role, Account, utc_now, Invitation
 from utils.core.enums import ValidPermissions
+from utils.app.enums import AppPermissions
 from exceptions.http_exceptions import (
     OrganizationNotFoundError, OrganizationNameTakenError,
     InsufficientPermissionsError, OrganizationSetupError,
@@ -71,6 +72,7 @@ async def read_organization(
             "user": user,
             "user_permissions": user_permissions,
             "ValidPermissions": ValidPermissions,
+            "all_permissions": list(ValidPermissions) + list(AppPermissions),
             "active_invitations": active_invitations
         }
     )

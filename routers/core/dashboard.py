@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from utils.core.dependencies import get_user_with_relations, get_session
 from utils.core.models import User, Organization
-from utils.core.enums import ValidPermissions
+from utils.app.enums import AppPermissions
 from utils.app.models import OrganizationResource
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -50,13 +50,13 @@ async def read_dashboard(
                 .order_by(OrganizationResource.created_at.desc())  # type: ignore[union-attr]
             ).all())
             can_read = user.has_permission(
-                ValidPermissions.READ_ORGANIZATION_RESOURCES, selected_org
+                AppPermissions.READ_ORGANIZATION_RESOURCES, selected_org
             )
             can_write = user.has_permission(
-                ValidPermissions.WRITE_ORGANIZATION_RESOURCES, selected_org
+                AppPermissions.WRITE_ORGANIZATION_RESOURCES, selected_org
             )
             can_delete = user.has_permission(
-                ValidPermissions.DELETE_ORGANIZATION_RESOURCES, selected_org
+                AppPermissions.DELETE_ORGANIZATION_RESOURCES, selected_org
             )
 
     return templates.TemplateResponse(

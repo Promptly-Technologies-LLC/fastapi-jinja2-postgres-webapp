@@ -8,6 +8,7 @@ from utils.core.models import User, UserAvatar, DataIntegrityError, Organization
 from utils.core.dependencies import get_authenticated_user, get_user_with_relations, get_session
 from utils.core.images import validate_and_process_image, MAX_FILE_SIZE, MIN_DIMENSION, MAX_DIMENSION, ALLOWED_CONTENT_TYPES
 from utils.core.enums import ValidPermissions
+from utils.app.enums import AppPermissions
 from exceptions.http_exceptions import (
     InsufficientPermissionsError,
     UserNotFoundError,
@@ -192,6 +193,7 @@ def update_user_role(
                 "user": user,
                 "user_permissions": user_permissions,
                 "ValidPermissions": ValidPermissions,
+                "all_permissions": list(ValidPermissions) + list(AppPermissions),
             },
         )
         response.headers["HX-Trigger"] = "modalDismiss"
@@ -259,6 +261,7 @@ def remove_user_from_organization(
                 "user": user,
                 "user_permissions": user_permissions,
                 "ValidPermissions": ValidPermissions,
+                "all_permissions": list(ValidPermissions) + list(AppPermissions),
             },
         )
         return append_toast(response, request, templates, "User removed from organization.")

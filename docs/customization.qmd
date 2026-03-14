@@ -247,6 +247,17 @@ graph.write_png('static/schema.png')
 
 To extend the database schema, define your own models in `utils/app/models.py` and import them in `utils/core/db.py` to make sure they are included in the `metadata` object in the `create_all` function.
 
+### Example application data model
+
+The template ships with an illustrative data model, `OrganizationResource`, in `utils/app/models.py`. This model demonstrates how to create an organization-scoped database table and is used by the dashboard to display example resources. It is **meant to be replaced** with your own application-specific models.
+
+To replace it:
+
+1. Edit `utils/app/models.py` — remove `OrganizationResource` and define your own SQLModel table classes. Any table class defined in this file will be automatically created in the database on startup.
+2. Update `routers/core/dashboard.py` — replace the `OrganizationResource` query and template context with your own data.
+3. Update `templates/dashboard/index.html` — replace the example resource list with your own application UI.
+4. Optionally add new permission values to `AppPermissions` in `utils/app/enums.py` if your models need custom permission checks. These are automatically registered alongside the core `ValidPermissions` during database setup.
+
 ### Database helpers
 
 Database operations are facilitated by helper functions in `utils/core/db.py` (for core logic) and `utils/app/` (for app-specific helpers). Key functions in the core utils include:
@@ -266,16 +277,20 @@ async def get_users(session: Session = Depends(get_session)):
 
 The session automatically handles transaction management, ensuring that database operations are atomic and consistent.
 
-There is also a helper method on the `User` model that checks if a user has a specific permission for a given organization. Its first argument must be a `ValidPermissions` enum value (from `utils/core/models.py`), and its second argument must be an `Organization` object or an `int` representing an organization ID:
+There is also a helper method on the `User` model that checks if a user has a specific permission for a given organization. Its first argument must be a `StrEnum` value (either from `ValidPermissions` in `utils/core/enums.py` or `AppPermissions` in `utils/app/enums.py`), and its second argument must be an `Organization` object or an `int` representing an organization ID:
 
 ```python
-permission = ValidPermissions.CREATE_ROLE
-organization = session.exec(select(Organization).where(Organization.name == "Acme Inc.")).first()
+from utils.core.enums import ValidPermissions
+from utils.app.enums import AppPermissions
 
-user.has_permission(permission, organization)
+# Check a core permission
+user.has_permission(ValidPermissions.CREATE_ROLE, organization)
+
+# Check an app-specific permission
+user.has_permission(AppPermissions.READ_ORGANIZATION_RESOURCES, organization)
 ```
 
-You can add custom permission enum values to the `ValidPermissions` enum in `utils/core/enums.py` (below the core permissions section) and validate that users have the necessary permissions before allowing them to modify organization data resources.
+Core permissions used by the template's built-in features are defined in `ValidPermissions` (`utils/core/enums.py`). To add your own app-specific permissions, define them in `AppPermissions` (`utils/app/enums.py`). Both enum types are automatically registered in the database during setup and work interchangeably with `User.has_permission()`.
 
 ### Cascade deletes
 

@@ -1,12 +1,12 @@
+from enum import StrEnum
 from logging import getLogger, DEBUG
 from uuid import uuid4
 from datetime import datetime, UTC, timedelta
 from typing import Optional, List, Union
 from pydantic import EmailStr
 from sqlmodel import SQLModel, Field, Relationship, Session, select
-from sqlalchemy import Column, Enum as SQLAlchemyEnum, LargeBinary, UniqueConstraint
+from sqlalchemy import Column, LargeBinary, String, UniqueConstraint
 from sqlalchemy.orm import Mapped
-from utils.core.enums import ValidPermissions
 from exceptions.http_exceptions import DataIntegrityError
 
 logger = getLogger("uvicorn.error")
@@ -166,9 +166,10 @@ class User(UserBase, table=True):
                 organization_ids.add(role.organization_id)
         return organizations
 
-    def has_permission(self, permission: ValidPermissions, organization: Union["Organization", int]) -> bool:
+    def has_permission(self, permission: StrEnum, organization: Union["Organization", int]) -> bool:
         """
         Check if the user has a specific permission for a given organization.
+        Accepts any StrEnum (ValidPermissions, AppPermissions, etc.).
         """
         organization_id: Optional[int] = None
         if isinstance(organization, Organization):
@@ -181,7 +182,7 @@ class User(UserBase, table=True):
 
         for role in self.roles:
             if role.organization_id == organization_id:
-                return permission in [perm.name for perm in role.permissions]
+                return str(permission) in [perm.name for perm in role.permissions]
         return False
 
 
@@ -260,12 +261,12 @@ class Role(SQLModel, table=True):
 
 class Permission(SQLModel, table=True):
     """
-    Represents a permission that can be assigned to a role. Should not be
-    modified unless the application logic and ValidPermissions enum change.
+    Represents a permission that can be assigned to a role. Permissions are
+    populated automatically from ValidPermissions and AppPermissions enums
+    during database setup.
     """
     id: Optional[int] = Field(default=None, primary_key=True)
-    name: ValidPermissions = Field(
-        sa_column=Column(SQLAlchemyEnum(ValidPermissions, create_type=False)))
+    name: str = Field(sa_column=Column(String, unique=True))
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
 
