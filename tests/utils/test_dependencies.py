@@ -5,9 +5,13 @@ from utils.core.dependencies import (
     get_account_from_email_update_token, validate_token_and_get_account,
     get_account_from_credentials, get_account_from_tokens, get_authenticated_account,
     validate_token_and_get_user, get_user_from_tokens, get_authenticated_user,
-    get_optional_user, get_account_from_reset_token, get_user_with_relations
+    get_optional_user, get_account_from_reset_token, get_user_with_relations,
+    require_unauthenticated_client, get_verified_account
 )
-from exceptions.http_exceptions import AuthenticationError, CredentialsError
+from exceptions.http_exceptions import (
+    AlreadyAuthenticatedError, AuthenticationError, CredentialsError,
+    PasswordValidationError
+)
 from exceptions.exceptions import NeedsNewTokens
 import pytest
 
@@ -440,3 +444,50 @@ def test_get_user_with_relations() -> None:
     # but we can verify the where clause was applied correctly
     assert '"user".id' in str(session.exec.call_args[0][0])
     assert 'id_1' in str(session.exec.call_args[0][0])
+
+
+def test_require_unauthenticated_client() -> None:
+    """Tests that require_unauthenticated_client raises when user is authenticated."""
+    # Test with no user (should return None)
+    result = require_unauthenticated_client(user=None)
+    assert result is None
+
+    # Test with authenticated user (should raise)
+    mock_user = User(id=1, name="Test User")
+    with pytest.raises(AlreadyAuthenticatedError):
+        require_unauthenticated_client(user=mock_user)
+
+
+def test_get_verified_account() -> None:
+    """Tests that get_verified_account verifies email and password."""
+    mock_account = Account(
+        id=1, email="test@example.com", hashed_password="hashed_password"
+    )
+
+    # Test with matching email and correct password
+    with patch('utils.core.dependencies.verify_password') as mock_verify:
+        mock_verify.return_value = True
+        account = get_verified_account(
+            email="test@example.com", password="correct_password",
+            account=mock_account
+        )
+        assert account == mock_account
+        mock_verify.assert_called_once_with("correct_password", "hashed_password")
+
+    # Test with mismatched email
+    with pytest.raises(CredentialsError) as exc_info:
+        get_verified_account(
+            email="wrong@example.com", password="correct_password",
+            account=mock_account
+        )
+    assert "Email does not match" in str(exc_info.value.detail)
+
+    # Test with wrong password
+    with patch('utils.core.dependencies.verify_password') as mock_verify:
+        mock_verify.return_value = False
+        with pytest.raises(PasswordValidationError) as exc_info:
+            get_verified_account(
+                email="test@example.com", password="wrong_password",
+                account=mock_account
+            )
+        assert exc_info.value.detail["field"] == "password"

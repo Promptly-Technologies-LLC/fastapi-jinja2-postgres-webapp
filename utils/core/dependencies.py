@@ -10,7 +10,10 @@ from utils.core.auth import (
 )
 from utils.core.db import create_engine, get_connection_url
 from utils.core.models import User, Role, PasswordResetToken, EmailUpdateToken, Account
-from exceptions.http_exceptions import AuthenticationError, CredentialsError, DataIntegrityError
+from exceptions.http_exceptions import (
+    AlreadyAuthenticatedError, AuthenticationError, CredentialsError,
+    DataIntegrityError, PasswordValidationError
+)
 from exceptions.exceptions import NeedsNewTokens
 
 
@@ -234,6 +237,36 @@ def get_optional_user(
         return user
 
     return None
+
+
+def require_unauthenticated_client(
+    user: Optional[User] = Depends(get_optional_user),
+) -> None:
+    """
+    Dependency that ensures the client is NOT authenticated.
+    Raises AlreadyAuthenticatedError (caught by exception handler) if a user is found.
+    """
+    if user:
+        raise AlreadyAuthenticatedError()
+
+
+def get_verified_account(
+    email: EmailStr = Form(..., title="Email", description="Account email address for verification"),
+    password: str = Form(..., title="Password", description="Account password for verification"),
+    account: Account = Depends(get_authenticated_account),
+) -> Account:
+    """
+    Dependency that returns an authenticated account after verifying credentials.
+    Wraps get_authenticated_account with an additional email/password check.
+    """
+    if email != account.email:
+        raise CredentialsError(message="Email does not match authenticated account")
+    if not verify_password(password, account.hashed_password):
+        raise PasswordValidationError(
+            field="password",
+            message="Password is incorrect"
+        )
+    return account
 
 
 def get_account_from_email_update_token(
