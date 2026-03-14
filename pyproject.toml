@@ -33,6 +33,7 @@ dev = [
     "sqlalchemy-schemadisplay<3.0,>=2.0",
     "ty>=0.0.21",
     "ruff>=0.15.5",
+    "pytest-jinja-check[fastapi]>=1.0.2",
 ]
 
 [tool.ty.rules]
