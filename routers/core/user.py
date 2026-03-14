@@ -14,7 +14,7 @@ from exceptions.http_exceptions import (
     OrganizationNotFoundError
 )
 from routers.core.organization import router as organization_router
-from utils.htmx import is_htmx_request, append_toast
+from utils.core.htmx import is_htmx_request, append_toast
 
 router = APIRouter(prefix="/user", tags=["user"])
 templates = Jinja2Templates(directory="templates")

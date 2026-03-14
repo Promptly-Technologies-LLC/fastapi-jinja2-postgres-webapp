@@ -128,7 +128,7 @@ The GET route for the homepage is defined in the main entry point for the applic
 
 We name our GET routes using the convention `read_<name>`, where `<name>` is the name of the resource, to indicate that they are read-only endpoints that do not modify the database. In POST routes that modify the database, you can use the `get_session` dependency as an argument to get a database session.
 
-Routes that require authentication generally take the `get_authenticated_account` dependency as an argument. Unauthenticated GET routes generally take the `get_optional_user` dependency as an argument. If a route should *only* be seen by authenticated users (i.e., a login page), you can redirect to the dashboard if `get_optional_user` returns a `User` object.
+Routes that require authentication generally take the `get_authenticated_account` dependency as an argument. Unauthenticated GET routes generally take the `get_optional_user` dependency as an argument. Routes that should *only* be seen by unauthenticated users (e.g., login, register) use the `require_unauthenticated_client` dependency, which automatically redirects authenticated users to the dashboard. Routes that require re-verification of credentials (e.g., account deletion) use the `get_verified_account` dependency, which wraps `get_authenticated_account` with an additional email/password check.
 
 ### Context variables
 
@@ -173,7 +173,7 @@ Middleware functions are decorated with `@app.exception_handler(ExceptionType)` 
 Here's a middleware for handling the `PasswordValidationError` exception, which returns a toast partial for HTMX requests or a full error page for non-HTMX requests:
 
 ```python
-from utils.htmx import is_htmx_request
+from utils.core.htmx import is_htmx_request
 
 @app.exception_handler(PasswordValidationError)
 async def password_validation_exception_handler(request: Request, exc: PasswordValidationError):
