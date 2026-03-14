@@ -5,6 +5,7 @@ from sqlalchemy.engine import URL
 from sqlmodel import create_engine, Session, SQLModel, select, text
 from utils.core.models import Role, Permission, RolePermissionLink
 from utils.core.enums import ValidPermissions
+from utils.app.models import *  # noqa: F401, F403 — registers app models with SQLModel.metadata
 
 # Set up a logger for error reporting
 logger = logging.getLogger("uvicorn.error")

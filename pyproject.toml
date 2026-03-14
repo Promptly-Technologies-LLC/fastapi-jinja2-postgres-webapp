@@ -34,6 +34,7 @@ dev = [
     "ty>=0.0.21",
     "ruff>=0.15.5",
     "pytest-jinja-check[fastapi]>=1.0.2",
+    "pytest-playwright>=0.7.2",
 ]
 
 [tool.ty.rules]

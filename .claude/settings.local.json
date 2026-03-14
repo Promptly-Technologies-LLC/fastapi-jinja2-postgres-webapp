@@ -11,7 +11,9 @@
       "Find",
       "Search",
       "WebSearch",
-      "WebFetch(*)"
+      "WebFetch(*)",
+      "Skill(browser-automation)",
+      "Skill(browser-automation:*)"
     ]
   }
 }
