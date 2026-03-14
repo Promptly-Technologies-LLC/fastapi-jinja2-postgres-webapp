@@ -20,7 +20,7 @@ from exceptions.http_exceptions import (
     InvalidInvitationTokenError,
 )
 from exceptions.exceptions import EmailSendFailedError
-from utils.htmx import is_htmx_request, append_toast
+from utils.core.htmx import is_htmx_request, append_toast
 # Import the account router to generate URLs for login/register
 from routers.core.account import router as account_router
 from routers.core.organization import router as org_router # Already imported, check usage

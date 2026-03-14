@@ -15,7 +15,7 @@ from exceptions.http_exceptions import (
     UserNotFoundError, UserAlreadyMemberError, DataIntegrityError
 )
 from pydantic import EmailStr
-from utils.htmx import is_htmx_request, set_flash_cookie
+from utils.core.htmx import is_htmx_request, set_flash_cookie
 
 logger = getLogger("uvicorn.error")
 

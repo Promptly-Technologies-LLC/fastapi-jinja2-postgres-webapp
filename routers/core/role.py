@@ -12,7 +12,7 @@ from utils.core.dependencies import get_authenticated_user, get_session
 from utils.core.models import Role, Permission, ValidPermissions, utc_now, User, DataIntegrityError, Organization
 from exceptions.http_exceptions import InsufficientPermissionsError, InvalidPermissionError, RoleAlreadyExistsError, RoleNotFoundError, RoleHasUsersError, CannotModifyDefaultRoleError
 from routers.core.organization import router as organization_router
-from utils.htmx import is_htmx_request, append_toast
+from utils.core.htmx import is_htmx_request, append_toast
 
 logger = getLogger("uvicorn.error")
 
