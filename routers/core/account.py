@@ -10,6 +10,7 @@ from pydantic import EmailStr
 from sqlmodel import Session, select
 from utils.core.models import User, DataIntegrityError, Account, Invitation
 from utils.core.dependencies import get_session
+from utils.core.models import RefreshToken
 from utils.core.auth import (
     HTML_PASSWORD_PATTERN,
     COMPILED_PASSWORD_PATTERN,
@@ -17,7 +18,8 @@ from utils.core.auth import (
     oauth2_scheme_cookie,
     get_password_hash,
     create_access_token,
-    create_refresh_token,
+    create_tracked_refresh_token,
+    revoke_all_refresh_tokens,
     validate_token,
     send_reset_email_task,
     send_email_update_confirmation
@@ -99,13 +101,28 @@ def validate_password_strength_and_match(
 
 
 @router.get("/logout", response_class=RedirectResponse)
-def logout():
+def logout(
+    tokens: tuple[Optional[str], Optional[str]] = Depends(oauth2_scheme_cookie),
+    session: Session = Depends(get_session),
+):
     """
-    Log out a user by clearing their cookies.
+    Log out a user by revoking their refresh token and clearing cookies.
     """
     response = RedirectResponse(url="/", status_code=303)
     response.delete_cookie("access_token")
     response.delete_cookie("refresh_token")
+
+    _, refresh_token_value = tokens
+    if refresh_token_value:
+        decoded = validate_token(refresh_token_value, token_type="refresh")
+        if decoded and decoded.get("jti"):
+            db_token = session.exec(
+                select(RefreshToken).where(RefreshToken.jti == decoded["jti"])
+            ).first()
+            if db_token:
+                db_token.revoked = True
+                session.commit()
+
     return response
 
 
@@ -303,7 +320,8 @@ async def register(
 
     # Create access token using the committed account's email
     access_token = create_access_token(data={"sub": account.email, "fresh": True})
-    refresh_token = create_refresh_token(data={"sub": account.email})
+    refresh_token = create_tracked_refresh_token(account.id, account.email, session)
+    session.commit()
 
     # Set cookie — use HX-Redirect for HTMX, 303 for regular form submissions
     if is_htmx_request(request):
@@ -404,7 +422,8 @@ async def login(
     access_token = create_access_token(
         data={"sub": account.email, "fresh": True}
     )
-    refresh_token = create_refresh_token(data={"sub": account.email})
+    refresh_token = create_tracked_refresh_token(account.id, account.email, session)
+    session.commit()
 
     # Set cookie — use HX-Redirect for HTMX, 303 for regular form submissions
     if is_htmx_request(request):
@@ -450,16 +469,47 @@ async def refresh_token(
         response.delete_cookie("refresh_token")
         return response
 
+    # Validate JTI server-side
+    jti = decoded_token.get("jti")
+    if not jti:
+        response = RedirectResponse(url=router.url_path_for("read_login"), status_code=303)
+        response.delete_cookie("access_token")
+        response.delete_cookie("refresh_token")
+        return response
+
     user_email = decoded_token.get("sub")
     account = session.exec(select(Account).where(
         Account.email == user_email)).one_or_none()
     if not account:
         return RedirectResponse(url=router.url_path_for("read_login"), status_code=303)
 
+    db_token = session.exec(
+        select(RefreshToken).where(RefreshToken.jti == jti)
+    ).first()
+
+    if not db_token or db_token.account_id != account.id:
+        return RedirectResponse(url=router.url_path_for("read_login"), status_code=303)
+
+    if db_token.revoked:
+        # Token reuse detected — revoke all tokens for this account
+        logger.warning(
+            f"Refresh token reuse detected for account {account.id} on /refresh endpoint. "
+            "Revoking all refresh tokens."
+        )
+        revoke_all_refresh_tokens(account.id, session)
+        session.commit()
+        response = RedirectResponse(url=router.url_path_for("read_login"), status_code=303)
+        response.delete_cookie("access_token")
+        response.delete_cookie("refresh_token")
+        return response
+
+    # Revoke current token and issue new ones
+    db_token.revoked = True
     new_access_token = create_access_token(
         data={"sub": account.email, "fresh": False}
     )
-    new_refresh_token = create_refresh_token(data={"sub": account.email})
+    new_refresh_token = create_tracked_refresh_token(account.id, account.email, session)
+    session.commit()
 
     response = RedirectResponse(url=dashboard_router.url_path_for("read_dashboard"), status_code=303)
     response.set_cookie(
@@ -616,11 +666,15 @@ async def confirm_email_update(
         
     account.email = new_email
     update_token.used = True
+
+    # Revoke all existing refresh tokens since the email changed
+    revoke_all_refresh_tokens(account.id, session)
     session.commit()
 
     # Create new tokens with the updated email
     access_token = create_access_token(data={"sub": new_email, "fresh": True})
-    refresh_token = create_refresh_token(data={"sub": new_email})
+    refresh_token = create_tracked_refresh_token(account.id, new_email, session)
+    session.commit()
 
     profile_path: URLPath = user_router.url_path_for("read_profile")
     response = RedirectResponse(url=str(profile_path), status_code=303)

@@ -5,6 +5,7 @@ from datetime import timedelta
 from urllib.parse import urlparse, parse_qs
 from starlette.datastructures import URLPath
 from main import app
+import uuid
 from utils.core.auth import (
     create_access_token,
     create_refresh_token,
@@ -48,11 +49,13 @@ def test_token_creation_and_validation(env_vars) -> None:
     assert decoded["type"] == "access"
 
     # Test refresh token
-    refresh_token = create_refresh_token(data)
+    jti = str(uuid.uuid4())
+    refresh_token = create_refresh_token(data, jti=jti)
     decoded = validate_token(refresh_token, "refresh")
     assert decoded is not None
     assert decoded["sub"] == data["sub"]
     assert decoded["type"] == "refresh"
+    assert decoded["jti"] == jti
 
 
 def test_expired_token(env_vars) -> None:

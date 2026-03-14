@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 from datetime import datetime, timedelta, UTC
-from utils.core.models import EmailUpdateToken, Account, User, PasswordResetToken, Role
+from utils.core.models import EmailUpdateToken, Account, User, PasswordResetToken, Role, RefreshToken
 from utils.core.dependencies import (
     get_account_from_email_update_token, validate_token_and_get_account,
     get_account_from_credentials, get_account_from_tokens, get_authenticated_account,
@@ -49,44 +49,77 @@ def test_validate_token_and_get_account() -> None:
     """
     session = MagicMock()
     mock_account = Account(id=1, email="test@example.com")
-    session.exec.return_value.first.return_value = mock_account
-    
+
     # Test with valid access token
     with patch('utils.core.dependencies.validate_token') as mock_validate:
         mock_validate.return_value = {"sub": "test@example.com", "type": "access"}
+        session.exec.return_value.first.return_value = mock_account
         account, access_token, refresh_token = validate_token_and_get_account("valid_token", "access", session)
         assert account == mock_account
         assert access_token is None
         assert refresh_token is None
         mock_validate.assert_called_once_with("valid_token", token_type="access")
-    
-    # Test with valid refresh token
+
+    # Test with valid refresh token (JTI validated, not revoked)
     with patch('utils.core.dependencies.validate_token') as mock_validate:
         with patch('utils.core.dependencies.create_access_token') as mock_access_token:
-            with patch('utils.core.dependencies.create_refresh_token') as mock_refresh_token:
-                mock_validate.return_value = {"sub": "test@example.com", "type": "refresh"}
+            with patch('utils.core.dependencies.create_tracked_refresh_token') as mock_tracked_refresh:
+                mock_validate.return_value = {"sub": "test@example.com", "type": "refresh", "jti": "test-jti"}
                 mock_access_token.return_value = "new_access_token"
-                mock_refresh_token.return_value = "new_refresh_token"
-                
+                mock_tracked_refresh.return_value = "new_refresh_token"
+
+                mock_db_token = MagicMock()
+                mock_db_token.account_id = 1
+                mock_db_token.revoked = False
+
+                # First call returns account, second returns db_token
+                session.exec.return_value.first.side_effect = [mock_account, mock_db_token]
+
                 account, access_token, refresh_token = validate_token_and_get_account("valid_token", "refresh", session)
                 assert account == mock_account
                 assert access_token == "new_access_token"
                 assert refresh_token == "new_refresh_token"
-                mock_validate.assert_called_once_with("valid_token", token_type="refresh")
-                mock_access_token.assert_called_once_with(data={"sub": "test@example.com"})
-                mock_refresh_token.assert_called_once_with(data={"sub": "test@example.com"})
-    
+                assert mock_db_token.revoked is True
+                mock_tracked_refresh.assert_called_once_with(1, "test@example.com", session)
+
+    # Test with refresh token missing JTI (legacy token)
+    with patch('utils.core.dependencies.validate_token') as mock_validate:
+        mock_validate.return_value = {"sub": "test@example.com", "type": "refresh"}
+        session.exec.return_value.first.side_effect = None
+        session.exec.return_value.first.return_value = mock_account
+        account, access_token, refresh_token = validate_token_and_get_account("valid_token", "refresh", session)
+        assert account is None
+        assert access_token is None
+        assert refresh_token is None
+
+    # Test with revoked refresh token (reuse detection)
+    with patch('utils.core.dependencies.validate_token') as mock_validate:
+        with patch('utils.core.dependencies.revoke_all_refresh_tokens') as mock_revoke_all:
+            mock_validate.return_value = {"sub": "test@example.com", "type": "refresh", "jti": "revoked-jti"}
+            mock_db_token = MagicMock()
+            mock_db_token.account_id = 1
+            mock_db_token.revoked = True
+            session.exec.return_value.first.side_effect = [mock_account, mock_db_token]
+
+            account, access_token, refresh_token = validate_token_and_get_account("valid_token", "refresh", session)
+            assert account is None
+            assert access_token is None
+            assert refresh_token is None
+            mock_revoke_all.assert_called_once_with(1, session)
+
     # Test with invalid token
     with patch('utils.core.dependencies.validate_token') as mock_validate:
         mock_validate.return_value = None
+        session.exec.return_value.first.side_effect = None
         account, access_token, refresh_token = validate_token_and_get_account("invalid_token", "access", session)
         assert account is None
         assert access_token is None
         assert refresh_token is None
-    
+
     # Test with valid token but no account found
     with patch('utils.core.dependencies.validate_token') as mock_validate:
         mock_validate.return_value = {"sub": "nonexistent@example.com", "type": "access"}
+        session.exec.return_value.first.side_effect = None
         session.exec.return_value.first.return_value = None
         account, access_token, refresh_token = validate_token_and_get_account("valid_token", "access", session)
         assert account is None
@@ -210,59 +243,40 @@ def test_get_authenticated_account() -> None:
 def test_validate_token_and_get_user() -> None:
     """
     Tests validating a token and retrieving the associated user.
+    Now delegates to validate_token_and_get_account internally.
     """
     session = MagicMock()
     mock_user = User(id=1, name="Test User")
     mock_account = Account(id=1, email="test@example.com", user=mock_user)
-    session.exec.return_value.first.return_value = mock_account
-    
+
     # Test with valid access token
-    with patch('utils.core.dependencies.validate_token') as mock_validate:
-        mock_validate.return_value = {"sub": "test@example.com", "type": "access"}
+    with patch('utils.core.dependencies.validate_token_and_get_account') as mock_validate:
+        mock_validate.return_value = (mock_account, None, None)
         user, access_token, refresh_token = validate_token_and_get_user("valid_token", "access", session)
         assert user == mock_user
         assert access_token is None
         assert refresh_token is None
-        mock_validate.assert_called_once_with("valid_token", token_type="access")
-    
-    # Test with valid refresh token
-    with patch('utils.core.dependencies.validate_token') as mock_validate:
-        with patch('utils.core.dependencies.create_access_token') as mock_access_token:
-            with patch('utils.core.dependencies.create_refresh_token') as mock_refresh_token:
-                mock_validate.return_value = {"sub": "test@example.com", "type": "refresh"}
-                mock_access_token.return_value = "new_access_token"
-                mock_refresh_token.return_value = "new_refresh_token"
-                
-                user, access_token, refresh_token = validate_token_and_get_user("valid_token", "refresh", session)
-                assert user == mock_user
-                assert access_token == "new_access_token"
-                assert refresh_token == "new_refresh_token"
-                mock_validate.assert_called_once_with("valid_token", token_type="refresh")
-                mock_access_token.assert_called_once_with(data={"sub": "test@example.com"})
-                mock_refresh_token.assert_called_once_with(data={"sub": "test@example.com"})
-    
+
+    # Test with valid refresh token (returns new tokens)
+    with patch('utils.core.dependencies.validate_token_and_get_account') as mock_validate:
+        mock_validate.return_value = (mock_account, "new_access_token", "new_refresh_token")
+        user, access_token, refresh_token = validate_token_and_get_user("valid_token", "refresh", session)
+        assert user == mock_user
+        assert access_token == "new_access_token"
+        assert refresh_token == "new_refresh_token"
+
     # Test with invalid token
-    with patch('utils.core.dependencies.validate_token') as mock_validate:
-        mock_validate.return_value = None
+    with patch('utils.core.dependencies.validate_token_and_get_account') as mock_validate:
+        mock_validate.return_value = (None, None, None)
         user, access_token, refresh_token = validate_token_and_get_user("invalid_token", "access", session)
         assert user is None
         assert access_token is None
         assert refresh_token is None
-    
-    # Test with valid token but no account found
-    with patch('utils.core.dependencies.validate_token') as mock_validate:
-        mock_validate.return_value = {"sub": "nonexistent@example.com", "type": "access"}
-        session.exec.return_value.first.return_value = None
-        user, access_token, refresh_token = validate_token_and_get_user("valid_token", "access", session)
-        assert user is None
-        assert access_token is None
-        assert refresh_token is None
-    
+
     # Test with valid token and account but no user
-    with patch('utils.core.dependencies.validate_token') as mock_validate:
-        mock_validate.return_value = {"sub": "test@example.com", "type": "access"}
+    with patch('utils.core.dependencies.validate_token_and_get_account') as mock_validate:
         mock_account_no_user = Account(id=1, email="test@example.com", user=None)
-        session.exec.return_value.first.return_value = mock_account_no_user
+        mock_validate.return_value = (mock_account_no_user, None, None)
         user, access_token, refresh_token = validate_token_and_get_user("valid_token", "access", session)
         assert user is None
         assert access_token is None

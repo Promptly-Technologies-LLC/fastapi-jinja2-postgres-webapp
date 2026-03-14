@@ -51,6 +51,12 @@ class Account(SQLModel, table=True):
             "cascade": "all, delete-orphan"
         }
     )
+    refresh_tokens: Mapped[List["RefreshToken"]] = Relationship(
+        back_populates="account",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan"
+        }
+    )
 
 class PasswordResetToken(SQLModel, table=True):
     __table_args__ = {"schema": "private"}
@@ -91,6 +97,24 @@ class EmailUpdateToken(SQLModel, table=True):
         """
         Check if the token has expired
         """
+        return datetime.now(UTC) > self.expires_at.replace(tzinfo=UTC)
+
+
+class RefreshToken(SQLModel, table=True):
+    __table_args__ = {"schema": "private"}
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    account_id: Optional[int] = Field(foreign_key="private.account.id", index=True)
+    jti: str = Field(default_factory=lambda: str(uuid4()), index=True, unique=True)
+    expires_at: datetime
+    revoked: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=utc_now)
+
+    account: Mapped[Optional[Account]] = Relationship(
+        back_populates="refresh_tokens"
+    )
+
+    def is_expired(self) -> bool:
         return datetime.now(UTC) > self.expires_at.replace(tzinfo=UTC)
 
 

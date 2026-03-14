@@ -13,7 +13,7 @@ from jinja2.environment import Template
 from fastapi.templating import Jinja2Templates
 from fastapi import Cookie
 from utils.core.db import create_engine, get_connection_url
-from utils.core.models import PasswordResetToken, EmailUpdateToken, Account
+from utils.core.models import PasswordResetToken, EmailUpdateToken, RefreshToken, Account
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -121,9 +121,9 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return encoded_jwt
 
 
-def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_refresh_token(data: dict, jti: str, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
-    to_encode.update({"type": "refresh"})
+    to_encode.update({"type": "refresh", "jti": jti})
     if expires_delta:
         expire = datetime.now(UTC) + expires_delta
     else:
@@ -131,6 +131,41 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) 
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, os.getenv("SECRET_KEY"), algorithm=ALGORITHM)
     return encoded_jwt
+
+
+def create_tracked_refresh_token(account_id: int, email: str, session: Session) -> str:
+    jti = str(uuid.uuid4())
+    expires_at = datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    db_token = RefreshToken(
+        account_id=account_id,
+        jti=jti,
+        expires_at=expires_at,
+    )
+    session.add(db_token)
+    token = create_refresh_token(data={"sub": email}, jti=jti)
+    return token
+
+
+def revoke_all_refresh_tokens(account_id: int, session: Session) -> None:
+    tokens = session.exec(
+        select(RefreshToken).where(
+            RefreshToken.account_id == account_id,
+            RefreshToken.revoked == False  # noqa: E712
+        )
+    ).all()
+    for token in tokens:
+        token.revoked = True
+
+
+def cleanup_expired_refresh_tokens(session: Session) -> int:
+    expired = session.exec(
+        select(RefreshToken).where(RefreshToken.expires_at < datetime.now(UTC))
+    ).all()
+    count = len(expired)
+    for token in expired:
+        session.delete(token)
+    session.commit()
+    return count
 
 
 def validate_token(token: str, token_type: str = "access") -> Optional[dict]:
