@@ -8,9 +8,11 @@ from html import unescape
 from sqlalchemy import inspect
 
 from main import app
-from utils.core.models import User, PasswordResetToken, EmailUpdateToken, Account
+from utils.core.models import User, PasswordResetToken, EmailUpdateToken, RefreshToken, Account
 from utils.core.auth import (
     create_access_token,
+    create_refresh_token,
+    create_tracked_refresh_token,
     verify_password,
     validate_token,
     get_password_hash
@@ -619,3 +621,210 @@ def test_forgot_password_email_rate_limit(unauth_client: TestClient, test_accoun
         data={"email": test_account.email},
     )
     assert response.status_code == 429
+
+
+# --- Refresh Token Security Tests ---
+
+
+def test_register_creates_tracked_refresh_token(unauth_client: TestClient, session: Session):
+    """Registration creates a RefreshToken record in the database."""
+    response = unauth_client.post(
+        app.url_path_for("register"),
+        data={
+            "name": "Token User",
+            "email": "tokenuser@example.com",
+            "password": "Token123!@#",
+            "confirm_password": "Token123!@#"
+        },
+    )
+    assert response.status_code == 303
+
+    account = session.exec(select(Account).where(Account.email == "tokenuser@example.com")).first()
+    assert account is not None
+
+    db_tokens = session.exec(
+        select(RefreshToken).where(RefreshToken.account_id == account.id)
+    ).all()
+    assert len(db_tokens) == 1
+    assert db_tokens[0].revoked is False
+
+
+def test_login_creates_tracked_refresh_token(unauth_client: TestClient, session: Session, test_account: Account, test_user: User):
+    """Login creates a RefreshToken record in the database."""
+    response = unauth_client.post(
+        app.url_path_for("login"),
+        data={"email": test_account.email, "password": "Test123!@#"},
+    )
+    assert response.status_code == 303
+
+    db_tokens = session.exec(
+        select(RefreshToken).where(RefreshToken.account_id == test_account.id)
+    ).all()
+    assert len(db_tokens) >= 1
+    assert any(not t.revoked for t in db_tokens)
+
+
+def test_logout_revokes_refresh_token(auth_client: TestClient, session: Session, test_account: Account):
+    """Logout revokes the refresh token server-side."""
+    # Get existing tokens before logout
+    db_tokens_before = session.exec(
+        select(RefreshToken).where(
+            RefreshToken.account_id == test_account.id,
+            RefreshToken.revoked == False  # noqa: E712
+        )
+    ).all()
+    assert len(db_tokens_before) >= 1
+
+    auth_client.get(app.url_path_for("logout"))
+
+    # Verify the token was revoked
+    session.expire_all()
+    active_tokens = session.exec(
+        select(RefreshToken).where(
+            RefreshToken.account_id == test_account.id,
+            RefreshToken.revoked == False  # noqa: E712
+        )
+    ).all()
+    assert len(active_tokens) == 0
+
+
+def test_refresh_endpoint_rotates_token(auth_client: TestClient, session: Session, test_account: Account):
+    """The /refresh endpoint revokes the old token and issues a new one."""
+    # Expire the access token so the refresh endpoint works
+    expired_access_token = create_access_token(
+        {"sub": test_account.email}, timedelta(minutes=-10)
+    )
+    auth_client.cookies.set("access_token", expired_access_token)
+
+    # Count active tokens before
+    active_before = session.exec(
+        select(RefreshToken).where(
+            RefreshToken.account_id == test_account.id,
+            RefreshToken.revoked == False  # noqa: E712
+        )
+    ).all()
+    assert len(active_before) == 1
+    old_jti = active_before[0].jti
+
+    response = auth_client.post(app.url_path_for("refresh_token"))
+    assert response.status_code == 303
+
+    # Old token should be revoked, new one should exist
+    session.expire_all()
+    old_token = session.exec(
+        select(RefreshToken).where(RefreshToken.jti == old_jti)
+    ).first()
+    assert old_token is not None
+    assert old_token.revoked is True
+
+    active_after = session.exec(
+        select(RefreshToken).where(
+            RefreshToken.account_id == test_account.id,
+            RefreshToken.revoked == False  # noqa: E712
+        )
+    ).all()
+    assert len(active_after) == 1
+    assert active_after[0].jti != old_jti
+
+
+def test_refresh_reuse_detection_revokes_all_tokens(
+    unauth_client: TestClient, session: Session, test_account: Account, test_user: User
+):
+    """Replaying a revoked refresh token revokes ALL tokens for that account."""
+    # Create a tracked refresh token and immediately revoke it (simulating prior use)
+    refresh_jwt = create_tracked_refresh_token(test_account.id, test_account.email, session)
+    session.commit()
+
+    db_token = session.exec(
+        select(RefreshToken).where(
+            RefreshToken.account_id == test_account.id,
+            RefreshToken.revoked == False  # noqa: E712
+        )
+    ).first()
+    assert db_token is not None
+    db_token.revoked = True
+
+    # Create a second active token (simulating the legitimate new token)
+    create_tracked_refresh_token(test_account.id, test_account.email, session)
+    session.commit()
+
+    # Replay the revoked token via the /refresh endpoint
+    client = TestClient(app, follow_redirects=False)
+    client.cookies.set("refresh_token", refresh_jwt)
+
+    response = client.post(app.url_path_for("refresh_token"))
+
+    # Should redirect to login (denied)
+    assert response.status_code == 303
+    assert "login" in response.headers["location"]
+
+    # ALL tokens for this account should now be revoked
+    session.expire_all()
+    active_tokens = session.exec(
+        select(RefreshToken).where(
+            RefreshToken.account_id == test_account.id,
+            RefreshToken.revoked == False  # noqa: E712
+        )
+    ).all()
+    assert len(active_tokens) == 0
+
+
+def test_legacy_refresh_token_without_jti_rejected(
+    unauth_client: TestClient, session: Session, test_account: Account, test_user: User
+):
+    """A refresh token without a JTI (pre-migration) is rejected."""
+    import uuid
+    # Create a legacy-style token without jti by using create_refresh_token with a jti
+    # but NOT storing it in the DB — simulating a pre-migration token
+    legacy_token = create_refresh_token(
+        data={"sub": test_account.email},
+        jti=str(uuid.uuid4())  # has jti in JWT but no DB record
+    )
+
+    client = TestClient(app, follow_redirects=False)
+    client.cookies.set("refresh_token", legacy_token)
+
+    response = client.post(app.url_path_for("refresh_token"))
+
+    # Should redirect to login (no DB record for this JTI)
+    assert response.status_code == 303
+    assert "login" in response.headers["location"]
+
+
+def test_automatic_token_refresh_via_dependency(
+    session: Session, test_account: Account, test_user: User
+):
+    """When access token expires, the dependency auto-refreshes using the refresh token."""
+    # Create a tracked refresh token
+    refresh_jwt = create_tracked_refresh_token(test_account.id, test_account.email, session)
+    session.commit()
+
+    # Create an expired access token
+    expired_access = create_access_token(
+        {"sub": test_account.email}, timedelta(minutes=-10)
+    )
+
+    client = TestClient(app, follow_redirects=False)
+    client.cookies.set("access_token", expired_access)
+    client.cookies.set("refresh_token", refresh_jwt)
+
+    # Hit an authenticated endpoint — should trigger NeedsNewTokens -> 307 redirect
+    response = client.get(app.url_path_for("read_dashboard"))
+
+    # The middleware catches NeedsNewTokens and redirects with new cookies
+    assert response.status_code == 307
+
+    cookie_headers = response.headers.get_list("set-cookie")
+    assert any("access_token=" in c for c in cookie_headers)
+    assert any("refresh_token=" in c for c in cookie_headers)
+
+    # Old refresh token should be revoked
+    session.expire_all()
+    active_tokens = session.exec(
+        select(RefreshToken).where(
+            RefreshToken.account_id == test_account.id,
+            RefreshToken.revoked == False  # noqa: E712
+        )
+    ).all()
+    # Should have exactly 1 active token (the new one)
+    assert len(active_tokens) == 1
