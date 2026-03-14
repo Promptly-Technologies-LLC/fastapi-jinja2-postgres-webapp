@@ -1,3 +1,4 @@
+import logging
 from fastapi import Depends, Form, Request
 from pydantic import EmailStr
 from sqlmodel import Session, select
@@ -5,16 +6,18 @@ from sqlalchemy.orm import selectinload
 from datetime import UTC, datetime
 from typing import Optional, Tuple, Generator
 from utils.core.auth import (
-    validate_token, create_access_token, create_refresh_token,
-    oauth2_scheme_cookie, verify_password
+    validate_token, create_access_token, create_tracked_refresh_token,
+    revoke_all_refresh_tokens, oauth2_scheme_cookie, verify_password
 )
 from utils.core.db import create_engine, get_connection_url
-from utils.core.models import User, Role, PasswordResetToken, EmailUpdateToken, Account
+from utils.core.models import User, Role, PasswordResetToken, EmailUpdateToken, RefreshToken, Account
 from exceptions.http_exceptions import (
     AlreadyAuthenticatedError, AuthenticationError, CredentialsError,
     DataIntegrityError, PasswordValidationError
 )
 from exceptions.exceptions import NeedsNewTokens
+
+logger = logging.getLogger(__name__)
 
 
 def get_session() -> Generator[Session, None, None]:
@@ -36,29 +39,55 @@ def validate_token_and_get_account(
 ) -> tuple[Optional[Account], Optional[str], Optional[str]]:
     """
     Validates a token and returns the associated account if valid.
-    
+    For refresh tokens, performs server-side JTI validation with reuse detection.
+
     Args:
         token: JWT token to validate
         token_type: Type of token ('access' or 'refresh')
         session: Database session
-        
+
     Returns:
         Tuple containing the account (if valid), and new tokens (if refresh token)
     """
     decoded_token = validate_token(token, token_type=token_type)
-    
+
     if decoded_token:
         user_email = decoded_token.get("sub")
         account = session.exec(select(Account).where(
             Account.email == user_email
         )).first()
-        
+
         if account:
             if token_type == "refresh":
+                jti = decoded_token.get("jti")
+                if not jti:
+                    # Legacy token without JTI — force re-login
+                    return None, None, None
+
+                db_token = session.exec(
+                    select(RefreshToken).where(RefreshToken.jti == jti)
+                ).first()
+
+                if not db_token or db_token.account_id != account.id:
+                    return None, None, None
+
+                if db_token.revoked:
+                    # Token reuse detected — revoke all tokens for this account
+                    logger.warning(
+                        f"Refresh token reuse detected for account {account.id}. "
+                        "Revoking all refresh tokens."
+                    )
+                    revoke_all_refresh_tokens(account.id, session)
+                    session.commit()
+                    return None, None, None
+
+                # Revoke the current token and issue new ones
+                db_token.revoked = True
                 new_access_token = create_access_token(
                     data={"sub": account.email})
-                new_refresh_token = create_refresh_token(
-                    data={"sub": account.email})
+                new_refresh_token = create_tracked_refresh_token(
+                    account.id, account.email, session)
+                session.commit()
                 return account, new_access_token, new_refresh_token
             return account, None, None
     return None, None, None
@@ -163,22 +192,12 @@ def validate_token_and_get_user(
     token_type: str,
     session: Session
 ) -> tuple[Optional[User], Optional[str], Optional[str]]:
-    decoded_token = validate_token(token, token_type=token_type)
-
-    if decoded_token:
-        user_email = decoded_token.get("sub")
-        account = session.exec(select(Account).where(
-            Account.email == user_email
-        )).first()
-        
-        if account and account.user:
-            if token_type == "refresh":
-                new_access_token = create_access_token(
-                    data={"sub": account.email})
-                new_refresh_token = create_refresh_token(
-                    data={"sub": account.email})
-                return account.user, new_access_token, new_refresh_token
-            return account.user, None, None
+    # Delegate to validate_token_and_get_account for shared JTI logic
+    account, new_access_token, new_refresh_token = validate_token_and_get_account(
+        token, token_type, session
+    )
+    if account and account.user:
+        return account.user, new_access_token, new_refresh_token
     return None, None, None
 
 
