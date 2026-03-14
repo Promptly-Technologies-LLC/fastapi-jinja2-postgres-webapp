@@ -9,7 +9,9 @@ from sqlmodel import Session, select, col
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 from utils.core.dependencies import get_authenticated_user, get_session
-from utils.core.models import Role, Permission, ValidPermissions, utc_now, User, DataIntegrityError, Organization
+from utils.core.models import Role, Permission, utc_now, User, DataIntegrityError, Organization
+from utils.core.enums import ValidPermissions
+from utils.app.enums import AppPermissions
 from exceptions.http_exceptions import InsufficientPermissionsError, InvalidPermissionError, RoleAlreadyExistsError, RoleNotFoundError, RoleHasUsersError, CannotModifyDefaultRoleError
 from routers.core.organization import router as organization_router
 from utils.core.htmx import is_htmx_request, append_toast
@@ -45,7 +47,7 @@ def create_role(
     request: Request,
     name: Annotated[str, Form(min_length=1, strip_whitespace=True, title="Role name", description="Name for the new role")],
     organization_id: int = Form(..., title="Organization ID", description="ID of the organization this role belongs to"),
-    permissions: List[ValidPermissions] = Form(default=[], title="Permissions", description="List of permissions to assign to this role"),
+    permissions: List[str] = Form(default=[], title="Permissions", description="List of permissions to assign to this role"),
     user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session)
 ):
@@ -94,6 +96,7 @@ def create_role(
                 "user": user,
                 "user_permissions": user_permissions,
                 "ValidPermissions": ValidPermissions,
+                "all_permissions": list(ValidPermissions) + list(AppPermissions),
             },
         )
         response.headers["HX-Trigger"] = "modalDismiss"
@@ -110,7 +113,7 @@ def update_role(
     id: int = Form(..., title="Role ID", description="ID of the role to update"),
     name: str = Form(..., min_length=1, strip_whitespace=True, title="Role name", description="Updated name for the role"),
     organization_id: int = Form(..., title="Organization ID", description="ID of the organization this role belongs to"),
-    permissions: List[ValidPermissions] = Form(default=[], title="Permissions", description="Updated list of permissions for this role"),
+    permissions: List[str] = Form(default=[], title="Permissions", description="Updated list of permissions for this role"),
     user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session)
 ):
@@ -132,8 +135,9 @@ def update_role(
         raise CannotModifyDefaultRoleError(action="update")
 
     # If any user-selected permissions are not valid, raise an error
+    all_valid = {str(p) for p in ValidPermissions} | {str(p) for p in AppPermissions}
     for permission in permissions:
-        if permission not in ValidPermissions:
+        if permission not in all_valid:
             raise InvalidPermissionError(permission)
 
     # Add any user-selected permissions that are not already associated with the role
@@ -184,6 +188,7 @@ def update_role(
                 "user": user,
                 "user_permissions": user_permissions,
                 "ValidPermissions": ValidPermissions,
+                "all_permissions": list(ValidPermissions) + list(AppPermissions),
             },
         )
         response.headers["HX-Trigger"] = "modalDismiss"
@@ -238,6 +243,7 @@ def delete_role(
                 "user": user,
                 "user_permissions": user_permissions,
                 "ValidPermissions": ValidPermissions,
+                "all_permissions": list(ValidPermissions) + list(AppPermissions),
             },
         )
         return append_toast(response, request, templates, "Role deleted successfully.")

@@ -2,7 +2,9 @@
 
 import pytest
 from tests.conftest import SetupError
-from utils.core.models import Role, Permission, ValidPermissions, User
+from utils.core.models import Role, Permission, User
+from utils.core.enums import ValidPermissions
+from utils.app.enums import AppPermissions
 from sqlmodel import Session, select, col
 import re
 from main import app
@@ -291,7 +293,7 @@ def test_update_role_invalid_permission(auth_client, editor_user, test_organizat
         follow_redirects=True
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 400
 
 
 def test_update_role_unauthenticated(unauth_client, test_organization, session: Session):
@@ -736,7 +738,7 @@ def test_create_role_form_modal(auth_client_owner, test_organization):
     assert f'value="{test_organization.id}"' in response.text
     
     # Check for permission checkboxes
-    for permission in ValidPermissions:
+    for permission in list(ValidPermissions) + list(AppPermissions):
         assert permission.value in response.text
 
 
@@ -784,7 +786,7 @@ def test_edit_role_form_modal(auth_client_owner, session, test_organization):
     assert f'value="{test_organization.id}"' in response.text
 
     # Check for permission checkboxes with correct checked state
-    for permission in ValidPermissions:
+    for permission in list(ValidPermissions) + list(AppPermissions):
         assert f'value="{permission.value}"' in response.text
 
     # These should be checked - use regex for robustness

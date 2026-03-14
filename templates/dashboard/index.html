@@ -1,7 +1,61 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="dashboard">
-    <!-- Dashboard Components -->
+<div class="dashboard container py-4">
+
+    {% if organizations %}
+    <!-- Organization Selector -->
+    <div class="d-flex align-items-center mb-4">
+        <label for="orgSelect" class="form-label me-2 mb-0 fw-bold">Organization:</label>
+        <div class="dropdown">
+            <button class="btn btn-outline-primary dropdown-toggle" type="button" id="orgSelect" data-bs-toggle="dropdown" aria-expanded="false">
+                {{ selected_org.name if selected_org else "Select Organization" }}
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="orgSelect">
+                {% for org in organizations %}
+                <li>
+                    <button class="dropdown-item {% if selected_org and org.id == selected_org.id %}active{% endif %}"
+                            hx-post="{{ url_for('select_organization', org_id=org.id) }}"
+                            hx-swap="none">
+                        {{ org.name }}
+                    </button>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Organization Resources Section -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Organization-specific assets will display here:</h5>
+        </div>
+        <div class="card-body">
+            {% if not organizations %}
+                <p class="text-muted">You are not a member of any organizations. Create or join an organization to see resources here.</p>
+            {% elif not can_read %}
+                <p class="text-muted">You do not have permission to view resources for this organization.</p>
+            {% elif resources %}
+                <!-- Replace this example resource list with your own application UI -->
+                <div class="list-group">
+                    {% for resource in resources %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ resource.title }}</h6>
+                            <small class="text-muted">{{ resource.created_at.strftime('%Y-%m-%d') }}</small>
+                        </div>
+                        {% if resource.description %}
+                        <p class="mb-1 text-muted">{{ resource.description }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">No resources found for this organization.</p>
+            {% endif %}
+        </div>
+    </div>
+
 </div>
 {% endblock %}
