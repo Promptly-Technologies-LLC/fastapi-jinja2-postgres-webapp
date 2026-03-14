@@ -1,5 +1,6 @@
 ---
 title: "Customization"
+description: "Guide to customizing the FastAPI webapp template including development workflow, code style conventions, and project structure."
 ---
 
 ## Development workflow

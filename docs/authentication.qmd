@@ -1,5 +1,6 @@
 ---
 title: "Authentication"
+description: "Guide to the FastAPI webapp template's authentication system including token-based auth, password recovery, and role-based access control."
 ---
 
 ## Security features

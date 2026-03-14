@@ -1,5 +1,6 @@
 ---
 title: "Deployment"
+description: "Guide to deploying the FastAPI webapp template to cloud platforms including Railway, Render, and other hosting services."
 ---
 
 This application requires two services to be deployed and connected to each other:

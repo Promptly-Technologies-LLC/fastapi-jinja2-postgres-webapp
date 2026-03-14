@@ -1,5 +1,6 @@
 ---
 title: "Installation"
+description: "Step-by-step installation guide for the FastAPI webapp template including Dev Container setup, manual installation, and environment configuration."
 ---
 
 ## Install all development dependencies in a VSCode Dev Container

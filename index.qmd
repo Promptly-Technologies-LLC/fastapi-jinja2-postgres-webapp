@@ -1,8 +1,9 @@
 ---
 title: "FastAPI, Jinja2, PostgreSQL Webapp Template"
+description: "A production-ready web application template combining FastAPI, Jinja2, and PostgreSQL with secure authentication, role-based access control, and easy cloud deployment."
 ---
 
-![Screenshot of homepage](docs/static/screenshot.jpg)
+![Screenshot of the FastAPI webapp template homepage](docs/static/screenshot.jpg)
 
 ## Quickstart
 
