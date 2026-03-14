@@ -51,5 +51,14 @@ jobs:
       - name: Run type checking with ty
         run: uv run ty check .
 
+      - name: Install Playwright browsers
+        run: uv run playwright install --with-deps chromium
+
       - name: Run tests with pytest
+        env:
+          DB_HOST: localhost
+          DB_PORT: "5432"
+          DB_NAME: db
+          DB_USER: postgres
+          DB_PASSWORD: postgres
         run: uv run pytest tests/
