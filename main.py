@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Depends, status
@@ -10,12 +9,13 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from routers.core import account, dashboard, organization, role, user, static_pages, invitation
 from utils.core.dependencies import (
-    get_optional_user,
-    get_user_from_request
+    get_user_from_request,
+    require_unauthenticated_client
 )
 from utils.core.auth import COOKIE_SECURE
 from utils.htmx import is_htmx_request, toast_response
 from exceptions.http_exceptions import (
+    AlreadyAuthenticatedError,
     AuthenticationError,
     PasswordValidationError,
     CredentialsError,
@@ -25,7 +25,6 @@ from exceptions.exceptions import (
     NeedsNewTokens
 )
 from utils.core.db import set_up_db
-from utils.core.models import User
 
 logger = logging.getLogger("uvicorn.error")
 logger.setLevel(logging.DEBUG)
@@ -73,6 +72,19 @@ async def authentication_error_handler(request: Request, exc: AuthenticationErro
     return RedirectResponse(
         url=app.url_path_for("read_login"),
         status_code=status.HTTP_303_SEE_OTHER
+    )
+
+
+# Handle AlreadyAuthenticatedError by redirecting to dashboard
+@app.exception_handler(AlreadyAuthenticatedError)
+async def already_authenticated_error_handler(request: Request, exc: AlreadyAuthenticatedError):
+    if is_htmx_request(request):
+        response = Response(status_code=200)
+        response.headers["HX-Redirect"] = str(request.url_for("read_dashboard"))
+        return response
+    return RedirectResponse(
+        url=app.url_path_for("read_dashboard"),
+        status_code=status.HTTP_302_FOUND
     )
 
 
@@ -283,14 +295,12 @@ async def general_exception_handler(request: Request, exc: Exception):
 @app.get("/")
 async def read_home(
     request: Request,
-    user: Optional[User] = Depends(get_optional_user)
+    _: None = Depends(require_unauthenticated_client)
 ):
-    if user:
-        return RedirectResponse(url=app.url_path_for("read_dashboard"), status_code=302)
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"user": user}
+        {"user": None}
     )
 
 

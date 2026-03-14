@@ -16,7 +16,6 @@ from utils.core.auth import (
     COOKIE_SECURE,
     oauth2_scheme_cookie,
     get_password_hash,
-    verify_password,
     create_access_token,
     create_refresh_token,
     validate_token,
@@ -28,7 +27,9 @@ from utils.core.dependencies import (
     get_optional_user,
     get_account_from_reset_token,
     get_account_from_email_update_token,
-    get_account_from_credentials
+    get_account_from_credentials,
+    require_unauthenticated_client,
+    get_verified_account
 )
 from exceptions.http_exceptions import (
     EmailAlreadyRegisteredError,
@@ -111,19 +112,17 @@ def logout():
 @router.get("/login")
 async def read_login(
     request: Request,
-    user: Optional[User] = Depends(get_optional_user),
+    _: None = Depends(require_unauthenticated_client),
     invitation_token: Optional[str] = Query(None)
 ):
     """
     Render login page or redirect to dashboard if already logged in.
     """
-    if user:
-        return RedirectResponse(url=dashboard_router.url_path_for("read_dashboard"), status_code=302)
     return templates.TemplateResponse(
         request,
         "account/login.html",
         {
-            "user": user,
+            "user": None,
             "invitation_token": invitation_token
         }
     )
@@ -132,21 +131,18 @@ async def read_login(
 @router.get("/register")
 async def read_register(
     request: Request,
-    user: Optional[User] = Depends(get_optional_user),
+    _: None = Depends(require_unauthenticated_client),
     email: Optional[EmailStr] = Query(None),
     invitation_token: Optional[str] = Query(None)
 ):
     """
     Render registration page or redirect to dashboard if already logged in.
     """
-    if user:
-        return RedirectResponse(url=dashboard_router.url_path_for("read_dashboard"), status_code=302)
-
     return templates.TemplateResponse(
         request,
         "account/register.html",
         {
-            "user": user,
+            "user": None,
             "password_pattern": HTML_PASSWORD_PATTERN,
             "email": email,
             "invitation_token": invitation_token
@@ -157,19 +153,16 @@ async def read_register(
 @router.get("/forgot_password")
 async def read_forgot_password(
     request: Request,
-    user: Optional[User] = Depends(get_optional_user),
+    _: None = Depends(require_unauthenticated_client),
     show_form: Optional[str] = "true",
 ):
     """
     Render forgot password page or redirect to dashboard if already logged in.
     """
-    if user:
-        return RedirectResponse(url=dashboard_router.url_path_for("read_dashboard"), status_code=302)
-
     return templates.TemplateResponse(
         request,
         "account/forgot_password.html",
-        {"user": user, "show_form": show_form == "true"}
+        {"user": None, "show_form": show_form == "true"}
     )
 
 
@@ -199,25 +192,12 @@ async def read_reset_password(
 
 @router.post("/delete", response_class=RedirectResponse)
 async def delete_account(
-    email: EmailStr = Form(..., title="Email", description="Account email address for verification"),
-    password: str = Form(..., title="Password", description="Account password for verification"),
-    account: Account = Depends(get_authenticated_account),
+    account: Account = Depends(get_verified_account),
     session: Session = Depends(get_session)
 ):
     """
     Delete a user account after verifying credentials.
     """
-    # Verify the provided email matches the authenticated user
-    if email != account.email:
-        raise CredentialsError(message="Email does not match authenticated account")
-
-    # Verify password
-    if not verify_password(password, account.hashed_password):
-        raise PasswordValidationError(
-            field="password",
-            message="Password is incorrect"
-        )
-
     # Delete the account and associated user
     # Note: The user will be deleted automatically by cascade relationship
     session.delete(account)
