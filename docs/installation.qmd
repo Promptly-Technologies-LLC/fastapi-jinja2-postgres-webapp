@@ -1,5 +1,6 @@
 ---
 title: "Installation"
+description: "Step-by-step installation guide for the FastAPI webapp template including Dev Container setup, manual installation, and environment configuration."
 ---
 
 ## Install all development dependencies in a VSCode Dev Container
@@ -169,8 +170,8 @@ Navigate to http://localhost:8000/.
 
 (Note: If startup fails with a sqlalchemy/psycopg2 connection error, make sure that Docker Desktop and the database service are running and that the environment variables in the `.env` file are correctly populated, and then try again.)
 
-## Lint types with mypy
+## Type check with ty
 
 ``` bash
-mypy .
+uv run ty check .
 ```

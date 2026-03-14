@@ -3,7 +3,8 @@
 <div class="modal fade" id="editOrganizationModal" tabindex="-1" aria-labelledby="editOrganizationModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form method="POST" action="{{ url_for('update_organization', org_id=organization.id) }}">
+      <form method="POST" action="{{ url_for('update_organization', org_id=organization.id) }}"
+            hx-post="{{ url_for('update_organization', org_id=organization.id) }}">
         <div class="modal-header">
           <h5 class="modal-title" id="editOrganizationModalLabel">Edit Organization</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -23,4 +24,4 @@
     </div>
   </div>
 </div>
-{% endif %} 
+{% endif %}

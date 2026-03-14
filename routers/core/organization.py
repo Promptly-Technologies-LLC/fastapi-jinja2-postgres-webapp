@@ -1,7 +1,7 @@
 from logging import getLogger
 from typing import Annotated
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from sqlalchemy.orm import selectinload
@@ -10,11 +10,12 @@ from utils.core.dependencies import get_authenticated_user, get_user_with_relati
 from utils.core.models import Organization, User, Role, Account, utc_now, Invitation
 from utils.core.enums import ValidPermissions
 from exceptions.http_exceptions import (
-    OrganizationNotFoundError, OrganizationNameTakenError, 
+    OrganizationNotFoundError, OrganizationNameTakenError,
     InsufficientPermissionsError, OrganizationSetupError,
     UserNotFoundError, UserAlreadyMemberError, DataIntegrityError
 )
 from pydantic import EmailStr
+from utils.htmx import is_htmx_request, set_flash_cookie
 
 logger = getLogger("uvicorn.error")
 
@@ -150,6 +151,7 @@ def create_organization(
 
 @router.post("/update/{org_id}", response_class=RedirectResponse)
 def update_organization(
+    request: Request,
     org_id: int,
     name: Annotated[str, Form(
         min_length=1,
@@ -160,7 +162,7 @@ def update_organization(
     )],
     user: User = Depends(get_user_with_relations),
     session: Session = Depends(get_session)
-) -> RedirectResponse:
+) -> Response:
     # This will raise appropriate exceptions if org doesn't exist or user lacks access
     organization: Organization | None = next(
         (org_item for org_item in user.organizations if org_item.id == org_id), None)
@@ -184,15 +186,23 @@ def update_organization(
     session.add(organization)
     session.commit()
 
-    return RedirectResponse(url=router.url_path_for("read_organization", org_id=org_id), status_code=303)
+    if is_htmx_request(request):
+        response = Response(status_code=200)
+        response.headers["HX-Redirect"] = str(router.url_path_for("read_organization", org_id=org_id))
+        set_flash_cookie(response, "Organization updated successfully.")
+        return response
+    response = RedirectResponse(url=router.url_path_for("read_organization", org_id=org_id), status_code=303)
+    set_flash_cookie(response, "Organization updated successfully.")
+    return response
 
 
 @router.post("/delete/{org_id}", response_class=RedirectResponse)
 def delete_organization(
+    request: Request,
     org_id: int,
     user: User = Depends(get_user_with_relations),
     session: Session = Depends(get_session)
-) -> RedirectResponse:
+) -> Response:
     # Find the organization the user belongs to
     organization: Organization | None = next(
         (org for org in user.organizations if org.id == org_id), None)
@@ -207,7 +217,14 @@ def delete_organization(
     session.delete(organization)
     session.commit()
 
-    return RedirectResponse(url="/user/profile", status_code=303)
+    if is_htmx_request(request):
+        response = Response(status_code=200)
+        response.headers["HX-Redirect"] = "/user/profile"
+        set_flash_cookie(response, "Organization deleted successfully.")
+        return response
+    response = RedirectResponse(url="/user/profile", status_code=303)
+    set_flash_cookie(response, "Organization deleted successfully.")
+    return response
 
 
 @router.post("/invite/{org_id}", response_class=RedirectResponse)
@@ -274,7 +291,7 @@ def invite_member(
     try:
         member_role.users.append(invited_user)
         session.commit()
-    except Exception as e:
+    except Exception:
         session.rollback()
         raise
 

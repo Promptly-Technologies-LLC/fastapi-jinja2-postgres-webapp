@@ -1,0 +1,82 @@
+name: release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate token for version incrementer app
+        id: create_token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.PRIVATE_KEY }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+          token: ${{ steps.create_token.outputs.token }}
+
+      - name: Force correct branch on workflow sha
+        run: git checkout -B ${{ github.ref_name }} ${{ github.sha }}
+
+      - name: Bump patch version
+        id: bump
+        run: |
+          CURRENT_VERSION=$(grep -oP '^version = "\K[^"]+' pyproject.toml)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          NEW_PATCH=$((PATCH + 1))
+          NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+          sed -i "s/^version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" pyproject.toml
+          echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Bumped version: $CURRENT_VERSION -> $NEW_VERSION"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Sync uv lockfile
+        run: uv lock
+
+      - name: Get merged PR info
+        id: pr_info
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER=$(gh pr list --state merged --search "${{ github.sha }}" --json number --jq '.[0].number' 2>/dev/null || echo "")
+          if [ -n "$PR_NUMBER" ]; then
+            PR_BODY=$(gh pr view "$PR_NUMBER" --json body --jq '.body')
+            echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+            {
+              echo "notes<<EOF"
+              echo "$PR_BODY"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "notes=Release ${{ steps.bump.outputs.tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_NOTES: ${{ steps.pr_info.outputs.notes }}
+        run: |
+          gh release create "${{ steps.bump.outputs.tag }}" \
+            --title "${{ steps.bump.outputs.tag }}" \
+            --notes "$RELEASE_NOTES"
+
+      - name: Commit version bump
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: release ${{ steps.bump.outputs.tag }} [skip ci]"
+          branch: ${{ github.ref_name }}
+          file_pattern: "pyproject.toml uv.lock"

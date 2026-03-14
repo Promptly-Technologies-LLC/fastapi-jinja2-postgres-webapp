@@ -1,31 +1,54 @@
 # TODO: User with permission to create/edit roles can only assign permissions
 # they themselves have.
-from typing import List, Sequence, Optional
+from typing import Annotated, List, Sequence, Optional
 from logging import getLogger
-from fastapi import APIRouter, Depends, Form
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
+from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select, col
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 from utils.core.dependencies import get_authenticated_user, get_session
-from utils.core.models import Role, Permission, ValidPermissions, utc_now, User, DataIntegrityError
+from utils.core.models import Role, Permission, ValidPermissions, utc_now, User, DataIntegrityError, Organization
 from exceptions.http_exceptions import InsufficientPermissionsError, InvalidPermissionError, RoleAlreadyExistsError, RoleNotFoundError, RoleHasUsersError, CannotModifyDefaultRoleError
 from routers.core.organization import router as organization_router
+from utils.htmx import is_htmx_request, append_toast
 
 logger = getLogger("uvicorn.error")
 
 router = APIRouter(prefix="/roles", tags=["roles"])
+templates = Jinja2Templates(directory="templates")
+
+
+def _load_org_for_roles_partial(session: Session, organization_id: int, user: User) -> tuple:
+    """Re-query org with roles/users/permissions and compute user_permissions."""
+    organization = session.exec(
+        select(Organization)
+        .where(Organization.id == organization_id)
+        .options(
+            selectinload(Organization.roles).selectinload(Role.users),
+            selectinload(Organization.roles).selectinload(Role.permissions),
+        )
+    ).first()
+    user_permissions = set()
+    for role in user.roles:
+        if role.organization_id == organization_id:
+            for permission in role.permissions:
+                user_permissions.add(permission.name)
+    return organization, user_permissions
+
 
 # --- Routes ---
 
 @router.post("/create", response_class=RedirectResponse)
 def create_role(
-    name: str = Form(...),
-    organization_id: int = Form(...),
-    permissions: List[ValidPermissions] = Form(...),
+    request: Request,
+    name: Annotated[str, Form(min_length=1, strip_whitespace=True, title="Role name", description="Name for the new role")],
+    organization_id: int = Form(..., title="Organization ID", description="ID of the organization this role belongs to"),
+    permissions: List[ValidPermissions] = Form(default=[], title="Permissions", description="List of permissions to assign to this role"),
     user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session)
-) -> RedirectResponse:
+):
     # Check that the user-selected role name is unique for the organization
     if session.exec(
         select(Role).where(
@@ -48,20 +71,33 @@ def create_role(
 
     # Select Permission records corresponding to the user-selected permissions
     # and associate them with the newly created role
-    db_permissions: Sequence[Permission] = session.exec(
-        select(Permission).where(col(Permission.name).in_(permissions))
-    ).all()
-    db_role.permissions.extend(db_permissions)
+    if permissions:
+        db_permissions: Sequence[Permission] = session.exec(
+            select(Permission).where(col(Permission.name).in_(permissions))
+        ).all()
+        db_role.permissions.extend(db_permissions)
 
     # Commit transaction
     try:
         session.commit()
     except IntegrityError:
         session.rollback()
-        # This likely means the unique constraint (org_id, name) was violated,
-        # potentially due to a race condition if the pre-check passed.
         raise RoleAlreadyExistsError()
 
+    if is_htmx_request(request):
+        organization, user_permissions = _load_org_for_roles_partial(session, organization_id, user)
+        response = templates.TemplateResponse(
+            request,
+            "organization/partials/roles_table.html",
+            {
+                "organization": organization,
+                "user": user,
+                "user_permissions": user_permissions,
+                "ValidPermissions": ValidPermissions,
+            },
+        )
+        response.headers["HX-Trigger"] = "modalDismiss"
+        return append_toast(response, request, templates, "Role created successfully.")
     return RedirectResponse(
         url=organization_router.url_path_for("read_organization", org_id=organization_id),
         status_code=303
@@ -70,13 +106,14 @@ def create_role(
 
 @router.post("/update", response_class=RedirectResponse)
 def update_role(
-    id: int = Form(...),
-    name: str = Form(...),
-    organization_id: int = Form(...),
-    permissions: List[ValidPermissions] = Form(...),
+    request: Request,
+    id: int = Form(..., title="Role ID", description="ID of the role to update"),
+    name: str = Form(..., min_length=1, strip_whitespace=True, title="Role name", description="Updated name for the role"),
+    organization_id: int = Form(..., title="Organization ID", description="ID of the organization this role belongs to"),
+    permissions: List[ValidPermissions] = Form(default=[], title="Permissions", description="Updated list of permissions for this role"),
     user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session)
-) -> RedirectResponse:
+):
     # Check that the user is authorized to update the role
     if not user.has_permission(ValidPermissions.EDIT_ROLE, organization_id):
         raise InsufficientPermissionsError()
@@ -133,11 +170,24 @@ def update_role(
         session.commit()
     except IntegrityError:
         session.rollback()
-        # This likely means the unique constraint (org_id, name) was violated,
-        # potentially due to a race condition if the pre-check passed.
         raise RoleAlreadyExistsError()
 
     session.refresh(db_role)
+
+    if is_htmx_request(request):
+        organization, user_permissions = _load_org_for_roles_partial(session, organization_id, user)
+        response = templates.TemplateResponse(
+            request,
+            "organization/partials/roles_table.html",
+            {
+                "organization": organization,
+                "user": user,
+                "user_permissions": user_permissions,
+                "ValidPermissions": ValidPermissions,
+            },
+        )
+        response.headers["HX-Trigger"] = "modalDismiss"
+        return append_toast(response, request, templates, "Role updated successfully.")
     return RedirectResponse(
         url=organization_router.url_path_for("read_organization", org_id=organization_id),
         status_code=303
@@ -146,11 +196,12 @@ def update_role(
 
 @router.post("/delete", response_class=RedirectResponse)
 def delete_role(
-    id: int = Form(...),
-    organization_id: int = Form(...),
+    request: Request,
+    id: int = Form(..., title="Role ID", description="ID of the role to delete"),
+    organization_id: int = Form(..., title="Organization ID", description="ID of the organization this role belongs to"),
     user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session)
-) -> RedirectResponse:
+):
     # Check that the user is authorized to delete the role
     if not user.has_permission(ValidPermissions.DELETE_ROLE, organization_id):
         raise InsufficientPermissionsError()
@@ -177,6 +228,19 @@ def delete_role(
     session.delete(db_role)
     session.commit()
 
+    if is_htmx_request(request):
+        organization, user_permissions = _load_org_for_roles_partial(session, organization_id, user)
+        response = templates.TemplateResponse(
+            request,
+            "organization/partials/roles_table.html",
+            {
+                "organization": organization,
+                "user": user,
+                "user_permissions": user_permissions,
+                "ValidPermissions": ValidPermissions,
+            },
+        )
+        return append_toast(response, request, templates, "Role deleted successfully.")
     return RedirectResponse(
         url=organization_router.url_path_for("read_organization", org_id=organization_id),
         status_code=303

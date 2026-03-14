@@ -3,7 +3,7 @@ from logging import getLogger
 from typing import Optional, Tuple
 from urllib.parse import urlparse
 from fastapi import APIRouter, Depends, BackgroundTasks, Form, Request, Query
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from starlette.datastructures import URLPath
 from pydantic import EmailStr
@@ -13,13 +13,14 @@ from utils.core.dependencies import get_session
 from utils.core.auth import (
     HTML_PASSWORD_PATTERN,
     COMPILED_PASSWORD_PATTERN,
+    COOKIE_SECURE,
     oauth2_scheme_cookie,
     get_password_hash,
     verify_password,
     create_access_token,
     create_refresh_token,
     validate_token,
-    send_reset_email,
+    send_reset_email_task,
     send_email_update_confirmation
 )
 from utils.core.dependencies import (
@@ -41,6 +42,15 @@ from routers.core.dashboard import router as dashboard_router
 from routers.core.user import router as user_router
 from routers.core.organization import router as org_router
 from utils.core.invitations import process_invitation
+from utils.core.rate_limit import (
+    check_login_ip_rate_limit,
+    check_login_email_rate_limit,
+    check_register_ip_rate_limit,
+    check_forgot_password_ip_rate_limit,
+    check_forgot_password_email_rate_limit,
+    login_email_limiter,
+)
+from utils.htmx import is_htmx_request, toast_response, set_flash_cookie
 logger = getLogger("uvicorn.error")
 
 router = APIRouter(prefix="/account", tags=["account"])
@@ -51,8 +61,8 @@ templates = Jinja2Templates(directory="templates")
 
 
 def validate_password_strength_and_match(
-    password: str = Form(...),
-    confirm_password: str = Form(...)
+    password: str = Form(..., title="Password", description="Account password"),
+    confirm_password: str = Form(..., title="Confirm password", description="Re-enter password to confirm")
 ) -> str:
     """
     Validates password strength and confirms passwords match.
@@ -71,7 +81,7 @@ def validate_password_strength_and_match(
     if not COMPILED_PASSWORD_PATTERN.match(password):
         raise PasswordValidationError(
             field="password",
-            message="Password does not satisfy the security policy"
+            message="Password must contain at least 8 characters, including one uppercase letter, one lowercase letter, one number, and one special character"
         )
     
     # Validate passwords match
@@ -102,7 +112,6 @@ def logout():
 async def read_login(
     request: Request,
     user: Optional[User] = Depends(get_optional_user),
-    email_updated: Optional[str] = Query("false"),
     invitation_token: Optional[str] = Query(None)
 ):
     """
@@ -111,11 +120,10 @@ async def read_login(
     if user:
         return RedirectResponse(url=dashboard_router.url_path_for("read_dashboard"), status_code=302)
     return templates.TemplateResponse(
+        request,
         "account/login.html",
         {
-            "request": request,
             "user": user,
-            "email_updated": email_updated,
             "invitation_token": invitation_token
         }
     )
@@ -135,9 +143,9 @@ async def read_register(
         return RedirectResponse(url=dashboard_router.url_path_for("read_dashboard"), status_code=302)
 
     return templates.TemplateResponse(
+        request,
         "account/register.html",
         {
-            "request": request,
             "user": user,
             "password_pattern": HTML_PASSWORD_PATTERN,
             "email": email,
@@ -159,8 +167,9 @@ async def read_forgot_password(
         return RedirectResponse(url=dashboard_router.url_path_for("read_dashboard"), status_code=302)
 
     return templates.TemplateResponse(
+        request,
         "account/forgot_password.html",
-        {"request": request, "user": user, "show_form": show_form == "true"}
+        {"user": user, "show_form": show_form == "true"}
     )
 
 
@@ -182,15 +191,16 @@ async def read_reset_password(
         raise CredentialsError(message="Invalid or expired token")
 
     return templates.TemplateResponse(
+        request,
         "account/reset_password.html",
-        {"request": request, "user": user, "email": email, "token": token, "password_pattern": HTML_PASSWORD_PATTERN}
+        {"user": user, "email": email, "token": token, "password_pattern": HTML_PASSWORD_PATTERN}
     )
 
 
 @router.post("/delete", response_class=RedirectResponse)
 async def delete_account(
-    email: EmailStr = Form(...),
-    password: str = Form(...),
+    email: EmailStr = Form(..., title="Email", description="Account email address for verification"),
+    password: str = Form(..., title="Password", description="Account password for verification"),
     account: Account = Depends(get_authenticated_account),
     session: Session = Depends(get_session)
 ):
@@ -219,13 +229,15 @@ async def delete_account(
 
 @router.post("/register", response_class=RedirectResponse)
 async def register(
-    name: str = Form(...),
-    email: EmailStr = Form(...),
+    request: Request,
+    _ip_check: None = Depends(check_register_ip_rate_limit),
+    name: str = Form(..., min_length=1, strip_whitespace=True, title="Name", description="Your full name"),
+    email: EmailStr = Form(..., title="Email", description="Email address for the new account"),
     session: Session = Depends(get_session),
     _: None = Depends(validate_password_strength_and_match),
-    password: str = Form(...),
-    invitation_token: Optional[str] = Form(None)
-) -> RedirectResponse:
+    password: str = Form(..., title="Password", description="Account password"),
+    invitation_token: Optional[str] = Form(None, title="Invitation token", description="Optional invitation token to join an organization")
+) -> Response:
     """
     Register a new user account, optionally processing an invitation.
     """
@@ -312,21 +324,25 @@ async def register(
     # Create access token using the committed account's email
     access_token = create_access_token(data={"sub": account.email, "fresh": True})
     refresh_token = create_refresh_token(data={"sub": account.email})
-    
-    # Set cookie
-    response = RedirectResponse(url=str(redirect_url), status_code=303) # Use determined redirect_url
+
+    # Set cookie — use HX-Redirect for HTMX, 303 for regular form submissions
+    if is_htmx_request(request):
+        response = Response(status_code=200)
+        response.headers["HX-Redirect"] = str(redirect_url)
+    else:
+        response = RedirectResponse(url=str(redirect_url), status_code=303)
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="strict"
     )
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="strict"
     )
 
@@ -335,13 +351,20 @@ async def register(
 
 @router.post("/login", response_class=RedirectResponse)
 async def login(
+    request: Request,
+    _ip_check: None = Depends(check_login_ip_rate_limit),
+    _email_check: EmailStr = Depends(check_login_email_rate_limit),
     account_and_session: Tuple[Account, Session] = Depends(get_account_from_credentials),
-    invitation_token: Optional[str] = Form(None)
-) -> RedirectResponse:
+    invitation_token: Optional[str] = Form(None, title="Invitation token", description="Optional invitation token to join an organization after login")
+) -> Response:
     """
     Log in a user with valid credentials and process invitation if token is provided.
     """
     account, session = account_and_session
+
+    # Successful login: reset the per-email rate limiter so legitimate users
+    # are not penalised for earlier mistyped attempts.
+    login_email_limiter.reset(f"email:{account.email.lower().strip()}")
 
     # Default redirect target
     redirect_url = dashboard_router.url_path_for("read_dashboard")
@@ -375,20 +398,24 @@ async def login(
 
         # Process the invitation
         try:
-            logger.info(f"Processing invitation {invitation.id} for user {account.user.id} during login.")
-            process_invitation(invitation, account.user, session)
-            session.commit()
-            # Set redirect to the organization page
-            redirect_url = org_router.url_path_for("read_organization", org_id=invitation.organization_id)
-            logger.info(f"Redirecting user {account.user.id} to organization {invitation.organization_id} after accepting invitation {invitation.id}.")
+            if account.user and account.user.id:
+                logger.info(f"Processing invitation {invitation.id} for user {account.user.id} during login.")
+                process_invitation(invitation, account.user, session)
+                session.commit()
+                # Set redirect to the organization page
+                redirect_url = org_router.url_path_for("read_organization", org_id=invitation.organization_id)
+                logger.info(f"Redirecting user {account.user.id} to organization {invitation.organization_id} after accepting invitation {invitation.id}.")
+            else:
+                logger.error("User has no ID during invitation processing.")
+                raise DataIntegrityError(resource="User ID")
         except Exception as e:
-             logger.error(
-                 f"Error processing invitation {invitation.id} for user {account.user.id} during login: {e}",
-                 exc_info=True
-             )
-             session.rollback()
-             # Raise the specific invitation processing error
-             raise InvitationProcessingError()
+            logger.error(
+                f"Error processing invitation during login: {e}",
+                exc_info=True
+            )
+            session.rollback()
+            # Raise the specific invitation processing error
+            raise InvitationProcessingError()
 
     else:
         logger.info(f"Standard login for account {account.email}. Redirecting to dashboard.")
@@ -399,20 +426,24 @@ async def login(
     )
     refresh_token = create_refresh_token(data={"sub": account.email})
 
-    # Set cookie
-    response = RedirectResponse(url=str(redirect_url), status_code=303)
+    # Set cookie — use HX-Redirect for HTMX, 303 for regular form submissions
+    if is_htmx_request(request):
+        response = Response(status_code=200)
+        response.headers["HX-Redirect"] = str(redirect_url)
+    else:
+        response = RedirectResponse(url=str(redirect_url), status_code=303)
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="strict",
     )
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="strict",
     )
 
@@ -455,14 +486,14 @@ async def refresh_token(
         key="access_token",
         value=new_access_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="strict",
     )
     response.set_cookie(
         key="refresh_token",
         value=new_refresh_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="strict",
     )
 
@@ -473,7 +504,8 @@ async def refresh_token(
 async def forgot_password(
     background_tasks: BackgroundTasks,
     request: Request,
-    email: EmailStr = Form(...),
+    _ip_check: None = Depends(check_forgot_password_ip_rate_limit),
+    email: EmailStr = Depends(check_forgot_password_email_rate_limit),
     session: Session = Depends(get_session)
 ):
     """
@@ -484,7 +516,7 @@ async def forgot_password(
         Account.email == email)).one_or_none()
 
     if account:
-        background_tasks.add_task(send_reset_email, email, session)
+        background_tasks.add_task(send_reset_email_task, email)
 
     # Get the referer header, default to /forgot_password if not present
     referer = request.headers.get("referer", "/forgot_password")
@@ -492,21 +524,27 @@ async def forgot_password(
     # Extract the path from the full URL
     redirect_path = urlparse(referer).path
 
-    # Add the query parameter to the redirect path
-    return RedirectResponse(url=f"{redirect_path}?show_form=false", status_code=303)
+    if is_htmx_request(request):
+        response = Response(status_code=200)
+        response.headers["HX-Redirect"] = f"{redirect_path}?show_form=false"
+    else:
+        response = RedirectResponse(url=f"{redirect_path}?show_form=false", status_code=303)
+    set_flash_cookie(response, "If an account exists with this email, a password reset link will be sent.")
+    return response
 
 
 @router.post("/reset_password")
 async def reset_password(
-    email: EmailStr = Form(...),
-    token: str = Form(...),
+    request: Request,
+    email: EmailStr = Form(..., title="Email", description="Account email address"),
+    token: str = Form(..., title="Reset token", description="Password reset token from email"),
     new_password: str = Depends(validate_password_strength_and_match),
     session: Session = Depends(get_session)
 ):
     """
     Reset a user's password using a valid token.
     """
-    
+
     # Get account from reset token
     authorized_account, reset_token = get_account_from_reset_token(
         email, token, session
@@ -522,13 +560,19 @@ async def reset_password(
     session.commit()
     session.refresh(authorized_account)
 
+    if is_htmx_request(request):
+        response = Response(status_code=200)
+        response.headers["HX-Redirect"] = str(router.url_path_for("read_login"))
+        set_flash_cookie(response, "Password reset successfully. Please log in.")
+        return response
     return RedirectResponse(url=router.url_path_for("read_login"), status_code=303)
 
 
 @router.post("/update_email")
 async def request_email_update(
-    email: EmailStr = Form(...),
-    new_email: EmailStr = Form(...),
+    request: Request,
+    email: EmailStr = Form(..., title="Current email", description="Current account email address"),
+    new_email: EmailStr = Form(..., title="New email", description="New email address to update to"),
     account: Account = Depends(get_authenticated_account),
     session: Session = Depends(get_session)
 ):
@@ -561,14 +605,15 @@ async def request_email_update(
         session=session
     )
 
-    # Generate URL with query parameters separately
+    if is_htmx_request(request):
+        return toast_response(
+            request, templates,
+            "Confirmation email sent. Check your inbox.", level="success",
+        )
     profile_path: URLPath = user_router.url_path_for("read_profile")
-    redirect_url = f"{profile_path}?email_update_requested=true"
-
-    return RedirectResponse(
-        url=redirect_url,
-        status_code=303
-    )
+    response = RedirectResponse(url=str(profile_path), status_code=303)
+    set_flash_cookie(response, "Confirmation email sent. Check your inbox.")
+    return response
 
 
 @router.get("/confirm_email_update")
@@ -597,29 +642,23 @@ async def confirm_email_update(
     access_token = create_access_token(data={"sub": new_email, "fresh": True})
     refresh_token = create_refresh_token(data={"sub": new_email})
 
-    # Generate URL with query parameters separately
     profile_path: URLPath = user_router.url_path_for("read_profile")
-    redirect_url = f"{profile_path}?email_updated=true"
-    
-    # Set cookies before redirecting
-    response = RedirectResponse(
-        url=redirect_url,
-        status_code=303
-    )
+    response = RedirectResponse(url=str(profile_path), status_code=303)
+    set_flash_cookie(response, "Your email address has been successfully updated.")
 
     # Add secure cookie attributes
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="lax"
     )
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="lax"
     )
     return response

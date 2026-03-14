@@ -8,29 +8,17 @@
 <div class="container mt-5">
     <h1 class="mb-4">User Profile</h1>
     
-    {% if email_update_requested == "true" %}
-    <div class="alert alert-info" role="alert">
-        Please check your current email address for a confirmation link to complete the email update.
-    </div>
-    {% endif %}
-
-    {% if email_updated == "true" %}
-    <div class="alert alert-success" role="alert">
-        Your email address has been successfully updated.
-    </div>
-    {% endif %}
-
     <!-- Basic Information -->
     <div class="card mb-4" id="basic-info">
         <div class="card-header">
             Basic Information
         </div>
-        <div class="card-body">
+        <div class="card-body" id="profile-display">
             <p><strong>Name:</strong> {{ user.name }}</p>
             <p><strong>Email:</strong> {{ user.account.email }}</p>
             <!-- Display user avatar or silhouette if no avatar is available -->
             <div class="mb-3">
-                {% if user.avatar_data %}
+                {% if user.avatar %}
                     <img src="{{ url_for('get_avatar') }}" alt="User Avatar" class="img-thumbnail" width="150">
                 {% else %}
                     {{ render_silhouette(width=150, height=150) }}
@@ -46,8 +34,12 @@
         <div class="card-header">
             Edit Profile
         </div>
-        <div class="card-body">
-            <form action="{{ url_for('update_profile') }}" method="post" enctype="multipart/form-data">
+        <div class="card-body" id="profile-form">
+            <form action="{{ url_for('update_profile') }}" method="post" enctype="multipart/form-data"
+                  hx-post="{{ url_for('update_profile') }}"
+                  hx-target="#profile-display"
+                  hx-swap="innerHTML"
+                  hx-encoding="multipart/form-data">
                 <div class="mb-3">
                     <label for="name" class="form-label">Name</label>
                     <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}">
@@ -76,10 +68,13 @@
             Update Email
         </div>
         <div class="card-body">
-            <form action="{{ url_for('request_email_update') }}" method="post">
+            <form action="{{ url_for('request_email_update') }}" method="post"
+                  hx-post="{{ url_for('request_email_update') }}"
+                  hx-swap="none">
+                <input type="hidden" name="email" value="{{ user.account.email }}">
                 <div class="mb-3">
                     <label for="new_email" class="form-label">New Email Address</label>
-                    <input type="email" class="form-control" id="new_email" name="new_email" value="{{ user.account.email }}">
+                    <input type="email" class="form-control" id="new_email" name="new_email" placeholder="newemail@example.com">
                 </div>
                 <p class="form-text">A confirmation link will be sent to your new email address to verify the change.</p>
                 <button type="submit" class="btn btn-primary">Update Email</button>
@@ -135,7 +130,7 @@
     function toggleEditProfile() {
         var basicInfo = document.getElementById('basic-info');
         var editProfile = document.getElementById('edit-profile');
-        
+
         if (basicInfo.style.display === 'none') {
             basicInfo.style.display = 'block';
             editProfile.style.display = 'none';
@@ -144,6 +139,15 @@
             editProfile.style.display = 'block';
         }
     }
+
+    // After a successful profile update the server sends an HX-Trigger
+    // header with "profileUpdated".  Toggle back to the display card.
+    // (We cannot use hx-on::after-request on the form because the OOB
+    // swap for #profile-form replaces it before afterRequest fires.)
+    document.body.addEventListener('profileUpdated', function() {
+        document.getElementById('edit-profile').style.display = 'none';
+        document.getElementById('basic-info').style.display = 'block';
+    });
 
     document.getElementById('avatar_file').addEventListener('change', function(e) {
         const file = e.target.files[0];
@@ -159,7 +163,7 @@
         // Check file size
         const fileSizeMB = file.size / (1024 * 1024);
         if (fileSizeMB > maxSizeMB) {
-            alert(`File size must be less than ${maxSizeMB}MB`);
+            showToast(`File size must be less than ${maxSizeMB}MB`, 'danger');
             this.value = '';
             return;
         }
@@ -167,7 +171,7 @@
         // Check file format
         const fileFormat = file.type.split('/')[1];
         if (!allowedFormats.includes(fileFormat)) {
-            alert(`File format must be one of: ${allowedFormats.join(', ')}`);
+            showToast(`File format must be one of: ${allowedFormats.join(', ')}`, 'danger');
             this.value = '';
             return;
         }
@@ -175,18 +179,18 @@
         // Check dimensions
         const img = new Image();
         img.src = URL.createObjectURL(file);
-        
+
         img.onload = function() {
             URL.revokeObjectURL(this.src);
-            
+
             if (this.width < minDimension || this.height < minDimension) {
-                alert(`Image dimensions must be at least ${minDimension}x${minDimension} pixels`);
+                showToast(`Image dimensions must be at least ${minDimension}x${minDimension} pixels`, 'danger');
                 e.target.value = '';
                 return;
             }
-            
+
             if (this.width > maxDimension || this.height > maxDimension) {
-                alert(`Image dimensions must not exceed ${maxDimension}x${maxDimension} pixels`);
+                showToast(`Image dimensions must not exceed ${maxDimension}x${maxDimension} pixels`, 'danger');
                 e.target.value = '';
                 return;
             }

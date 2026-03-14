@@ -15,9 +15,27 @@ from utils.core.auth import (
     validate_token,
     get_password_hash
 )
+from utils.core.rate_limit import (
+    login_ip_limiter,
+    login_email_limiter,
+    register_ip_limiter,
+    forgot_password_ip_limiter,
+    forgot_password_email_limiter,
+)
 
-# --- Fixture setup ---
 
+@pytest.fixture(autouse=True)
+def _reset_rate_limiters():
+    """Reset all rate limiter state between tests to avoid cross-test pollution."""
+    yield
+    for limiter in (
+        login_ip_limiter,
+        login_email_limiter,
+        register_ip_limiter,
+        forgot_password_ip_limiter,
+        forgot_password_email_limiter,
+    ):
+        limiter._attempts.clear()
 
 # --- API Endpoint Tests ---
 
@@ -37,11 +55,11 @@ def test_register_endpoint(unauth_client: TestClient, session: Session):
             "password": "NewPass123!@#",
             "confirm_password": "NewPass123!@#"
         },
-        follow_redirects=False
     )
-    
+
     # Just check the response status code
     assert response.status_code == 303
+    assert response.headers["location"] == str(app.url_path_for("read_dashboard"))
     
     # Verify the account was created
     account = session.exec(select(Account).where(Account.email == "new@example.com")).first()
@@ -61,9 +79,9 @@ def test_login_endpoint(unauth_client: TestClient, test_account: Account):
             "email": test_account.email,
             "password": "Test123!@#"
         },
-        follow_redirects=False
     )
     assert response.status_code == 303
+    assert response.headers["location"] == str(app.url_path_for("read_dashboard"))
 
     # Check if cookies are set
     cookies = response.cookies
@@ -81,9 +99,9 @@ def test_refresh_token_endpoint(auth_client: TestClient, test_account: Account):
 
     response = auth_client.post(
         app.url_path_for("refresh_token"),
-        follow_redirects=False
     )
     assert response.status_code == 303
+    assert response.headers["location"] == str(app.url_path_for("read_dashboard"))
 
     # Check for new tokens in headers
     cookie_headers = response.headers.get_list("set-cookie")
@@ -107,9 +125,9 @@ def test_password_reset_flow(unauth_client: TestClient, session: Session, test_a
     response = unauth_client.post(
         app.url_path_for("forgot_password"),
         data={"email": test_account.email},
-        follow_redirects=False
     )
     assert response.status_code == 303
+    assert response.headers["location"] == "/forgot_password?show_form=false"
 
     # Verify the email was "sent" with correct parameters
     mock_resend_send.assert_called_once()
@@ -124,7 +142,7 @@ def test_password_reset_flow(unauth_client: TestClient, session: Session, test_a
 
     # Verify content
     assert call_args["to"] == [test_account.email]
-    assert call_args["from"] == "noreply@promptlytechnologies.com"
+    assert call_args["from"] == "test@example.com"
     assert "Password Reset Request" in call_args["subject"]
     assert "reset_password" in call_args["html"]
 
@@ -149,9 +167,9 @@ def test_password_reset_flow(unauth_client: TestClient, session: Session, test_a
 def test_logout_endpoint(auth_client: TestClient):
     response = auth_client.get(
         app.url_path_for("logout"),
-        follow_redirects=False
     )
     assert response.status_code == 303
+    assert response.headers["location"] == "/"
 
     # Check for cookie deletion in headers
     cookie_headers = response.headers.get_list("set-cookie")
@@ -162,6 +180,77 @@ def test_logout_endpoint(auth_client: TestClient):
 
 
 # --- Error Case Tests ---
+
+
+def test_register_page_shows_password_requirements(unauth_client: TestClient):
+    """Issue #156: Register page must display password requirements visibly."""
+    response = unauth_client.get(app.url_path_for("read_register"))
+    assert response.status_code == 200
+    html = response.text
+    # Requirements should be visible as text (not just in hidden pattern/title attributes)
+    assert "8" in html, "Page should mention minimum 8 characters"
+    assert "uppercase" in html.lower(), "Page should mention uppercase requirement"
+    assert "lowercase" in html.lower(), "Page should mention lowercase requirement"
+    assert "number" in html.lower() or "digit" in html.lower(), "Page should mention digit requirement"
+    assert "special" in html.lower(), "Page should mention special character requirement"
+
+
+def test_register_page_confirm_password_has_autocomplete(unauth_client: TestClient):
+    """Issue #156: Both password fields must have autocomplete='new-password' for Chrome autofill."""
+    response = unauth_client.get(app.url_path_for("read_register"))
+    assert response.status_code == 200
+    html = response.text
+    # The confirm_password field should have autocomplete="new-password"
+    assert 'id="confirm_password"' in html
+    # Find the confirm_password input and check it has autocomplete="new-password"
+    import re
+    confirm_input = re.search(r'<input[^>]*id="confirm_password"[^>]*>', html)
+    assert confirm_input is not None
+    assert 'autocomplete="new-password"' in confirm_input.group(0), \
+        "confirm_password field must have autocomplete='new-password' for Chrome autofill"
+
+
+def test_register_weak_password_error_restates_requirements(unauth_client: TestClient, session: Session):
+    """Issue #156: Error toast for weak password must restate the security policy requirements."""
+    response = unauth_client.post(
+        app.url_path_for("register"),
+        data={
+            "name": "Test User",
+            "email": "weak@example.com",
+            "password": "weak",
+            "confirm_password": "weak"
+        },
+    )
+    assert response.status_code == 422
+    text = response.text
+    # The error message must include the actual requirements, not just a generic message
+    assert "8" in text, "Error should mention minimum 8 characters"
+    assert "uppercase" in text.lower() or "upper" in text.lower(), \
+        "Error should mention uppercase requirement"
+    assert "lowercase" in text.lower() or "lower" in text.lower(), \
+        "Error should mention lowercase requirement"
+
+
+def test_register_weak_password_htmx_error_restates_requirements(unauth_client: TestClient, session: Session):
+    """Issue #156: HTMX error toast for weak password must restate the security policy requirements."""
+    response = unauth_client.post(
+        app.url_path_for("register"),
+        data={
+            "name": "Test User",
+            "email": "weak@example.com",
+            "password": "weak",
+            "confirm_password": "weak"
+        },
+        headers={"HX-Request": "true"},
+    )
+    assert response.status_code == 422
+    text = response.text
+    # The toast message must include the actual requirements
+    assert "8" in text, "Toast should mention minimum 8 characters"
+    assert "uppercase" in text.lower() or "upper" in text.lower(), \
+        "Toast should mention uppercase requirement"
+    assert "lowercase" in text.lower() or "lower" in text.lower(), \
+        "Toast should mention lowercase requirement"
 
 
 def test_register_with_existing_email(unauth_client: TestClient, test_account: Account):
@@ -199,6 +288,7 @@ def test_password_reset_with_invalid_token(unauth_client: TestClient, test_accou
         }
     )
     assert response.status_code == 401  # Unauthorized for invalid token
+    assert app.url_path_for("read_login") not in response.headers.get("location", "")
 
 
 def test_password_reset_email_url(unauth_client: TestClient, session: Session, test_account: Account, mock_resend_send):
@@ -208,9 +298,9 @@ def test_password_reset_email_url(unauth_client: TestClient, session: Session, t
     response = unauth_client.post(
         app.url_path_for("forgot_password"),
         data={"email": test_account.email},
-        follow_redirects=False
     )
     assert response.status_code == 303
+    assert response.headers["location"] == "/forgot_password?show_form=false"
 
     # Get the reset token from the database
     reset_token = session.exec(select(PasswordResetToken)
@@ -240,6 +330,34 @@ def test_password_reset_email_url(unauth_client: TestClient, session: Session, t
     assert query_params["token"][0] == reset_token.token
 
 
+def test_forgot_password_does_not_send_second_email_while_token_is_active(
+    unauth_client: TestClient,
+    session: Session,
+    test_account: Account,
+    mock_resend_send,
+):
+    """Forgot-password preserves the existing one-hour token/send suppression."""
+    first_response = unauth_client.post(
+        app.url_path_for("forgot_password"),
+        data={"email": test_account.email},
+    )
+    assert first_response.status_code == 303
+    assert first_response.headers["location"] == "/forgot_password?show_form=false"
+
+    second_response = unauth_client.post(
+        app.url_path_for("forgot_password"),
+        data={"email": test_account.email},
+    )
+    assert second_response.status_code == 303
+    assert second_response.headers["location"] == "/forgot_password?show_form=false"
+
+    tokens = session.exec(
+        select(PasswordResetToken).where(PasswordResetToken.account_id == test_account.id)
+    ).all()
+    assert len(tokens) == 1
+    assert mock_resend_send.call_count == 1
+
+
 def test_request_email_update_success(auth_client: TestClient, test_account: Account, mock_resend_send):
     """Test successful email update request"""
     new_email = "newemail@example.com"
@@ -247,22 +365,34 @@ def test_request_email_update_success(auth_client: TestClient, test_account: Acc
     response = auth_client.post(
         app.url_path_for("request_email_update"),
         data={"email": test_account.email, "new_email": new_email},
-        follow_redirects=False
     )
-    
+
     assert response.status_code == 303
-    assert f"{app.url_path_for('read_profile')}?email_update_requested=true" in response.headers["location"]
-    
+    assert response.headers["location"] == str(app.url_path_for("read_profile"))
+    # Flash cookie should be set
+    assert "flash_message" in response.headers.get("set-cookie", "")
+
     # Verify email was "sent"
     mock_resend_send.assert_called_once()
     call_args = mock_resend_send.call_args[0][0]
     
     # Verify email content
     assert call_args["to"] == [test_account.email]
-    assert call_args["from"] == "noreply@promptlytechnologies.com"
+    assert call_args["from"] == "test@example.com"
     assert "Confirm Email Update" in call_args["subject"]
     assert "confirm_email_update" in call_args["html"]
     assert new_email in call_args["html"]
+
+
+def test_request_email_update_same_email_returns_error_page(auth_client: TestClient, test_account: Account):
+    response = auth_client.post(
+        app.url_path_for("request_email_update"),
+        data={"email": test_account.email, "new_email": test_account.email},
+    )
+
+    assert response.status_code == 401
+    assert response.headers.get("location") is None
+    assert "New email is the same as the current email" in response.text
 
 
 def test_request_email_update_already_registered(auth_client: TestClient, session: Session, test_account: Account):
@@ -290,10 +420,10 @@ def test_request_email_update_unauthenticated(unauth_client: TestClient):
     response = unauth_client.post(
         app.url_path_for("request_email_update"),
         data={"email": "test@example.com", "new_email": "new@example.com"},
-        follow_redirects=False
     )
-    
+
     assert response.status_code == 303  # Redirect to login
+    assert response.headers["location"] == str(app.url_path_for("read_login"))
 
 
 def test_confirm_email_update_success(unauth_client: TestClient, session: Session, test_account: Account):
@@ -312,12 +442,13 @@ def test_confirm_email_update_success(unauth_client: TestClient, session: Sessio
             "token": update_token.token,
             "new_email": new_email
         },
-        follow_redirects=False
     )
     
     assert response.status_code == 303
-    assert f"{app.url_path_for('read_profile')}?email_updated=true" in response.headers["location"]
-    
+    assert response.headers["location"] == str(app.url_path_for("read_profile"))
+    # Flash cookie should be set
+    assert "flash_message" in response.headers.get("set-cookie", "")
+
     # Verify email was updated
     session.refresh(test_account)
     assert test_account.email == new_email
@@ -361,7 +492,7 @@ def test_confirm_email_update_used_token(unauth_client: TestClient, session: Ses
     )
     session.add(used_token)
     session.commit()
-    
+
     response = unauth_client.get(
         app.url_path_for("confirm_email_update"),
         params={
@@ -370,10 +501,121 @@ def test_confirm_email_update_used_token(unauth_client: TestClient, session: Ses
             "new_email": "new@example.com"
         }
     )
-    
+
     assert response.status_code == 401
     assert "Invalid or expired" in response.text
-    
+
     # Verify email was not updated
     session.refresh(test_account)
     assert test_account.email == "test@example.com"
+
+
+# --- Rate Limiting Tests ---
+
+
+def test_login_ip_rate_limit(unauth_client: TestClient, test_account: Account):
+    """Login returns 429 after exceeding IP rate limit."""
+    for _ in range(login_ip_limiter.max_attempts):
+        unauth_client.post(
+            app.url_path_for("login"),
+            data={"email": test_account.email, "password": "WrongPass123!@#"},
+        )
+
+    response = unauth_client.post(
+        app.url_path_for("login"),
+        data={"email": test_account.email, "password": "WrongPass123!@#"},
+    )
+    assert response.status_code == 429
+    assert "Retry-After" in response.headers
+
+
+def test_login_email_rate_limit(unauth_client: TestClient, test_account: Account):
+    """Login returns 429 after exceeding per-email rate limit."""
+    for _ in range(login_email_limiter.max_attempts):
+        unauth_client.post(
+            app.url_path_for("login"),
+            data={"email": test_account.email, "password": "WrongPass123!@#"},
+        )
+
+    response = unauth_client.post(
+        app.url_path_for("login"),
+        data={"email": test_account.email, "password": "WrongPass123!@#"},
+    )
+    assert response.status_code == 429
+
+
+def test_login_success_resets_email_limiter(unauth_client: TestClient, test_account: Account):
+    """Successful login resets the per-email rate limiter."""
+    # Use up all but one email attempt
+    for _ in range(login_email_limiter.max_attempts - 1):
+        unauth_client.post(
+            app.url_path_for("login"),
+            data={"email": test_account.email, "password": "WrongPass123!@#"},
+        )
+    assert login_email_limiter.remaining(f"email:{test_account.email.lower().strip()}") == 1
+
+    # Successful login should reset the counter
+    response = unauth_client.post(
+        app.url_path_for("login"),
+        data={"email": test_account.email, "password": "Test123!@#"},
+    )
+    assert response.status_code == 303
+    assert response.headers["location"] == str(app.url_path_for("read_dashboard"))
+
+    # Verify the limiter was reset — full allowance available
+    assert login_email_limiter.remaining(f"email:{test_account.email.lower().strip()}") == login_email_limiter.max_attempts
+
+
+def test_register_ip_rate_limit(unauth_client: TestClient, session: Session):
+    """Register returns 429 after exceeding IP rate limit."""
+    for i in range(register_ip_limiter.max_attempts):
+        unauth_client.post(
+            app.url_path_for("register"),
+            data={
+                "name": f"User{i}",
+                "email": f"user{i}@example.com",
+                "password": "Test123!@#",
+                "confirm_password": "Test123!@#",
+            },
+        )
+
+    response = unauth_client.post(
+        app.url_path_for("register"),
+        data={
+            "name": "Blocked",
+            "email": "blocked@example.com",
+            "password": "Test123!@#",
+            "confirm_password": "Test123!@#",
+        },
+    )
+    assert response.status_code == 429
+
+
+def test_forgot_password_ip_rate_limit(unauth_client: TestClient):
+    """Forgot password returns 429 after exceeding IP rate limit."""
+    for i in range(forgot_password_ip_limiter.max_attempts):
+        unauth_client.post(
+            app.url_path_for("forgot_password"),
+            data={"email": f"user{i}@example.com"},
+        )
+
+    response = unauth_client.post(
+        app.url_path_for("forgot_password"),
+        data={"email": "extra@example.com"},
+    )
+    assert response.status_code == 429
+
+
+def test_forgot_password_email_rate_limit(unauth_client: TestClient, test_account: Account, mock_resend_send):
+    """Forgot password returns 429 after exceeding per-email rate limit."""
+    for _ in range(forgot_password_email_limiter.max_attempts):
+        unauth_client.post(
+            app.url_path_for("forgot_password"),
+            data={"email": test_account.email},
+        )
+
+    response = unauth_client.post(
+        app.url_path_for("forgot_password"),
+        data={"email": test_account.email},
+    )
+    assert response.status_code == 429

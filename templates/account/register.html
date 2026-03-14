@@ -6,7 +6,9 @@
 
 {% block auth_content %}
 <div class="register-form">
-    <form method="POST" action="{{ url_for('register') }}" class="needs-validation" novalidate>
+    <form method="POST" action="{{ url_for('register') }}"
+          hx-post="{{ url_for('register') }}" hx-swap="none"
+          class="needs-validation" novalidate>
         {# Add hidden input for invitation token if present #}
         {% if invitation_token %}
         <input type="hidden" name="invitation_token" value="{{ invitation_token }}">
@@ -30,11 +32,14 @@
         <!-- Password Input -->
         <div class="mb-3">
             <label for="password" class="form-label">Password</label>
-            <input type="password" class="form-control" id="password" name="password" 
+            <input type="password" class="form-control" id="password" name="password"
                    pattern="{{ password_pattern }}"
-                   title="Must contain at least one number, one uppercase and lowercase letter, one special character, and at least 8 or more characters" 
+                   title="Must contain at least one number, one uppercase and lowercase letter, one special character, and at least 8 or more characters"
                    placeholder="Enter your password" required
                    autocomplete="new-password">
+            <div class="form-text">
+                Password must contain at least 8 characters, including one uppercase letter, one lowercase letter, one number, and one special character.
+            </div>
             <div class="invalid-feedback">
                 Must contain at least one number, one uppercase and lowercase letter, one special character, and at least 8 or more characters
             </div>
@@ -43,7 +48,7 @@
         <!-- Confirm Password Input -->
         <div class="mb-3">
             <label for="confirm_password" class="form-label">Confirm Password</label>
-            <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
+            <input type="password" class="form-control" id="confirm_password" name="confirm_password"
                    placeholder="Confirm your password" required
                    autocomplete="new-password">
             <div class="invalid-feedback">

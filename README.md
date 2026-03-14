@@ -1,7 +1,8 @@
 # FastAPI, Jinja2, PostgreSQL Webapp Template
 
 
-![Screenshot of homepage](docs/static/screenshot.jpg)
+![Screenshot of the FastAPI webapp template
+homepage](docs/static/screenshot.jpg)
 
 ## Quickstart
 
@@ -61,8 +62,7 @@ to deploy to any major cloud hosting platform.
 - [Github Actions](https://docs.github.com/en/actions): CI/CD pipeline
 - [Quarto](https://quarto.org/docs/): simple documentation website
   renderer
-- [MyPy](https://mypy.readthedocs.io/en/stable/): static type checker
-  for Python
+- [ty](https://docs.astral.sh/ty/): static type checker for Python
 - [Bootstrap](https://getbootstrap.com/): HTML/CSS styler
 - [Resend](https://resend.com/): zero- or low-cost email service used
   for password recovery
@@ -173,28 +173,19 @@ uv run python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 Navigate to http://localhost:8000/
 
-### Lint types with mypy
+### Type check with ty
 
 ``` bash
-uv run mypy .
+uv run ty check .
 ```
 
 ## Developing with LLMs
 
-In line with the [llms.txt standard](https://llmstxt.org/), we have
-provided a Markdown-formatted prompt—designed to help LLM agents
-understand how to work with this template—as a text file:
-[llms.txt](docs/static/llms.txt).
-
-One use case for this file, if using the Cursor IDE, is to rename it to
-`.cursorrules` and place it in your project directory (see the [Cursor
-docs](https://docs.cursor.com/context/rules-for-ai) on this for more
-information). Alternatively, you could use it as a custom system prompt
-in the web interface for ChatGPT, Claude, or the LLM of your choice.
-
-We have also exposed the full Markdown-formatted project documentation
-as a [single text file](docs/static/documentation.txt) for easy
-downloading and embedding for RAG workflows.
+The `.cursor/rules` folder contains a set of AI rules for working on
+this codebase in the Cursor IDE. We have also exposed the full
+Markdown-formatted project documentation as a [single text
+file](docs/static/documentation.txt) for easy downloading and embedding
+for RAG.
 
 ## Contributing
 

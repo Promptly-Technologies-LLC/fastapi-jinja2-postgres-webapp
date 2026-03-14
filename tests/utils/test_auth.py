@@ -37,7 +37,7 @@ def test_password_hashing() -> None:
     assert not verify_password("wrong_password", hashed)
 
 
-def test_token_creation_and_validation() -> None:
+def test_token_creation_and_validation(env_vars) -> None:
     data = {"sub": "test@example.com"}
 
     # Test access token
@@ -55,7 +55,7 @@ def test_token_creation_and_validation() -> None:
     assert decoded["type"] == "refresh"
 
 
-def test_expired_token() -> None:
+def test_expired_token(env_vars) -> None:
     data = {"sub": "test@example.com"}
     expired_delta = timedelta(minutes=-10)
     expired_token = create_access_token(data, expired_delta)
@@ -63,13 +63,13 @@ def test_expired_token() -> None:
     assert decoded is None
 
 
-def test_invalid_token_type() -> None:
+def test_invalid_token_type(env_vars) -> None:
     data = {"sub": "test@example.com"}
     access_token = create_access_token(data)
     decoded = validate_token(access_token, "refresh")
     assert decoded is None
 
-def test_password_reset_url_generation() -> None:
+def test_password_reset_url_generation(env_vars) -> None:
     """
     Tests that the password reset URL is correctly formatted and contains
     the required query parameters.
@@ -151,7 +151,7 @@ def test_password_pattern() -> None:
     password = "aA1" * 3
     assert re.match(COMPILED_PASSWORD_PATTERN, password) is None
 
-def test_email_update_url_generation() -> None:
+def test_email_update_url_generation(env_vars) -> None:
     """
     Tests that the email update confirmation URL is correctly formatted and contains
     the required query parameters.

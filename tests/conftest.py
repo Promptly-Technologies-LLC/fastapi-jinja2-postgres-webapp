@@ -1,17 +1,14 @@
 import pytest
+import os
 from typing import Generator
 from sqlmodel import create_engine, Session, select
-from sqlalchemy import Engine
 from fastapi.testclient import TestClient
 from dotenv import load_dotenv
-from utils.core.db import get_connection_url, tear_down_db, set_up_db, create_default_roles
-from utils.core.models import User, PasswordResetToken, EmailUpdateToken, Organization, Role, Account, Invitation
+from utils.core.db import get_connection_url, tear_down_db, set_up_db, create_default_roles, ensure_database_exists
+from utils.core.models import User, Organization, Role, Account, Invitation
 from utils.core.auth import get_password_hash, create_access_token, create_refresh_token
 from main import app
 from datetime import datetime, UTC, timedelta
-
-# Load environment variables
-load_dotenv(override=True)
 
 # Define a custom exception for test setup errors
 class SetupError(Exception):
@@ -21,29 +18,39 @@ class SetupError(Exception):
         super().__init__(self.message)
 
 
-@pytest.fixture(scope="session")
-def engine() -> Engine:
+@pytest.fixture
+def env_vars(monkeypatch):
+    load_dotenv()
+
+    # monkeypatch remaining env vars
+    with monkeypatch.context() as m:
+        # Get valid db user, password, host, and port from env
+        m.setenv("DB_HOST", os.getenv("DB_HOST", "127.0.0.1"))
+        m.setenv("DB_PORT", os.getenv("DB_PORT", "5432"))
+        m.setenv("DB_USER", os.getenv("DB_USER", "postgres"))
+        m.setenv("DB_PASSWORD", os.getenv("DB_PASSWORD", "postgres"))
+        m.setenv("SECRET_KEY", "testsecretkey-that-is-at-least-32-bytes-long")
+        m.setenv("HOST_NAME", "Test Organization")
+        m.setenv("DB_NAME", "webapp-test-db")
+        m.setenv("RESEND_API_KEY", "test")
+        m.setenv("EMAIL_FROM", "test@example.com")
+        m.setenv("BASE_URL", "http://localhost:8000")
+        yield
+
+
+@pytest.fixture
+def engine(env_vars):
     """
     Create a new SQLModel engine for the test database.
     Use PostgreSQL for testing to match production environment.
     """
     # Use PostgreSQL for testing to match production environment
+    ensure_database_exists(get_connection_url())
     engine = create_engine(get_connection_url())
-    return engine
+    set_up_db(drop=True)
 
+    yield engine
 
-@pytest.fixture(scope="session", autouse=True)
-def set_up_database(engine) -> Generator[None, None, None]:
-    """
-    Set up the test database before running the test suite.
-    Drop all tables and recreate them to ensure a clean state.
-    """
-    # Drop and recreate all tables using the helpers from db.py
-    tear_down_db()
-    set_up_db(drop=False)
-    
-    yield
-    
     # Clean up after tests
     tear_down_db()
 
@@ -57,20 +64,7 @@ def session(engine) -> Generator[Session, None, None]:
         yield session
 
 
-@pytest.fixture(autouse=True)
-def clean_db(session: Session) -> None:
-    """
-    Cleans up the database tables before each test.
-    """
-    # Don't delete permissions as they are required for tests
-    for model in (PasswordResetToken, EmailUpdateToken, User, Role, Organization, Account):
-        for record in session.exec(select(model)).all():
-            session.delete(record)
-
-    session.commit()
-
-
-@pytest.fixture()
+@pytest.fixture
 def test_account(session: Session) -> Account:
     """
     Creates a test account in the database.
@@ -85,7 +79,7 @@ def test_account(session: Session) -> Account:
     return account
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_user(session: Session, test_account: Account) -> User:
     """
     Creates a test user in the database linked to the test account.
@@ -103,21 +97,21 @@ def test_user(session: Session, test_account: Account) -> User:
     return user
 
 
-@pytest.fixture()
+@pytest.fixture
 def unauth_client(session: Session) -> Generator[TestClient, None, None]:
     """
     Provides a TestClient instance without authentication.
     """
-    client = TestClient(app)
+    client = TestClient(app, follow_redirects=False)
     yield client
 
 
-@pytest.fixture()
+@pytest.fixture
 def auth_client(session: Session, test_account: Account, test_user: User) -> Generator[TestClient, None, None]:
     """
     Provides a TestClient instance with valid authentication tokens.
     """
-    client = TestClient(app)
+    client = TestClient(app, follow_redirects=False)
 
     # Create and set valid tokens
     access_token = create_access_token({"sub": test_account.email})
@@ -136,12 +130,12 @@ def test_organization(session: Session) -> Organization:
     session.add(organization)
     session.flush()
 
-    if organization.id is None:
+    if organization.id:
+        # Use the utility function to create default roles and assign permissions
+        # This function handles the commit internally
+        create_default_roles(session, organization.id, check_first=False)
+    else:
         pytest.fail("Failed to get organization ID after flush")
-
-    # Use the utility function to create default roles and assign permissions
-    # This function handles the commit internally
-    create_default_roles(session, organization.id, check_first=False)
 
     return organization
 
@@ -281,8 +275,8 @@ def non_member_user(session: Session) -> User:
 @pytest.fixture
 def auth_client_owner(session: Session, org_owner: User) -> Generator[TestClient, None, None]:
     """Provides a TestClient authenticated as the organization owner"""
-    client = TestClient(app)
-    
+    client = TestClient(app, follow_redirects=False)
+
     # Initialize tokens
     access_token = ""
     refresh_token = ""
@@ -301,8 +295,8 @@ def auth_client_owner(session: Session, org_owner: User) -> Generator[TestClient
 @pytest.fixture
 def auth_client_admin(session: Session, org_admin_user: User) -> Generator[TestClient, None, None]:
     """Provides a TestClient authenticated as an organization administrator"""
-    client = TestClient(app)
-    
+    client = TestClient(app, follow_redirects=False)
+
     # Initialize tokens
     access_token = ""
     refresh_token = ""
@@ -321,8 +315,8 @@ def auth_client_admin(session: Session, org_admin_user: User) -> Generator[TestC
 @pytest.fixture
 def auth_client_member(session: Session, org_member_user: User) -> Generator[TestClient, None, None]:
     """Provides a TestClient authenticated as the organization member"""
-    client = TestClient(app)
-    
+    client = TestClient(app, follow_redirects=False)
+
     # Initialize tokens
     access_token = ""
     refresh_token = ""
@@ -341,8 +335,8 @@ def auth_client_member(session: Session, org_member_user: User) -> Generator[Tes
 @pytest.fixture
 def auth_client_non_member(session: Session, non_member_user: User) -> Generator[TestClient, None, None]:
     """Provides a TestClient authenticated as a non-member"""
-    client = TestClient(app)
-    
+    client = TestClient(app, follow_redirects=False)
+
     # Initialize tokens
     access_token = ""
     refresh_token = ""
@@ -475,8 +469,8 @@ def existing_invitee_user(session: Session, existing_invitee_account: Account) -
 @pytest.fixture
 def auth_client_invitee(session: Session, existing_invitee_user: User) -> Generator[TestClient, None, None]:
     """Provides a TestClient authenticated as the existing_invitee_user."""
-    client = TestClient(app)
-    
+    client = TestClient(app, follow_redirects=False)
+
     # Initialize tokens
     access_token = ""
     refresh_token = ""
@@ -524,6 +518,19 @@ def mock_resend_send(mock_email_response):
     """
     # Ensure patch and resend are imported
     from unittest.mock import patch
-    import resend
     with patch('resend.Emails.send', return_value=mock_email_response) as mock:
         yield mock
+
+# --- HTMX Test Helpers ---
+
+def htmx_headers() -> dict:
+    """Headers that simulate an HTMX request."""
+    return {"HX-Request": "true", "HX-Current-URL": "http://testserver/"}
+
+
+def is_html_partial(response) -> bool:
+    """True if response is a 200 HTML fragment (not a full page)."""
+    return (
+        response.status_code == 200
+        and "<!DOCTYPE html>" not in response.text
+    )

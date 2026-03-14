@@ -1,5 +1,6 @@
 ---
 title: "Customization"
+description: "Guide to customizing the FastAPI webapp template including development workflow, code style conventions, and project structure."
 ---
 
 ## Development workflow
@@ -53,27 +54,32 @@ To run the tests, use these commands:
 - Run particular test files by name: `uv run pytest <test_file_name>`
 - Run particular tests by name: `uv run pytest -k <test_name>`
 
-### Type checking with mypy
+### Type checking with ty
 
-The project uses type annotations and mypy for static type checking. To run mypy, use this command from the root directory:
+The project uses type annotations and [ty](https://docs.astral.sh/ty/) for static type checking. To run ty, use this command from the root directory:
 
 ```bash
-mypy .
+uv run ty check .
 ```
 
-We find that mypy is an enormous time-saver, catching many errors early and greatly reducing time spent debugging unit tests. However, note that mypy requires you type annotate every variable, function, and method in your code base, so taking advantage of it requires a lifestyle change!
+We find that static type checking is an enormous time-saver, catching many errors early and greatly reducing time spent debugging unit tests. However, note that it requires you type annotate every variable, function, and method in your code base, so taking advantage of it requires a lifestyle change!
 
 ### Developing with LLMs
 
-The `.cursor/rules` folder contains a set of AI rules for working on this codebase in the Cursor IDE. We have also provided an [llms.txt](static/llms.txt) system prompt file for use with other agentic LLM workflows and exposed the full Markdown-formatted project documentation as a [single text file](docs/static/documentation.txt) for easy downloading and embedding for RAG.
+The `.cursor/rules` folder contains a set of AI rules for working on this codebase in the Cursor IDE. We have also exposed the full Markdown-formatted project documentation as a [single text file](docs/static/documentation.txt) for easy downloading and embedding for RAG.
 
 ## Application architecture
 
-### Post-Redirect-Get pattern
+### Hybrid PRG + HTMX pattern
 
 In this template, we use FastAPI to define the "API endpoints" of our application. An API endpoint is simply a URL that accepts user requests and returns responses. When a user visits a page, their browser sends what's called a "GET" request to an endpoint, and the server processes it (often querying a database), and returns a response (typically HTML). The browser renders the HTML, displaying the page.
 
-We also create POST endpoints, which accept form submissions so the user can create, update, and delete data in the database. This template follows the Post-Redirect-Get (PRG) pattern to handle POST requests. When a form is submitted, the server processes the data and then returns a "redirect" response, which sends the user to a GET endpoint to re-render the page with the updated data. (See [Architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html) for more details.)
+We also create POST endpoints, which accept form submissions so the user can create, update, and delete data in the database. This template uses a **hybrid Post-Redirect-Get (PRG) + HTMX** approach for POST requests:
+
+- **Non-HTMX (PRG):** When a form is submitted without HTMX, the server processes the data and returns a `303 See Other` redirect to a GET endpoint, which re-renders the full page with updated data.
+- **HTMX:** When HTMX submits the same form, the server detects the `HX-Request: true` header and instead returns a `200` HTML partial that HTMX swaps into the relevant part of the page — no full-page reload needed.
+
+Both paths use the same POST route URLs and form field contracts. (See [Architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html) for more details.)
 
 #### File structure
 
@@ -97,6 +103,8 @@ We also create POST endpoints, which accept form submissions so the user can cre
     - Enums: `enums.py`
     - Image helpers: `images.py`
     - Database models: `models.py`
+- Shared helper functions: `utils/`
+    - HTMX request detection: `htmx.py`
 - Custom template helper functions for your app: `utils/app/`
 - Exceptions: `exceptions/`
     - HTTP exceptions: `http_exceptions.py`
@@ -162,11 +170,20 @@ This template uses middlewares exclusively for global exception handling; they o
 
 Middleware functions are decorated with `@app.exception_handler(ExceptionType)` and are executed in the order they are defined in `main.py`, from most to least specific.
 
-Here's a middleware for handling the `PasswordMismatchError` exception from the previous example, which renders the `errors/validation_error.html` template with the error details:
+Here's a middleware for handling the `PasswordValidationError` exception, which returns a toast partial for HTMX requests or a full error page for non-HTMX requests:
 
 ```python
+from utils.htmx import is_htmx_request
+
 @app.exception_handler(PasswordValidationError)
 async def password_validation_exception_handler(request: Request, exc: PasswordValidationError):
+    if is_htmx_request(request):
+        return templates.TemplateResponse(
+            request,
+            "base/partials/toast.html",
+            {"message": exc.detail, "level": "danger"},
+            status_code=422,
+        )
     return templates.TemplateResponse(
         request,
         "errors/validation_error.html",
@@ -207,13 +224,14 @@ Here's an entity-relationship diagram (ERD) of the current core database schema,
 import sys
 sys.path.append("..")
 from utils.core.models import *
-from utils.core.db import engine
+from utils.core.db import get_connection_url
+from sqlmodel import create_engine
 from sqlalchemy import MetaData
 from sqlalchemy_schemadisplay import create_schema_graph
 
 # Create the directed graph
 graph = create_schema_graph(
-    engine=engine,
+    engine=create_engine(get_connection_url()),
     metadata=SQLModel.metadata,
     show_datatypes=True,
     show_indexes=True,
@@ -257,7 +275,7 @@ organization = session.exec(select(Organization).where(Organization.name == "Acm
 user.has_permission(permission, organization)
 ```
 
-You should create custom `AppPermissions` enum values for your application in `utils/app/` (if needed) and validate that users have the necessary permissions before allowing them to modify organization data resources.
+You can add custom permission enum values to the `ValidPermissions` enum in `utils/core/enums.py` (below the core permissions section) and validate that users have the necessary permissions before allowing them to modify organization data resources.
 
 ### Cascade deletes
 
@@ -397,7 +415,7 @@ Note that this will overwrite the existing `static/css/styles.css` file, so if y
 
 ### Client-side form validation
 
-While this template includes comprehensive server-side validation through Pydantic models and custom validators, it's important to note that server-side validation should be treated as a fallback security measure. If users ever see the `validation_error.html` template, it indicates that our client-side validation has failed to catch invalid input before it reaches the server.
+While this template includes comprehensive server-side validation through Pydantic models and custom validators, it's important to note that server-side validation should be treated as a fallback security measure. For HTMX requests, validation errors are surfaced as a toast notification without a page reload. For non-HTMX requests, they render the `validation_error.html` full-page error template. In either case, seeing a validation error means client-side validation has failed to catch invalid input before it reached the server.
 
 Best practices dictate implementing thorough client-side validation via JavaScript and/or HTML `input` element `pattern` attributes to:
 

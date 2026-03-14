@@ -1,14 +1,10 @@
 import os
 import logging
 from typing import Union, Sequence
-from dotenv import load_dotenv
 from sqlalchemy.engine import URL
-from sqlmodel import create_engine, Session, SQLModel, select
+from sqlmodel import create_engine, Session, SQLModel, select, text
 from utils.core.models import Role, Permission, RolePermissionLink
 from utils.core.enums import ValidPermissions
-
-# Load environment variables from a .env file
-load_dotenv()
 
 # Set up a logger for error reporting
 logger = logging.getLogger("uvicorn.error")
@@ -23,34 +19,82 @@ default_roles = ["Owner", "Administrator", "Member"]
 # --- Database connection functions ---
 
 
+def ensure_database_exists(url: URL) -> None:
+    dbname = url.database
+    server_url = url.set(database="postgres")
+    engine = create_engine(server_url, isolation_level="AUTOCOMMIT")
+    with engine.connect() as conn:
+        exists = conn.execute(
+            text("SELECT 1 FROM pg_database WHERE datname = :n"),
+            {"n": dbname},
+        ).scalar()
+        if not exists:
+            conn.execute(text(f'CREATE DATABASE "{dbname}"'))
+            
+
 def get_connection_url() -> URL:
     """
     Constructs a SQLModel URL object for connecting to the PostgreSQL database.
 
-    The connection details are sourced from environment variables, which should include:
+    Supports two connection modes controlled by the USE_POOL environment variable:
+    - Direct mode (USE_POOL=0, default): Connects directly to the database
+    - Pooled mode (USE_POOL=1): Connects via an external connection pooler (e.g., PgBouncer)
+
+    Direct mode environment variables:
+    - DB_HOST: Database host address
+    - DB_PORT: Database port
+    - DB_NAME: Database name
     - DB_USER: Database username
     - DB_PASSWORD: Database password
+    - DB_SSLMODE: SSL mode (default: "prefer")
+
+    Pooled mode environment variables:
     - DB_HOST: Database host address
-    - DB_PORT: Database port (default is 5432)
-    - DB_NAME: Database name
+    - DB_POOL_PORT: Connection pooler port
+    - DB_POOL_NAME: Database name for pooled connections
+    - DB_APPUSER: Application user for pooled connections
+    - DB_APPUSER_PASSWORD: Application user password
+    - DB_SSLMODE: SSL mode (default: "prefer")
 
     Returns:
         URL: A SQLModel URL object containing the connection details.
+
+    Raises:
+        ValueError: If required environment variables are missing.
     """
+    use_pool = bool(int(os.getenv("USE_POOL", "0")))
+
+    host = os.getenv("DB_HOST")
+    sslmode = os.getenv("DB_SSLMODE", "prefer")
+
+    if use_pool:
+        port = os.getenv("DB_POOL_PORT")
+        database = os.getenv("DB_POOL_NAME")
+        username = os.getenv("DB_APPUSER")
+        password = os.getenv("DB_APPUSER_PASSWORD")
+        required = ["DB_HOST", "DB_POOL_PORT", "DB_POOL_NAME", "DB_APPUSER", "DB_APPUSER_PASSWORD"]
+    else:
+        port = os.getenv("DB_PORT")
+        database = os.getenv("DB_NAME")
+        username = os.getenv("DB_USER")
+        password = os.getenv("DB_PASSWORD")
+        required = ["DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD"]
+
+    missing = [var for var in required if not os.getenv(var)]
+    if missing:
+        raise ValueError(f"Missing environment variables: {', '.join(missing)}")
+
     database_url: URL = URL.create(
         drivername="postgresql",
-        username=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        host=os.getenv("DB_HOST"),
-        port=int(os.getenv("DB_PORT") or "5432"),
-        database=os.getenv("DB_NAME"),
+        username=username,
+        password=password,
+        host=host,
+        port=int(port),  # type: ignore[arg-type]
+        database=database,
+        query={"sslmode": sslmode},
     )
 
     return database_url
-
-
-# Create the database engine using the connection URL
-engine = create_engine(get_connection_url())
 
 
 def assign_permissions_to_role(
@@ -167,6 +211,10 @@ def set_up_db(drop: bool = False) -> None:
     engine = create_engine(get_connection_url())
     if drop:
         SQLModel.metadata.drop_all(engine)
+    # Ensure the private schema exists before creating tables
+    with engine.connect() as conn:
+        conn.execute(text("CREATE SCHEMA IF NOT EXISTS private"))
+        conn.commit()
     SQLModel.metadata.create_all(engine)
     # Create default permissions
     with Session(engine) as session:
@@ -177,8 +225,11 @@ def set_up_db(drop: bool = False) -> None:
 
 def tear_down_db() -> None:
     """
-    Tears down the database by dropping all tables.
+    Tears down the database by dropping all tables and the private schema.
     """
     engine = create_engine(get_connection_url())
     SQLModel.metadata.drop_all(engine)
+    with engine.connect() as conn:
+        conn.execute(text("DROP SCHEMA IF EXISTS private CASCADE"))
+        conn.commit()
     engine.dispose()

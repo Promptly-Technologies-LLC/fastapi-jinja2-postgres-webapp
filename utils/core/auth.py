@@ -5,7 +5,6 @@ import jwt
 import uuid
 import logging
 import resend
-from dotenv import load_dotenv
 from sqlmodel import Session, select
 from bcrypt import gensalt, hashpw, checkpw
 from datetime import UTC, datetime, timedelta
@@ -13,10 +12,8 @@ from typing import Optional
 from jinja2.environment import Template
 from fastapi.templating import Jinja2Templates
 from fastapi import Cookie
+from utils.core.db import create_engine, get_connection_url
 from utils.core.models import PasswordResetToken, EmailUpdateToken, Account
-
-load_dotenv(override=True)
-resend.api_key = os.environ["RESEND_API_KEY"]
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -27,7 +24,7 @@ logger.addHandler(logging.StreamHandler())
 
 
 templates = Jinja2Templates(directory="templates")
-SECRET_KEY = os.getenv("SECRET_KEY")
+COOKIE_SECURE = os.getenv("BASE_URL", "http://localhost:8000").startswith("https")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 30
@@ -120,7 +117,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
         expire = datetime.now(
             UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, os.getenv("SECRET_KEY"), algorithm=ALGORITHM)
     return encoded_jwt
 
 
@@ -132,13 +129,13 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) 
     else:
         expire = datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, os.getenv("SECRET_KEY"), algorithm=ALGORITHM)
     return encoded_jwt
 
 
 def validate_token(token: str, token_type: str = "access") -> Optional[dict]:
     try:
-        decoded_token = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        decoded_token = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=[ALGORITHM])
 
         # Check if the token has expired
         if decoded_token["exp"] < datetime.now(UTC).timestamp():
@@ -182,7 +179,7 @@ def send_reset_email(email: str, session: Session) -> None:
             .where(
                 PasswordResetToken.account_id == account.id,
                 PasswordResetToken.expires_at > datetime.now(UTC),
-                PasswordResetToken.used == False
+                PasswordResetToken.used == False  # noqa: E712 - SQL expression for boolean false
             )
         ).first()
 
@@ -204,14 +201,15 @@ def send_reset_email(email: str, session: Session) -> None:
                 "emails/reset_email.html")
             html_content: str = template.render({"reset_url": reset_url})
 
-            params: resend.Emails.SendParams = {
+            resend.api_key = os.getenv("RESEND_API_KEY")
+            params = {
                 "from": os.getenv("EMAIL_FROM", ""),
                 "to": [email],
                 "subject": "Password Reset Request",
                 "html": html_content,
             }
 
-            sent_email: resend.Email = resend.Emails.send(params)
+            sent_email = resend.Emails.send(params)  # ty: ignore[invalid-argument-type]
             logger.debug(f"Password reset email sent: {sent_email.get('id')}")
 
             session.commit()
@@ -220,6 +218,18 @@ def send_reset_email(email: str, session: Session) -> None:
             session.rollback()
     else:
         logger.debug("No account found with the provided email.")
+
+
+def send_reset_email_task(email: str) -> None:
+    """
+    Background-task wrapper that creates its own session.
+
+    FastAPI background tasks should not reuse request-scoped resources from
+    `yield` dependencies, because cleanup may run before the task executes.
+    """
+    engine = create_engine(get_connection_url())
+    with Session(engine) as session:
+        send_reset_email(email, session)
 
 
 def generate_email_update_url(account_id: int, token: str, new_email: str) -> str:
@@ -242,7 +252,7 @@ def send_email_update_confirmation(
         .where(
             EmailUpdateToken.account_id == account_id,
             EmailUpdateToken.expires_at > datetime.now(UTC),
-            EmailUpdateToken.used == False
+            EmailUpdateToken.used == False  # noqa: E712 - SQL expression for boolean false
         )
     ).first()
 
@@ -266,14 +276,15 @@ def send_email_update_confirmation(
             "new_email": new_email
         })
 
-        params: resend.Emails.SendParams = {
+        resend.api_key = os.getenv("RESEND_API_KEY")
+        params = {
             "from": os.getenv("EMAIL_FROM", ""),
             "to": [current_email],
             "subject": "Confirm Email Update",
             "html": html_content,
         }
 
-        sent_email: resend.Email = resend.Emails.send(params)
+        sent_email = resend.Emails.send(params)  # ty: ignore[invalid-argument-type]
         logger.debug(f"Email update confirmation sent: {sent_email.get('id')}")
 
         session.commit()

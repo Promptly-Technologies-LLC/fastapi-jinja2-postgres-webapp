@@ -25,6 +25,8 @@ def utc_now():
 
 # TODO: Handle password hashing and checking on the data model?
 class Account(SQLModel, table=True):
+    __table_args__ = {"schema": "private"}
+
     id: Optional[int] = Field(default=None, primary_key=True)
     email: EmailStr = Field(index=True, unique=True)
     hashed_password: str
@@ -51,8 +53,10 @@ class Account(SQLModel, table=True):
     )
 
 class PasswordResetToken(SQLModel, table=True):
+    __table_args__ = {"schema": "private"}
+
     id: Optional[int] = Field(default=None, primary_key=True)
-    account_id: Optional[int] = Field(foreign_key="account.id")
+    account_id: Optional[int] = Field(foreign_key="private.account.id")
     token: str = Field(default_factory=lambda: str(
         uuid4()), index=True, unique=True)
     expires_at: datetime = Field(
@@ -70,8 +74,10 @@ class PasswordResetToken(SQLModel, table=True):
 
 
 class EmailUpdateToken(SQLModel, table=True):
+    __table_args__ = {"schema": "private"}
+
     id: Optional[int] = Field(default=None, primary_key=True)
-    account_id: Optional[int] = Field(foreign_key="account.id")
+    account_id: Optional[int] = Field(foreign_key="private.account.id")
     token: str = Field(default_factory=lambda: str(
         uuid4()), index=True, unique=True)
     expires_at: datetime = Field(
@@ -108,12 +114,17 @@ class RolePermissionLink(SQLModel, table=True):
 
 class UserBase(SQLModel):
     name: Optional[str] = None
-    avatar_data: Optional[bytes] = Field(
-        default=None, sa_column=Column(LargeBinary)
-    )
-    avatar_content_type: Optional[str] = Field(
-        default=None
-    )
+
+
+class UserAvatar(SQLModel, table=True):
+    __tablename__ = "useravatar"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", unique=True, index=True)
+    avatar_data: bytes = Field(sa_column=Column(LargeBinary, nullable=False))
+    avatar_content_type: str
+
+    user: Mapped["User"] = Relationship(back_populates="avatar")
 
 
 # TODO: Prevent deleting a user who is sole owner of an organization
@@ -123,9 +134,16 @@ class User(UserBase, table=True):
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
 
-    account_id: Optional[int] = Field(foreign_key="account.id", unique=True)
+    account_id: Optional[int] = Field(foreign_key="private.account.id", unique=True)
     account: Mapped[Optional[Account]] = Relationship(
         back_populates="user"
+    )
+    avatar: Mapped[Optional["UserAvatar"]] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan",
+            "uselist": False
+        }
     )
     roles: Mapped[List["Role"]] = Relationship(
         back_populates="users",
@@ -293,6 +311,6 @@ class Invitation(SQLModel, table=True):
 
     @classmethod
     def get_active_for_org(cls, session: Session, organization_id: int) -> list["Invitation"]:
-        statement = select(cls).where(cls.organization_id == organization_id, cls.used == False)
+        statement = select(cls).where(cls.organization_id == organization_id, cls.used == False)  # noqa: E712
         results = session.exec(statement).all()
         return [inv for inv in results if not inv.is_expired()]

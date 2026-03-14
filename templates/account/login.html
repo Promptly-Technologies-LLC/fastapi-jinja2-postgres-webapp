@@ -6,7 +6,9 @@
 
 {% block auth_content %}
 <div class="login-form">
-    <form method="POST" action="{{ url_for('login') }}" class="needs-validation" novalidate>
+    <form method="POST" action="{{ url_for('login') }}"
+          hx-post="{{ url_for('login') }}" hx-swap="none"
+          class="needs-validation" novalidate>
         {# Add hidden input for invitation token if present #}
         {% if invitation_token %}
         <input type="hidden" name="invitation_token" value="{{ invitation_token }}">

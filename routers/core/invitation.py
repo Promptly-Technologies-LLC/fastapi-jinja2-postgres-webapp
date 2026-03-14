@@ -1,7 +1,8 @@
 from uuid import uuid4
 from typing import Optional
-from fastapi import APIRouter, Depends, Form, Query, status
+from fastapi import APIRouter, Depends, Form, Query, Request, status
 from fastapi.responses import RedirectResponse
+from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import HTTPException
 from pydantic import EmailStr
 from sqlmodel import Session, select
@@ -17,15 +18,17 @@ from exceptions.http_exceptions import (
     OrganizationNotFoundError,
     InvitationEmailSendError,
     InvalidInvitationTokenError,
-    InvitationEmailMismatchError,
 )
 from exceptions.exceptions import EmailSendFailedError
+from utils.htmx import is_htmx_request, append_toast
 # Import the account router to generate URLs for login/register
 from routers.core.account import router as account_router
 from routers.core.organization import router as org_router # Already imported, check usage
 
 # Setup logger
 logger = getLogger("uvicorn.error")
+
+templates = Jinja2Templates(directory="templates")
 
 router = APIRouter(
     prefix="/invitations",
@@ -48,11 +51,12 @@ def get_valid_invitation(
 
 @router.post("/", name="create_invitation")
 async def create_invitation(
+    request: Request,
     current_user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session),
-    invitee_email: EmailStr = Form(...),
-    role_id: int = Form(...),
-    organization_id: int = Form(...),
+    invitee_email: EmailStr = Form(..., title="Invitee email", description="Email address of the person to invite"),
+    role_id: int = Form(..., title="Role ID", description="ID of the role to assign to the invitee"),
+    organization_id: int = Form(..., title="Organization ID", description="ID of the organization to invite the user to"),
 ):
     # Fetch the organization
     organization = session.get(Organization, organization_id)
@@ -127,7 +131,16 @@ async def create_invitation(
         session.rollback()
         raise HTTPException(status_code=500, detail="An unexpected error occurred.")
 
-    # Redirect back to organization page (PRG pattern)
+    # HTMX: return partial; non-HTMX: PRG redirect
+    if is_htmx_request(request):
+        active_invitations = Invitation.get_active_for_org(session, organization_id)
+        response = templates.TemplateResponse(
+            request,
+            "organization/partials/invitations_list.html",
+            {"active_invitations": active_invitations},
+        )
+        response.headers["HX-Trigger"] = "modalDismiss"
+        return append_toast(response, request, templates, "Invitation sent successfully.")
     return RedirectResponse(url=f"/organizations/{organization_id}", status_code=303)
 
 

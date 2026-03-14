@@ -1,0 +1,111 @@
+{# Partial: card-body content for roles. Swapped into #roles-card-content. #}
+{% if organization.roles %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Role Name</th>
+                <th>Members</th>
+                <th>Permissions</th>
+                {% if ValidPermissions.EDIT_ROLE in user_permissions or ValidPermissions.DELETE_ROLE in user_permissions %}
+                <th>Actions</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody id="roles-table-body">
+            {% for role in organization.roles %}
+            <tr id="role-row-{{ role.id }}">
+                <td>{{ role.name }}</td>
+                <td>{{ role.users|length }}</td>
+                <td>
+                    <ul class="list-unstyled mb-0">
+                        {% for permission in role.permissions %}
+                        <li><small>{{ permission.name.value }}</small></li>
+                        {% endfor %}
+                    </ul>
+                </td>
+                {% if ValidPermissions.EDIT_ROLE in user_permissions or ValidPermissions.DELETE_ROLE in user_permissions %}
+                <td>
+                    {% if ValidPermissions.EDIT_ROLE in user_permissions and role.name not in ["Owner", "Administrator", "Member"] %}
+                    <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editRoleModal{{ role.id }}">
+                        Edit Role
+                    </button>
+                    {% endif %}
+
+                    {% if ValidPermissions.DELETE_ROLE in user_permissions and role.name not in ["Owner", "Administrator", "Member"] %}
+                    <form method="POST" action="{{ url_for('delete_role') }}" class="d-inline"
+                          hx-post="{{ url_for('delete_role') }}"
+                          hx-target="#roles-card-content"
+                          hx-swap="innerHTML"
+                          hx-confirm="Are you sure you want to delete this role?">
+                        <input type="hidden" name="id" value="{{ role.id }}">
+                        <input type="hidden" name="organization_id" value="{{ organization.id }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" {% if role.users|length > 0 %}disabled{% endif %}>
+                            Delete Role
+                        </button>
+                    </form>
+                    {% endif %}
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">No roles defined</p>
+{% endif %}
+
+<div id="role-modals-container" hx-swap-oob="true">
+{% if ValidPermissions.EDIT_ROLE in user_permissions %}
+  {% for role in organization.roles %}
+    {% if role.name not in ["Owner", "Administrator", "Member"] %}
+    <div class="modal fade" id="editRoleModal{{ role.id }}" tabindex="-1" aria-labelledby="editRoleModalLabel{{ role.id }}" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <form method="POST" action="{{ url_for('update_role') }}"
+                hx-post="{{ url_for('update_role') }}"
+                hx-target="#roles-card-content"
+                hx-swap="innerHTML">
+            <div class="modal-header">
+              <h5 class="modal-title" id="editRoleModalLabel{{ role.id }}">Edit Role: {{ role.name }}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="name_{{ role.id }}" class="form-label">Role Name</label>
+                <input type="text" class="form-control" id="name_{{ role.id }}" name="name" value="{{ role.name }}" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Permissions</label>
+                <div class="row">
+                  {% set role_permission_names = role.permissions | map(attribute='name') | list %}
+                  {% for permission in ValidPermissions %}
+                    <div class="col-md-6 mb-2">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="permissions" value="{{ permission.value }}"
+                               id="perm_{{ role.id }}_{{ permission.value | replace(' ', '_') }}"
+                               {% if permission in role_permission_names %}checked{% endif %}>
+                        <label class="form-check-label" for="perm_{{ role.id }}_{{ permission.value | replace(' ', '_') }}">
+                          {{ permission.value }}
+                        </label>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+              <input type="hidden" name="id" value="{{ role.id }}">
+              <input type="hidden" name="organization_id" value="{{ organization.id }}">
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  {% endfor %}
+{% endif %}
+</div>

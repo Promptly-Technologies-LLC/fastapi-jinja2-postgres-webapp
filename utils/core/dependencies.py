@@ -1,4 +1,4 @@
-from fastapi import Depends, Form
+from fastapi import Depends, Form, Request
 from pydantic import EmailStr
 from sqlmodel import Session, select
 from sqlalchemy.orm import selectinload
@@ -8,7 +8,7 @@ from utils.core.auth import (
     validate_token, create_access_token, create_refresh_token,
     oauth2_scheme_cookie, verify_password
 )
-from utils.core.db import engine
+from utils.core.db import create_engine, get_connection_url
 from utils.core.models import User, Role, PasswordResetToken, EmailUpdateToken, Account
 from exceptions.http_exceptions import AuthenticationError, CredentialsError, DataIntegrityError
 from exceptions.exceptions import NeedsNewTokens
@@ -21,6 +21,7 @@ def get_session() -> Generator[Session, None, None]:
     Yields:
         Session: A SQLModel session object for database operations.
     """
+    engine = create_engine(get_connection_url())
     with Session(engine) as session:
         yield session
 
@@ -257,7 +258,7 @@ def get_account_from_email_update_token(
             Account.id == account_id,
             EmailUpdateToken.token == token,
             EmailUpdateToken.expires_at > datetime.now(UTC),
-            EmailUpdateToken.used == False,
+            EmailUpdateToken.used == False,  # noqa: E712
             EmailUpdateToken.account_id == Account.id
         )
     ).first()
@@ -291,7 +292,7 @@ def get_account_from_reset_token(
             Account.email == email,
             PasswordResetToken.token == token,
             PasswordResetToken.expires_at > datetime.now(UTC),
-            PasswordResetToken.used == False,
+            PasswordResetToken.used == False,  # noqa: E712
             PasswordResetToken.account_id == Account.id
         )
     ).first()
@@ -321,3 +322,32 @@ def get_user_with_relations(
     ).one()
 
     return eager_user
+
+
+async def get_user_from_request(request: Request) -> Optional[User]:
+    """
+    Helper function to get user from request cookies in exception handlers.
+    Exception handlers can't use Depends(), so we manually extract tokens and get the user.
+    """
+    access_token = request.cookies.get("access_token")
+    refresh_token = request.cookies.get("refresh_token")
+    tokens = (access_token, refresh_token)
+
+    # Get a database session
+    engine = create_engine(get_connection_url())
+    with Session(engine) as session:
+        user, new_access_token, new_refresh_token = get_user_from_tokens(tokens, session)
+
+        # If we got new tokens, we'd normally raise NeedsNewTokens, but in an exception
+        # handler we can't do that easily. For now, just return the user.
+        # The tokens will be refreshed on the next request.
+        if user and new_access_token and new_refresh_token:
+            # Note: We can't easily set cookies here since we're in an exception handler.
+            # The user will need to make another request to get new tokens.
+            pass
+
+        if user:
+            # Eagerly load avatar so it's available after the session closes
+            _ = user.avatar
+
+        return user

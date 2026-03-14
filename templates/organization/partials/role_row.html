@@ -1,0 +1,35 @@
+{# Partial: single role <tr>. Swapped into <tr id="role-row-{{ role.id }}"> via outerHTML. #}
+<tr id="role-row-{{ role.id }}">
+    <td>{{ role.name }}</td>
+    <td>{{ role.users|length }}</td>
+    <td>
+        <ul class="list-unstyled mb-0">
+            {% for permission in role.permissions %}
+            <li><small>{{ permission.name.value }}</small></li>
+            {% endfor %}
+        </ul>
+    </td>
+    {% if ValidPermissions.EDIT_ROLE in user_permissions or ValidPermissions.DELETE_ROLE in user_permissions %}
+    <td>
+        {% if ValidPermissions.EDIT_ROLE in user_permissions and role.name not in ["Owner", "Administrator", "Member"] %}
+        <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editRoleModal{{ role.id }}">
+            Edit Role
+        </button>
+        {% endif %}
+
+        {% if ValidPermissions.DELETE_ROLE in user_permissions and role.name not in ["Owner", "Administrator", "Member"] %}
+        <form method="POST" action="{{ url_for('delete_role') }}" class="d-inline"
+              hx-post="{{ url_for('delete_role') }}"
+              hx-target="#roles-card-content"
+              hx-swap="innerHTML"
+              hx-confirm="Are you sure you want to delete this role?">
+            <input type="hidden" name="id" value="{{ role.id }}">
+            <input type="hidden" name="organization_id" value="{{ organization.id }}">
+            <button type="submit" class="btn btn-sm btn-outline-danger" {% if role.users|length > 0 %}disabled{% endif %}>
+                Delete Role
+            </button>
+        </form>
+        {% endif %}
+    </td>
+    {% endif %}
+</tr>

@@ -11,7 +11,6 @@ def test_create_organization_success(auth_client, session, test_user):
     response = auth_client.post(
         app.url_path_for("create_organization"),
         data={"name": "New Test Organization"},
-        follow_redirects=False
     )
 
     # Check response
@@ -84,7 +83,6 @@ def test_create_organization_duplicate_name(auth_client, session, test_organizat
     response = auth_client.post(
         app.url_path_for("create_organization"),
         data={"name": test_organization.name},
-        follow_redirects=False
     )
     
     # Verify the response is a 400 Bad Request
@@ -107,10 +105,10 @@ def test_create_organization_unauthenticated(unauth_client):
     response = unauth_client.post(
         app.url_path_for("create_organization"),
         data={"name": "Unauthorized Org"},
-        follow_redirects=False
     )
-    
+
     assert response.status_code == 303  # Unauthorized
+    assert response.headers["location"] == app.url_path_for("read_login")
 
 def test_update_organization_success(
         auth_client: TestClient, session: Session, test_organization: Organization, test_user: User
@@ -152,7 +150,6 @@ def test_update_organization_success(
     response = auth_client.post(
         app.url_path_for("update_organization", org_id=test_organization.id),
         data={"id": str(test_organization.id), "name": new_name},
-        follow_redirects=False
     )
 
     assert response.status_code == 303  # Redirect status code
@@ -181,7 +178,6 @@ def test_update_organization_unauthorized(auth_client, session, test_organizatio
             "id": test_organization.id,
             "name": "Unauthorized Update"
         },
-        follow_redirects=False
     )
 
     assert response.status_code == 403
@@ -227,7 +223,6 @@ def test_update_organization_duplicate_name(auth_client, session, test_organizat
             "id": test_organization.id,
             "name": "Existing Org"
         },
-        follow_redirects=False
     )
 
     assert response.status_code == 400
@@ -286,10 +281,10 @@ def test_update_organization_unauthenticated(unauth_client, test_organization):
             "id": test_organization.id,
             "name": "Unauthorized Update"
         },
-        follow_redirects=False
     )
 
     assert response.status_code == 303  # Redirect to login
+    assert response.headers["location"] == app.url_path_for("read_login")
 
 def test_delete_organization_success(auth_client, session, test_organization, test_user):
     """Test successful organization deletion"""
@@ -327,7 +322,6 @@ def test_delete_organization_success(auth_client, session, test_organization, te
 
     response = auth_client.post(
         app.url_path_for("delete_organization", org_id=org_id),
-        follow_redirects=False
     )
 
     assert response.status_code == 303  # Redirect status code
@@ -347,7 +341,6 @@ def test_delete_organization_unauthorized(auth_client_member, session, test_orga
     # Use auth_client_member, who belongs to the org but has no delete permission
     response = auth_client_member.post(
         app.url_path_for("delete_organization", org_id=test_organization.id),
-        follow_redirects=False
     )
 
     assert response.status_code == 403
@@ -361,7 +354,6 @@ def test_delete_organization_not_member(auth_client_non_member, session, test_or
     """Test organization deletion by non-member"""
     response = auth_client_non_member.post(
         app.url_path_for("delete_organization", org_id=test_organization.id),
-        follow_redirects=False
     )
 
     assert response.status_code == 403
@@ -375,10 +367,10 @@ def test_delete_organization_unauthenticated(unauth_client, test_organization):
     """Test organization deletion without authentication"""
     response = unauth_client.post(
         app.url_path_for("delete_organization", org_id=test_organization.id),
-        follow_redirects=False
     )
 
     assert response.status_code == 303  # Redirect to login
+    assert response.headers["location"] == app.url_path_for("read_login")
 
 def test_delete_organization_cascade(auth_client, session, test_organization, test_user):
     """Test that deleting organization cascades to roles"""
@@ -425,10 +417,10 @@ def test_delete_organization_cascade(auth_client, session, test_organization, te
 
     response = auth_client.post(
         app.url_path_for("delete_organization", org_id=org_id),
-        follow_redirects=False
     )
 
     assert response.status_code == 303
+    assert app.url_path_for("read_profile") in response.headers["location"]
 
     # Expire all objects in the session to force a refresh from the database
     session.expire_all()
@@ -446,7 +438,6 @@ def test_read_organization_as_owner(auth_client_owner, test_organization):
     """Test accessing organization page as an owner"""
     response = auth_client_owner.get(
         app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
     )
 
     assert response.status_code == 200
@@ -460,7 +451,6 @@ def test_read_organization_as_admin(auth_client_admin, test_organization):
     """Test accessing organization page as an admin"""
     response = auth_client_admin.get(
         app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
     )
 
     assert response.status_code == 200
@@ -474,7 +464,6 @@ def test_read_organization_as_member(auth_client_member, test_organization):
     """Test accessing organization page as a regular member"""
     response = auth_client_member.get(
         app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
     )
 
     assert response.status_code == 200
@@ -488,7 +477,6 @@ def test_read_organization_as_non_member(auth_client_non_member, test_organizati
     """Test accessing organization page as a non-member"""
     response = auth_client_non_member.get(
         app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
     )
 
     # Non-members should get an error when accessing the organization
@@ -500,7 +488,6 @@ def test_organization_page_displays_members_correctly(auth_client_owner, org_adm
     """Test that members and their roles are displayed correctly"""
     response = auth_client_owner.get(
         app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
     )
 
     assert response.status_code == 200
@@ -553,7 +540,6 @@ def test_empty_organization_displays_no_members_message(auth_client_owner, sessi
 
     response = auth_client_owner.get(
         app.url_path_for("read_organization", org_id=empty_org.id),
-        follow_redirects=False
     )
 
     # This will fail before implementation but should pass after
@@ -572,7 +558,6 @@ def test_invite_user_success(auth_client_owner, session, test_organization, non_
     response = auth_client_owner.post(
         app.url_path_for("invite_member", org_id=test_organization.id),
         data={"email": non_member_user.account.email},
-        follow_redirects=False
     )
 
     # Should redirect back to organization page

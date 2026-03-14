@@ -1,4 +1,4 @@
-
+import pytest
 from sqlmodel import Session, select, inspect
 from sqlalchemy import Engine
 from utils.core.db import (
@@ -12,11 +12,90 @@ from utils.core.db import (
 from utils.core.models import Role, Permission, Organization, RolePermissionLink, ValidPermissions
 from tests.conftest import SetupError
 
-def test_get_connection_url():
+
+# --- Connection URL Tests ---
+
+
+def test_get_connection_url(env_vars):
     """Test that get_connection_url returns a valid URL object"""
     url = get_connection_url()
     assert url.drivername == "postgresql"
     assert url.database is not None
+
+
+def test_get_connection_url_direct_mode(monkeypatch):
+    """Test that direct mode uses standard DB vars."""
+    # Clear any existing vars
+    for var in ["USE_POOL", "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD",
+                "DB_POOL_PORT", "DB_POOL_NAME", "DB_APPUSER", "DB_APPUSER_PASSWORD"]:
+        monkeypatch.delenv(var, raising=False)
+
+    # Set direct mode vars
+    monkeypatch.setenv("DB_HOST", "localhost")
+    monkeypatch.setenv("DB_PORT", "5432")
+    monkeypatch.setenv("DB_NAME", "testdb")
+    monkeypatch.setenv("DB_USER", "testuser")
+    monkeypatch.setenv("DB_PASSWORD", "testpass")
+
+    url = get_connection_url()
+    assert url.host == "localhost"
+    assert url.port == 5432
+    assert url.database == "testdb"
+    assert url.username == "testuser"
+    assert url.query.get("sslmode") == "prefer"
+
+
+def test_get_connection_url_pooled_mode(monkeypatch):
+    """Test that pooled mode uses pool-specific vars."""
+    # Clear any existing vars
+    for var in ["USE_POOL", "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD",
+                "DB_POOL_PORT", "DB_POOL_NAME", "DB_APPUSER", "DB_APPUSER_PASSWORD"]:
+        monkeypatch.delenv(var, raising=False)
+
+    # Set pooled mode vars
+    monkeypatch.setenv("USE_POOL", "1")
+    monkeypatch.setenv("DB_HOST", "pooler.example.com")
+    monkeypatch.setenv("DB_POOL_PORT", "6543")
+    monkeypatch.setenv("DB_POOL_NAME", "pooldb")
+    monkeypatch.setenv("DB_APPUSER", "appuser")
+    monkeypatch.setenv("DB_APPUSER_PASSWORD", "apppass")
+    monkeypatch.setenv("DB_SSLMODE", "require")
+
+    url = get_connection_url()
+    assert url.host == "pooler.example.com"
+    assert url.port == 6543
+    assert url.database == "pooldb"
+    assert url.username == "appuser"
+    assert url.query.get("sslmode") == "require"
+
+
+def test_get_connection_url_missing_direct_vars(monkeypatch):
+    """Test that missing direct mode vars raises ValueError."""
+    # Clear all DB vars
+    for var in ["USE_POOL", "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD",
+                "DB_POOL_PORT", "DB_POOL_NAME", "DB_APPUSER", "DB_APPUSER_PASSWORD"]:
+        monkeypatch.delenv(var, raising=False)
+
+    with pytest.raises(ValueError, match="Missing environment variables"):
+        get_connection_url()
+
+
+def test_get_connection_url_missing_pool_vars(monkeypatch):
+    """Test that missing pooled mode vars raises ValueError."""
+    # Clear all DB vars
+    for var in ["USE_POOL", "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD",
+                "DB_POOL_PORT", "DB_POOL_NAME", "DB_APPUSER", "DB_APPUSER_PASSWORD"]:
+        monkeypatch.delenv(var, raising=False)
+
+    monkeypatch.setenv("USE_POOL", "1")
+    monkeypatch.setenv("DB_HOST", "localhost")
+    # Missing: DB_POOL_PORT, DB_POOL_NAME, DB_APPUSER, DB_APPUSER_PASSWORD
+
+    with pytest.raises(ValueError, match="Missing environment variables.*DB_POOL_PORT"):
+        get_connection_url()
+
+
+# --- Permission and Role Tests ---
 
 
 def test_create_permissions(session: Session):
@@ -140,22 +219,56 @@ def test_set_up_db_creates_tables(engine: Engine, session: Session):
 
     # Use SQLAlchemy inspect to check tables
     inspector = inspect(engine)
-    table_names = inspector.get_table_names()
+    public_table_names = inspector.get_table_names(schema="public")
 
-    # Check for core tables
-    expected_tables = {
+    # Check for public tables
+    expected_public_tables = {
         "user",
         "organization",
         "role",
         "permission",
         "rolepermissionlink",
-        "passwordresettoken"
     }
-    assert expected_tables.issubset(set(table_names))
+    assert expected_public_tables.issubset(set(public_table_names))
+
+    # Check that private tables are NOT in the public schema
+    assert "account" not in public_table_names
+    assert "passwordresettoken" not in public_table_names
+    assert "emailupdatetoken" not in public_table_names
+
+    # Check that private tables ARE in the private schema
+    private_table_names = inspector.get_table_names(schema="private")
+    expected_private_tables = {"account", "passwordresettoken", "emailupdatetoken"}
+    assert expected_private_tables.issubset(set(private_table_names))
 
     # Verify permissions were created
     permissions = session.exec(select(Permission)).all()
     assert len(permissions) == len(ValidPermissions)
+
+
+def test_private_schema_exists_after_setup(engine: Engine):
+    """Test that set_up_db creates the 'private' PostgreSQL schema."""
+    inspector = inspect(engine)
+    schemas = inspector.get_schema_names()
+    assert "private" in schemas
+
+
+def test_private_tables_in_private_schema(engine: Engine):
+    """Account, PasswordResetToken, and EmailUpdateToken must be in the private schema."""
+    inspector = inspect(engine)
+    private_tables = set(inspector.get_table_names(schema="private"))
+    assert {"account", "passwordresettoken", "emailupdatetoken"}.issubset(private_tables)
+
+
+def test_public_tables_in_public_schema(engine: Engine):
+    """Core business-logic tables must be in the public schema."""
+    inspector = inspect(engine)
+    public_tables = set(inspector.get_table_names(schema="public"))
+    assert {"user", "organization", "role", "permission"}.issubset(public_tables)
+    # Private tables must not leak into public
+    assert "account" not in public_tables
+    assert "passwordresettoken" not in public_tables
+    assert "emailupdatetoken" not in public_tables
 
 
 def test_set_up_db_drop_flag(engine: Engine, session: Session):
