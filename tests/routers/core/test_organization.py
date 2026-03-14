@@ -1,4 +1,5 @@
-from utils.core.models import Organization, Role, Permission, ValidPermissions, User
+from utils.core.models import Organization, Role, Permission, User
+from utils.core.enums import ValidPermissions
 from utils.core.db import create_default_roles
 from main import app
 from sqlmodel import select

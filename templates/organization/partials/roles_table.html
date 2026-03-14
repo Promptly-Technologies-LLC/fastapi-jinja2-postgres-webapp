@@ -80,7 +80,7 @@
                 <label class="form-label">Permissions</label>
                 <div class="row">
                   {% set role_permission_names = role.permissions | map(attribute='name') | list %}
-                  {% for permission in ValidPermissions %}
+                  {% for permission in all_permissions %}
                     <div class="col-md-6 mb-2">
                       <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="permissions" value="{{ permission.value }}"

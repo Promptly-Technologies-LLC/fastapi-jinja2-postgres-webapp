@@ -3,7 +3,8 @@ from datetime import datetime, timedelta, UTC
 from unittest.mock import MagicMock
 from sqlmodel import Session, select
 from tests.conftest import SetupError
-from utils.core.models import Role, Permission, ValidPermissions, User, Invitation, Organization, Account
+from utils.core.models import Role, Permission, User, Invitation, Organization, Account
+from utils.core.enums import ValidPermissions
 from main import app
 from utils.core.invitations import generate_invitation_link
 
@@ -15,7 +16,7 @@ def invite_user_permission(session: Session) -> Permission:
     ).first()
     if permission is None:
         # Attempt to create it if missing. Permissions are global.
-        permission = Permission(name=ValidPermissions.INVITE_USER)
+        permission = Permission(name=str(ValidPermissions.INVITE_USER))
         session.add(permission)
         session.commit()
         session.refresh(permission)

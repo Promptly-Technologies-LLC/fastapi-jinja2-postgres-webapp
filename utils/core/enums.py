@@ -1,9 +1,13 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class ValidPermissions(Enum):
+class ValidPermissions(StrEnum):
     """
-    Core permissions - do not modify these:
+    Core permissions used by the template's built-in organization and role
+    management features. Do not remove these.
+
+    To add app-specific permissions, define them in a separate StrEnum in
+    utils/app/enums.py (see AppPermissions for an example).
     """
     DELETE_ORGANIZATION = "Delete Organization"
     EDIT_ORGANIZATION = "Edit Organization"
@@ -13,8 +17,3 @@ class ValidPermissions(Enum):
     CREATE_ROLE = "Create Role"
     DELETE_ROLE = "Delete Role"
     EDIT_ROLE = "Edit Role"
-
-    # Add additional app-specific permissions below this line:
-    READ_ORGANIZATION_RESOURCES = "Read Organization Resources"
-    WRITE_ORGANIZATION_RESOURCES = "Write Organization Resources"
-    DELETE_ORGANIZATION_RESOURCES = "Delete Organization Resources"
