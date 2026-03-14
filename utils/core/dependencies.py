@@ -11,13 +11,13 @@ from utils.core.auth import (
 )
 from utils.core.db import create_engine, get_connection_url
 from utils.core.models import User, Role, PasswordResetToken, EmailUpdateToken, RefreshToken, Account
-
-logger = logging.getLogger(__name__)
 from exceptions.http_exceptions import (
     AlreadyAuthenticatedError, AuthenticationError, CredentialsError,
     DataIntegrityError, PasswordValidationError
 )
 from exceptions.exceptions import NeedsNewTokens
+
+logger = logging.getLogger(__name__)
 
 
 def get_session() -> Generator[Session, None, None]:

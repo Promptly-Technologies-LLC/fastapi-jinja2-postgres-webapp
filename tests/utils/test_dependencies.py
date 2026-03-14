@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 from datetime import datetime, timedelta, UTC
-from utils.core.models import EmailUpdateToken, Account, User, PasswordResetToken, Role, RefreshToken
+from utils.core.models import EmailUpdateToken, Account, User, PasswordResetToken, Role
 from utils.core.dependencies import (
     get_account_from_email_update_token, validate_token_and_get_account,
     get_account_from_credentials, get_account_from_tokens, get_authenticated_account,
