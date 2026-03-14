@@ -11,7 +11,7 @@ import pytest
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 from tests.conftest import htmx_headers
-from utils.htmx import is_htmx_request, toast_response, append_toast
+from utils.core.htmx import is_htmx_request, toast_response, append_toast
 from utils.core.rate_limit import (
     login_ip_limiter,
     login_email_limiter,

@@ -35,6 +35,15 @@ class AuthenticationError(HTTPException):
         )
 
 
+class AlreadyAuthenticatedError(HTTPException):
+    """Raised when an authenticated user tries to access a page meant for unauthenticated users."""
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_303_SEE_OTHER,
+            headers={"Location": "/dashboard/"}
+        )
+
+
 class PasswordValidationError(HTTPException):
     def __init__(self, field: str, message: str):
         super().__init__(
