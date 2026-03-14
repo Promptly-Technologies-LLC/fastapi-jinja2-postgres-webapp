@@ -6,6 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="description" content="Guide to customizing the FastAPI webapp template including development workflow, code style conventions, and project structure.">
 
 <title>Customization – FastAPI Webapp Template</title>
 <style>
@@ -106,6 +107,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <link rel="stylesheet" href="../docs/static/styles.css">
+<meta property="og:title" content="Customization – FastAPI Webapp Template">
+<meta property="og:description" content="Guide to customizing the FastAPI webapp template including development workflow, code style conventions, and project structure.">
+<meta property="og:image" content="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/static/reset_email.png">
+<meta property="og:site_name" content="FastAPI Webapp Template">
+<meta property="og:image:height" content="715">
+<meta property="og:image:width" content="759">
+<meta name="twitter:title" content="Customization – FastAPI Webapp Template">
+<meta name="twitter:description" content="Guide to customizing the FastAPI webapp template including development workflow, code style conventions, and project structure.">
+<meta name="twitter:image" content="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/static/reset_email.png">
+<meta name="twitter:image-height" content="715">
+<meta name="twitter:image-width" content="759">
+<meta name="twitter:card" content="summary_large_image">
 </head>
 
 <body class="nav-fixed quarto-light">
@@ -220,6 +233,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h1 class="title">Customization</h1>
 </div>
 
+<div>
+  <div class="description">
+    Guide to customizing the FastAPI webapp template including development workflow, code style conventions, and project structure.
+  </div>
+</div>
 
 
 <div class="quarto-title-meta">
@@ -663,7 +681,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/Promptly-Technologies-LLC\.github\.io\/fastapi-jinja2-postgres-webapp\/");
+        var filterRegex = new RegExp("https:\/\/promptlytechnologies\.com\/fastapi-jinja2-postgres-webapp\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

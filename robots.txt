@@ -1,1 +1,1 @@
-Sitemap: https://Promptly-Technologies-LLC.github.io/fastapi-jinja2-postgres-webapp/sitemap.xml
+Sitemap: https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/sitemap.xml

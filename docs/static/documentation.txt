@@ -1,6 +1,9 @@
-# FastAPI, Jinja2, PostgreSQL Webapp Template
+---
+title: "FastAPI, Jinja2, PostgreSQL Webapp Template"
+description: "A production-ready web application template combining FastAPI, Jinja2, and PostgreSQL with secure authentication, role-based access control, and easy cloud deployment."
+---
 
-![Screenshot of homepage](docs/static/screenshot.jpg)
+![Screenshot of the FastAPI webapp template homepage](docs/static/screenshot.jpg)
 
 ## Quickstart
 
@@ -216,7 +219,10 @@ Your contributions are welcome! See the [issues page](https://github.com/promptl
 This project is created and maintained by [Promptly Technologies, LLC](https://promptlytechnologies.com/) and licensed under the MIT License. See the LICENSE file for more details.
 
 
-# Architecture
+---
+title: "Architecture"
+description: "Overview of the FastAPI webapp template architecture including data flow, database schema, project structure, and routing."
+---
 
 ## Data flow
 
@@ -353,7 +359,10 @@ def is_htmx_request(request: Request) -> bool:
 
 HTMX automatically adds the `HX-Request: true` header to every request it initiates. Non-HTMX form submissions (standard browser POSTs) do not include this header, so they follow the PRG path unchanged.
 
-# Authentication
+---
+title: "Authentication"
+description: "Guide to the FastAPI webapp template's authentication system including token-based auth, password recovery, and role-based access control."
+---
 
 ## Security features
 
@@ -480,7 +489,10 @@ reset.render('static/reset_flow', format='png', cleanup=True)
 ![Password reset flow](static/reset_flow.png)
 
 
-# Installation
+---
+title: "Installation"
+description: "Step-by-step installation guide for the FastAPI webapp template including Dev Container setup, manual installation, and environment configuration."
+---
 
 ## Install all development dependencies in a VSCode Dev Container
 
@@ -656,7 +668,10 @@ uv run ty check .
 ```
 
 
-# Customization
+---
+title: "Customization"
+description: "Guide to customizing the FastAPI webapp template including development workflow, code style conventions, and project structure."
+---
 
 ## Development workflow
 
@@ -1081,7 +1096,10 @@ Best practices dictate implementing thorough client-side validation via JavaScri
 
 Server-side validation remains essential as a security measure against malicious requests that bypass client-side validation, but it should rarely be encountered during normal user interaction. See `templates/authentication/register.html` for a client-side form validation example involving both JavaScript and HTML regex `pattern` matching.
 
-# Deployment
+---
+title: "Deployment"
+description: "Guide to deploying the FastAPI webapp template to cloud platforms including Railway, Render, and other hosting services."
+---
 
 This application requires two services to be deployed and connected to each other:
 
@@ -1446,7 +1464,10 @@ Consider using a connection pooler when:
 - You're hitting database connection limits
 - You want to reduce connection latency for frequently-accessed queries
 
-# Contributing
+---
+title: "Contributing"
+description: "How to contribute to the FastAPI webapp template project including guidelines for pull requests and development setup."
+---
 
 ## Contributors
 

@@ -6,6 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="description" content="A production-ready web application template combining FastAPI, Jinja2, and PostgreSQL with secure authentication, role-based access control, and easy cloud deployment.">
 
 <title>FastAPI, Jinja2, PostgreSQL Webapp Template – FastAPI Webapp Template</title>
 <style>
@@ -106,6 +107,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <link rel="stylesheet" href="docs/static/styles.css">
+<meta property="og:title" content="FastAPI, Jinja2, PostgreSQL Webapp Template – FastAPI Webapp Template">
+<meta property="og:description" content="A production-ready web application template combining FastAPI, Jinja2, and PostgreSQL with secure authentication, role-based access control, and easy cloud deployment.">
+<meta property="og:image" content="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/static/screenshot.jpg">
+<meta property="og:site_name" content="FastAPI Webapp Template">
+<meta name="twitter:title" content="FastAPI, Jinja2, PostgreSQL Webapp Template – FastAPI Webapp Template">
+<meta name="twitter:description" content="A production-ready web application template combining FastAPI, Jinja2, and PostgreSQL with secure authentication, role-based access control, and easy cloud deployment.">
+<meta name="twitter:image" content="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/static/screenshot.jpg">
+<meta name="twitter:card" content="summary_large_image">
 </head>
 
 <body class="nav-fixed quarto-light">
@@ -206,6 +215,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h1 class="title">FastAPI, Jinja2, PostgreSQL Webapp Template</h1>
 </div>
 
+<div>
+  <div class="description">
+    A production-ready web application template combining FastAPI, Jinja2, and PostgreSQL with secure authentication, role-based access control, and easy cloud deployment.
+  </div>
+</div>
 
 
 <div class="quarto-title-meta">
@@ -223,7 +237,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="docs/static/screenshot.jpg" class="img-fluid figure-img"></p>
-<figcaption>Screenshot of homepage</figcaption>
+<figcaption>Screenshot of the FastAPI webapp template homepage</figcaption>
 </figure>
 </div>
 <section id="quickstart" class="level2">
@@ -421,7 +435,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/Promptly-Technologies-LLC\.github\.io\/fastapi-jinja2-postgres-webapp\/");
+        var filterRegex = new RegExp("https:\/\/promptlytechnologies\.com\/fastapi-jinja2-postgres-webapp\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
