@@ -1,5 +1,6 @@
 ---
 title: "Architecture"
+description: "Overview of the FastAPI webapp template architecture including data flow, database schema, project structure, and routing."
 ---
 
 ## Data flow
