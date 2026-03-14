@@ -231,7 +231,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>This application uses a <strong>hybrid Post-Redirect-Get (PRG) + HTMX</strong> architecture. Every mutating endpoint supports both paths simultaneously:</p>
 <ul>
 <li><strong>Non-HTMX path (PRG):</strong> A standard browser form submission sends a POST request. On success the server issues a <code>303 See Other</code> redirect to a GET endpoint, which re-renders the full page with updated data. On error a full-page error template is returned.</li>
-<li><strong>HTMX path:</strong> When the browser sends the <code>HX-Request: true</code> header (added automatically by <a href="https://htmx.org">htmx.org</a>), the same POST endpoint detects the header via <code>utils/htmx.py:is_htmx_request()</code> and instead returns a <code>200</code> HTML partial that HTMX swaps into the relevant section of the page. On error a toast partial is returned and swapped into <code>#toast-container</code> via out-of-band (OOB) swap.</li>
+<li><strong>HTMX path:</strong> When the browser sends the <code>HX-Request: true</code> header (added automatically by <a href="https://htmx.org">htmx.org</a>), the same POST endpoint detects the header via <code>utils/core/htmx.py:is_htmx_request()</code> and instead returns a <code>200</code> HTML partial that HTMX swaps into the relevant section of the page. On error a toast partial is returned and swapped into <code>#toast-container</code> via out-of-band (OOB) swap.</li>
 </ul>
 <p>The HTMX rollout keeps the existing POST route contract intact — dedicated <code>PUT</code>/<code>PATCH</code>/<code>DELETE</code> routes may be introduced in a future iteration.</p>
 <section id="prg-path" class="level3">
@@ -295,7 +295,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="htmx-request-detection" class="level3">
 <h3 class="anchored" data-anchor-id="htmx-request-detection">HTMX request detection</h3>
-<p>All HTMX-aware endpoints use the <code>is_htmx_request()</code> helper from <code>utils/htmx.py</code>:</p>
+<p>All HTMX-aware endpoints use the <code>is_htmx_request()</code> helper from <code>utils/core/htmx.py</code>:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> is_htmx_request(request: Request) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> request.headers.get(<span class="st">"HX-Request"</span>) <span class="op">==</span> <span class="st">"true"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>HTMX automatically adds the <code>HX-Request: true</code> header to every request it initiates. Non-HTMX form submissions (standard browser POSTs) do not include this header, so they follow the PRG path unchanged.</p>
