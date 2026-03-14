@@ -1,7 +1,8 @@
 # FastAPI, Jinja2, PostgreSQL Webapp Template
 
 
-![Screenshot of homepage](docs/static/screenshot.jpg)
+![Screenshot of the FastAPI webapp template
+homepage](docs/static/screenshot.jpg)
 
 ## Quickstart
 
