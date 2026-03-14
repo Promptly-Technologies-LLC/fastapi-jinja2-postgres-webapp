@@ -10,7 +10,8 @@
       "Explore",
       "Find",
       "Search",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(*)"
     ]
   }
 }
