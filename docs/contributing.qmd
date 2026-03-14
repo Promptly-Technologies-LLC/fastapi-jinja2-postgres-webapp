@@ -1,5 +1,6 @@
 ---
 title: "Contributing"
+description: "How to contribute to the FastAPI webapp template project including guidelines for pull requests and development setup."
 ---
 
 ## Contributors
@@ -33,7 +34,7 @@ To contribute code to the project:
 1. Fork the repository and clone your fork locally
 2. Create a new branch from `main` with a descriptive name
 3. Review the [customization](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/customization.html), [architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/architecture.html), and [authentication](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/authentication.html) pages for guidance on design patterns and code structure and style
-4. Ensure all tests pass, including `mypy` type checking
+4. Ensure all tests pass, including `ty` type checking
 5. Stage, commit, and push your changes to the branch:
    - Use clear, descriptive commit messages
    - Keep commits focused and atomic

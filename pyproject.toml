@@ -1,6 +1,6 @@
 [project]
 name = "fastapi-jinja2-postgres-webapp"
-version = "0.1.1"
+version = "0.1.11"
 description = "A template webapp with a pure-Python FastAPI backend, frontend templating with Jinja2, and a Postgres database to power user auth"
 readme = "README.md"
 package-mode = false
@@ -31,5 +31,24 @@ dev = [
     "notebook<8.0.0,>=7.2.2",
     "pytest<9.0.0,>=8.3.3",
     "sqlalchemy-schemadisplay<3.0,>=2.0",
-    "mypy>=1.18.2",
+    "ty>=0.0.21",
+    "ruff>=0.15.5",
 ]
+
+[tool.ty.rules]
+# SQLModel/SQLAlchemy metaclass attributes (__table__) and constructor
+# patterns are not understood by ty, nor is pytest's @_with_exception
+# decorator on pytest.fail, nor resend library type stubs.
+invalid-argument-type = "warn"
+unresolved-attribute = "warn"
+missing-argument = "warn"
+
+[[tool.ty.overrides]]
+include = ["tests/**"]
+[tool.ty.overrides.rules]
+# pytest.fail uses @_with_exception decorator that ty doesn't understand,
+# SQLModel constructors have metaclass-generated parameters, and
+# Response.body type is overly broad in stubs.
+invalid-argument-type = "ignore"
+unresolved-attribute = "ignore"
+missing-argument = "ignore"

@@ -4,6 +4,10 @@ project:
 
 website:
   title: "FastAPI Webapp Template"
+  site-url: "https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/"
+  description: "A production-ready FastAPI web application template with Jinja2 templates, PostgreSQL database, and built-in authentication."
+  open-graph: true
+  twitter-card: true
   navbar:
     left:
       - href: index.qmd

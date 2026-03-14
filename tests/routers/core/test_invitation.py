@@ -1,12 +1,11 @@
 import pytest
 from datetime import datetime, timedelta, UTC
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from sqlmodel import Session, select
 from tests.conftest import SetupError
 from utils.core.models import Role, Permission, ValidPermissions, User, Invitation, Organization, Account
 from main import app
 from utils.core.invitations import generate_invitation_link
-from exceptions.exceptions import EmailSendFailedError
 
 @pytest.fixture
 def invite_user_permission(session: Session) -> Permission:
@@ -278,7 +277,6 @@ def test_create_invitation_success(auth_client, inviter_user: User, test_organiz
             "role_id": str(member_role_id), # Form data is usually string
             "organization_id": str(test_organization.id) # Form data is usually string
         },
-        follow_redirects=False # Important for checking redirect
     )
 
     assert response.status_code == 303, f"Expected 303 redirect, got {response.status_code}. Response: {response.text}" # See Other redirect
@@ -328,7 +326,6 @@ def test_create_invitation_unauthorized(auth_client_member, test_user: User, tes
             "role_id": str(member_role.id),
             "organization_id": str(test_organization.id)
         },
-        follow_redirects=False
     )
 
     assert response.status_code == 403, f"Expected 403 Forbidden, got {response.status_code}. Response: {response.text}" # Forbidden
@@ -389,7 +386,6 @@ def test_create_invitation_for_existing_member(auth_client, inviter_user: User, 
             "role_id": str(member_role.id),
             "organization_id": str(test_organization.id)
         },
-        follow_redirects=False
     )
 
     # Expecting a 409 Conflict based on the plan
@@ -406,7 +402,6 @@ def test_create_invitation_duplicate_active(auth_client, inviter_user: User, exi
             "role_id": str(existing_invitation.role_id),
             "organization_id": str(existing_invitation.organization_id)
         },
-        follow_redirects=False
     )
 
     assert response.status_code == 409, f"Expected 409 Conflict, got {response.status_code}. Response: {response.text}" # Conflict - ActiveInvitationExistsError
@@ -422,7 +417,6 @@ def test_create_invitation_role_not_found(auth_client, inviter_user: User, test_
             "role_id": str(non_existent_role_id),
             "organization_id": str(test_organization.id)
         },
-        follow_redirects=False
     )
 
     # Depending on implementation, this might be 404 (Role Not Found) or 400 (Invalid Role for Org)
@@ -449,7 +443,6 @@ def test_create_invitation_role_wrong_organization(auth_client, inviter_user: Us
             "role_id": str(other_role.id),  # Role from the wrong org
             "organization_id": str(test_organization.id) # Target the main test org
         },
-        follow_redirects=False
     )
 
     # Plan suggests 400 Bad Request
@@ -474,12 +467,10 @@ def test_create_invitation_unauthenticated(unauth_client, test_organization: Org
             "role_id": str(member_role.id),
             "organization_id": str(test_organization.id)
         },
-        follow_redirects=False # Check for redirect explicitly
     )
 
     assert response.status_code == 303, f"Expected 303 redirect to login, got {response.status_code}" # Redirect to login
-    # Optionally check that the redirect location is the login page
-    # assert "/login" in response.headers.get("location", "")
+    assert response.headers["location"] == app.url_path_for("read_login")
 
 def test_create_invitation_email_send_failure(auth_client, inviter_user: User, test_organization: Organization, session: Session, mock_resend_send: MagicMock):
     """Test that invitation creation fails and rolls back if email sending fails."""
@@ -502,7 +493,6 @@ def test_create_invitation_email_send_failure(auth_client, inviter_user: User, t
             "role_id": str(member_role_id),
             "organization_id": str(test_organization.id)
         },
-        follow_redirects=False
     )
 
     assert response.status_code == 500, f"Expected 500 Internal Server Error, got {response.status_code}. Response: {response.text}"
@@ -524,7 +514,6 @@ def test_organization_page_shows_active_invitations(auth_client_owner, test_orga
     assert test_organization.id is not None
     response = auth_client_owner.get(
         app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
     )
 
     assert response.status_code == 200
@@ -543,7 +532,6 @@ def test_organization_page_invite_form_visibility(auth_client_owner, auth_client
     # Owner should see invitation form (has INVITE_USER permission via Owner role -> permission fixture)
     owner_response = auth_client_owner.get(
         app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
     )
     assert owner_response.status_code == 200
     assert '<form' in owner_response.text
@@ -554,7 +542,6 @@ def test_organization_page_invite_form_visibility(auth_client_owner, auth_client
     # Admin should also see invitation form (has INVITE_USER permission via Admin role -> permission fixture)
     admin_response = auth_client_admin.get(
         app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
     )
     assert admin_response.status_code == 200
     assert '<form' in admin_response.text
@@ -563,7 +550,6 @@ def test_organization_page_invite_form_visibility(auth_client_owner, auth_client
     # Regular member should not see invitation form (lacks INVITE_USER permission)
     member_response = auth_client_member.get(
         app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
     )
     assert member_response.status_code == 200
 

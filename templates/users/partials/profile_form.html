@@ -3,8 +3,7 @@
       hx-post="{{ url_for('update_profile') }}"
       hx-target="#profile-display"
       hx-swap="innerHTML"
-      hx-encoding="multipart/form-data"
-      hx-on::after-request="if(event.detail.successful) { document.getElementById('edit-profile').style.display='none'; document.getElementById('basic-info').style.display='block'; }">
+      hx-encoding="multipart/form-data">
     <div class="mb-3">
         <label for="name" class="form-label">Name</label>
         <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}">

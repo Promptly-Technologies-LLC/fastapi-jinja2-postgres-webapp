@@ -9,7 +9,7 @@ _environment
 _docs/
 *.ipynb
 .pytest_cache/
-.mypy_cache/
+.ty/
 node_modules
 package-lock.json
 package.json

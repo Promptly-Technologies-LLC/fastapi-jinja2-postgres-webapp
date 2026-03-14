@@ -29,7 +29,7 @@ def env_vars(monkeypatch):
         m.setenv("DB_PORT", os.getenv("DB_PORT", "5432"))
         m.setenv("DB_USER", os.getenv("DB_USER", "postgres"))
         m.setenv("DB_PASSWORD", os.getenv("DB_PASSWORD", "postgres"))
-        m.setenv("SECRET_KEY", "testsecretkey")
+        m.setenv("SECRET_KEY", "testsecretkey-that-is-at-least-32-bytes-long")
         m.setenv("HOST_NAME", "Test Organization")
         m.setenv("DB_NAME", "webapp-test-db")
         m.setenv("RESEND_API_KEY", "test")
@@ -102,7 +102,7 @@ def unauth_client(session: Session) -> Generator[TestClient, None, None]:
     """
     Provides a TestClient instance without authentication.
     """
-    client = TestClient(app)
+    client = TestClient(app, follow_redirects=False)
     yield client
 
 
@@ -111,7 +111,7 @@ def auth_client(session: Session, test_account: Account, test_user: User) -> Gen
     """
     Provides a TestClient instance with valid authentication tokens.
     """
-    client = TestClient(app)
+    client = TestClient(app, follow_redirects=False)
 
     # Create and set valid tokens
     access_token = create_access_token({"sub": test_account.email})
@@ -275,8 +275,8 @@ def non_member_user(session: Session) -> User:
 @pytest.fixture
 def auth_client_owner(session: Session, org_owner: User) -> Generator[TestClient, None, None]:
     """Provides a TestClient authenticated as the organization owner"""
-    client = TestClient(app)
-    
+    client = TestClient(app, follow_redirects=False)
+
     # Initialize tokens
     access_token = ""
     refresh_token = ""
@@ -295,8 +295,8 @@ def auth_client_owner(session: Session, org_owner: User) -> Generator[TestClient
 @pytest.fixture
 def auth_client_admin(session: Session, org_admin_user: User) -> Generator[TestClient, None, None]:
     """Provides a TestClient authenticated as an organization administrator"""
-    client = TestClient(app)
-    
+    client = TestClient(app, follow_redirects=False)
+
     # Initialize tokens
     access_token = ""
     refresh_token = ""
@@ -315,8 +315,8 @@ def auth_client_admin(session: Session, org_admin_user: User) -> Generator[TestC
 @pytest.fixture
 def auth_client_member(session: Session, org_member_user: User) -> Generator[TestClient, None, None]:
     """Provides a TestClient authenticated as the organization member"""
-    client = TestClient(app)
-    
+    client = TestClient(app, follow_redirects=False)
+
     # Initialize tokens
     access_token = ""
     refresh_token = ""
@@ -335,8 +335,8 @@ def auth_client_member(session: Session, org_member_user: User) -> Generator[Tes
 @pytest.fixture
 def auth_client_non_member(session: Session, non_member_user: User) -> Generator[TestClient, None, None]:
     """Provides a TestClient authenticated as a non-member"""
-    client = TestClient(app)
-    
+    client = TestClient(app, follow_redirects=False)
+
     # Initialize tokens
     access_token = ""
     refresh_token = ""
@@ -469,8 +469,8 @@ def existing_invitee_user(session: Session, existing_invitee_account: Account) -
 @pytest.fixture
 def auth_client_invitee(session: Session, existing_invitee_user: User) -> Generator[TestClient, None, None]:
     """Provides a TestClient authenticated as the existing_invitee_user."""
-    client = TestClient(app)
-    
+    client = TestClient(app, follow_redirects=False)
+
     # Initialize tokens
     access_token = ""
     refresh_token = ""
@@ -518,7 +518,6 @@ def mock_resend_send(mock_email_response):
     """
     # Ensure patch and resend are imported
     from unittest.mock import patch
-    import resend
     with patch('resend.Emails.send', return_value=mock_email_response) as mock:
         yield mock
 

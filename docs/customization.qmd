@@ -1,5 +1,6 @@
 ---
 title: "Customization"
+description: "Guide to customizing the FastAPI webapp template including development workflow, code style conventions, and project structure."
 ---
 
 ## Development workflow
@@ -53,15 +54,15 @@ To run the tests, use these commands:
 - Run particular test files by name: `uv run pytest <test_file_name>`
 - Run particular tests by name: `uv run pytest -k <test_name>`
 
-### Type checking with mypy
+### Type checking with ty
 
-The project uses type annotations and mypy for static type checking. To run mypy, use this command from the root directory:
+The project uses type annotations and [ty](https://docs.astral.sh/ty/) for static type checking. To run ty, use this command from the root directory:
 
 ```bash
-mypy .
+uv run ty check .
 ```
 
-We find that mypy is an enormous time-saver, catching many errors early and greatly reducing time spent debugging unit tests. However, note that mypy requires you type annotate every variable, function, and method in your code base, so taking advantage of it requires a lifestyle change!
+We find that static type checking is an enormous time-saver, catching many errors early and greatly reducing time spent debugging unit tests. However, note that it requires you type annotate every variable, function, and method in your code base, so taking advantage of it requires a lifestyle change!
 
 ### Developing with LLMs
 

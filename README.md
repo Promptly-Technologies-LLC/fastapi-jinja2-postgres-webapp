@@ -1,7 +1,8 @@
 # FastAPI, Jinja2, PostgreSQL Webapp Template
 
 
-![Screenshot of homepage](docs/static/screenshot.jpg)
+![Screenshot of the FastAPI webapp template
+homepage](docs/static/screenshot.jpg)
 
 ## Quickstart
 
@@ -61,8 +62,7 @@ to deploy to any major cloud hosting platform.
 - [Github Actions](https://docs.github.com/en/actions): CI/CD pipeline
 - [Quarto](https://quarto.org/docs/): simple documentation website
   renderer
-- [MyPy](https://mypy.readthedocs.io/en/stable/): static type checker
-  for Python
+- [ty](https://docs.astral.sh/ty/): static type checker for Python
 - [Bootstrap](https://getbootstrap.com/): HTML/CSS styler
 - [Resend](https://resend.com/): zero- or low-cost email service used
   for password recovery
@@ -173,10 +173,10 @@ uv run python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 Navigate to http://localhost:8000/
 
-### Lint types with mypy
+### Type check with ty
 
 ``` bash
-uv run mypy .
+uv run ty check .
 ```
 
 ## Developing with LLMs

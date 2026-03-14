@@ -24,6 +24,7 @@ logger.addHandler(logging.StreamHandler())
 
 
 templates = Jinja2Templates(directory="templates")
+COOKIE_SECURE = os.getenv("BASE_URL", "http://localhost:8000").startswith("https")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 30
@@ -201,14 +202,14 @@ def send_reset_email(email: str, session: Session) -> None:
             html_content: str = template.render({"reset_url": reset_url})
 
             resend.api_key = os.getenv("RESEND_API_KEY")
-            params: resend.Emails.SendParams = {
+            params = {
                 "from": os.getenv("EMAIL_FROM", ""),
                 "to": [email],
                 "subject": "Password Reset Request",
                 "html": html_content,
             }
 
-            sent_email: resend.Email = resend.Emails.send(params)
+            sent_email = resend.Emails.send(params)  # ty: ignore[invalid-argument-type]
             logger.debug(f"Password reset email sent: {sent_email.get('id')}")
 
             session.commit()
@@ -276,14 +277,14 @@ def send_email_update_confirmation(
         })
 
         resend.api_key = os.getenv("RESEND_API_KEY")
-        params: resend.Emails.SendParams = {
+        params = {
             "from": os.getenv("EMAIL_FROM", ""),
             "to": [current_email],
             "subject": "Confirm Email Update",
             "html": html_content,
         }
 
-        sent_email: resend.Email = resend.Emails.send(params)
+        sent_email = resend.Emails.send(params)  # ty: ignore[invalid-argument-type]
         logger.debug(f"Email update confirmation sent: {sent_email.get('id')}")
 
         session.commit()

@@ -15,7 +15,7 @@ from exceptions.http_exceptions import (
     UserNotFoundError, UserAlreadyMemberError, DataIntegrityError
 )
 from pydantic import EmailStr
-from utils.htmx import is_htmx_request
+from utils.htmx import is_htmx_request, set_flash_cookie
 
 logger = getLogger("uvicorn.error")
 
@@ -189,8 +189,11 @@ def update_organization(
     if is_htmx_request(request):
         response = Response(status_code=200)
         response.headers["HX-Redirect"] = str(router.url_path_for("read_organization", org_id=org_id))
+        set_flash_cookie(response, "Organization updated successfully.")
         return response
-    return RedirectResponse(url=router.url_path_for("read_organization", org_id=org_id), status_code=303)
+    response = RedirectResponse(url=router.url_path_for("read_organization", org_id=org_id), status_code=303)
+    set_flash_cookie(response, "Organization updated successfully.")
+    return response
 
 
 @router.post("/delete/{org_id}", response_class=RedirectResponse)
@@ -217,8 +220,11 @@ def delete_organization(
     if is_htmx_request(request):
         response = Response(status_code=200)
         response.headers["HX-Redirect"] = "/user/profile"
+        set_flash_cookie(response, "Organization deleted successfully.")
         return response
-    return RedirectResponse(url="/user/profile", status_code=303)
+    response = RedirectResponse(url="/user/profile", status_code=303)
+    set_flash_cookie(response, "Organization deleted successfully.")
+    return response
 
 
 @router.post("/invite/{org_id}", response_class=RedirectResponse)
@@ -285,7 +291,7 @@ def invite_member(
     try:
         member_role.users.append(invited_user)
         session.commit()
-    except Exception as e:
+    except Exception:
         session.rollback()
         raise
 

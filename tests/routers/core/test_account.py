@@ -55,11 +55,11 @@ def test_register_endpoint(unauth_client: TestClient, session: Session):
             "password": "NewPass123!@#",
             "confirm_password": "NewPass123!@#"
         },
-        follow_redirects=False
     )
-    
+
     # Just check the response status code
     assert response.status_code == 303
+    assert response.headers["location"] == str(app.url_path_for("read_dashboard"))
     
     # Verify the account was created
     account = session.exec(select(Account).where(Account.email == "new@example.com")).first()
@@ -79,9 +79,9 @@ def test_login_endpoint(unauth_client: TestClient, test_account: Account):
             "email": test_account.email,
             "password": "Test123!@#"
         },
-        follow_redirects=False
     )
     assert response.status_code == 303
+    assert response.headers["location"] == str(app.url_path_for("read_dashboard"))
 
     # Check if cookies are set
     cookies = response.cookies
@@ -99,9 +99,9 @@ def test_refresh_token_endpoint(auth_client: TestClient, test_account: Account):
 
     response = auth_client.post(
         app.url_path_for("refresh_token"),
-        follow_redirects=False
     )
     assert response.status_code == 303
+    assert response.headers["location"] == str(app.url_path_for("read_dashboard"))
 
     # Check for new tokens in headers
     cookie_headers = response.headers.get_list("set-cookie")
@@ -125,9 +125,9 @@ def test_password_reset_flow(unauth_client: TestClient, session: Session, test_a
     response = unauth_client.post(
         app.url_path_for("forgot_password"),
         data={"email": test_account.email},
-        follow_redirects=False
     )
     assert response.status_code == 303
+    assert response.headers["location"] == "/forgot_password?show_form=false"
 
     # Verify the email was "sent" with correct parameters
     mock_resend_send.assert_called_once()
@@ -167,9 +167,9 @@ def test_password_reset_flow(unauth_client: TestClient, session: Session, test_a
 def test_logout_endpoint(auth_client: TestClient):
     response = auth_client.get(
         app.url_path_for("logout"),
-        follow_redirects=False
     )
     assert response.status_code == 303
+    assert response.headers["location"] == "/"
 
     # Check for cookie deletion in headers
     cookie_headers = response.headers.get_list("set-cookie")
@@ -180,6 +180,77 @@ def test_logout_endpoint(auth_client: TestClient):
 
 
 # --- Error Case Tests ---
+
+
+def test_register_page_shows_password_requirements(unauth_client: TestClient):
+    """Issue #156: Register page must display password requirements visibly."""
+    response = unauth_client.get(app.url_path_for("read_register"))
+    assert response.status_code == 200
+    html = response.text
+    # Requirements should be visible as text (not just in hidden pattern/title attributes)
+    assert "8" in html, "Page should mention minimum 8 characters"
+    assert "uppercase" in html.lower(), "Page should mention uppercase requirement"
+    assert "lowercase" in html.lower(), "Page should mention lowercase requirement"
+    assert "number" in html.lower() or "digit" in html.lower(), "Page should mention digit requirement"
+    assert "special" in html.lower(), "Page should mention special character requirement"
+
+
+def test_register_page_confirm_password_has_autocomplete(unauth_client: TestClient):
+    """Issue #156: Both password fields must have autocomplete='new-password' for Chrome autofill."""
+    response = unauth_client.get(app.url_path_for("read_register"))
+    assert response.status_code == 200
+    html = response.text
+    # The confirm_password field should have autocomplete="new-password"
+    assert 'id="confirm_password"' in html
+    # Find the confirm_password input and check it has autocomplete="new-password"
+    import re
+    confirm_input = re.search(r'<input[^>]*id="confirm_password"[^>]*>', html)
+    assert confirm_input is not None
+    assert 'autocomplete="new-password"' in confirm_input.group(0), \
+        "confirm_password field must have autocomplete='new-password' for Chrome autofill"
+
+
+def test_register_weak_password_error_restates_requirements(unauth_client: TestClient, session: Session):
+    """Issue #156: Error toast for weak password must restate the security policy requirements."""
+    response = unauth_client.post(
+        app.url_path_for("register"),
+        data={
+            "name": "Test User",
+            "email": "weak@example.com",
+            "password": "weak",
+            "confirm_password": "weak"
+        },
+    )
+    assert response.status_code == 422
+    text = response.text
+    # The error message must include the actual requirements, not just a generic message
+    assert "8" in text, "Error should mention minimum 8 characters"
+    assert "uppercase" in text.lower() or "upper" in text.lower(), \
+        "Error should mention uppercase requirement"
+    assert "lowercase" in text.lower() or "lower" in text.lower(), \
+        "Error should mention lowercase requirement"
+
+
+def test_register_weak_password_htmx_error_restates_requirements(unauth_client: TestClient, session: Session):
+    """Issue #156: HTMX error toast for weak password must restate the security policy requirements."""
+    response = unauth_client.post(
+        app.url_path_for("register"),
+        data={
+            "name": "Test User",
+            "email": "weak@example.com",
+            "password": "weak",
+            "confirm_password": "weak"
+        },
+        headers={"HX-Request": "true"},
+    )
+    assert response.status_code == 422
+    text = response.text
+    # The toast message must include the actual requirements
+    assert "8" in text, "Toast should mention minimum 8 characters"
+    assert "uppercase" in text.lower() or "upper" in text.lower(), \
+        "Toast should mention uppercase requirement"
+    assert "lowercase" in text.lower() or "lower" in text.lower(), \
+        "Toast should mention lowercase requirement"
 
 
 def test_register_with_existing_email(unauth_client: TestClient, test_account: Account):
@@ -227,9 +298,9 @@ def test_password_reset_email_url(unauth_client: TestClient, session: Session, t
     response = unauth_client.post(
         app.url_path_for("forgot_password"),
         data={"email": test_account.email},
-        follow_redirects=False
     )
     assert response.status_code == 303
+    assert response.headers["location"] == "/forgot_password?show_form=false"
 
     # Get the reset token from the database
     reset_token = session.exec(select(PasswordResetToken)
@@ -269,16 +340,16 @@ def test_forgot_password_does_not_send_second_email_while_token_is_active(
     first_response = unauth_client.post(
         app.url_path_for("forgot_password"),
         data={"email": test_account.email},
-        follow_redirects=False,
     )
     assert first_response.status_code == 303
+    assert first_response.headers["location"] == "/forgot_password?show_form=false"
 
     second_response = unauth_client.post(
         app.url_path_for("forgot_password"),
         data={"email": test_account.email},
-        follow_redirects=False,
     )
     assert second_response.status_code == 303
+    assert second_response.headers["location"] == "/forgot_password?show_form=false"
 
     tokens = session.exec(
         select(PasswordResetToken).where(PasswordResetToken.account_id == test_account.id)
@@ -294,12 +365,13 @@ def test_request_email_update_success(auth_client: TestClient, test_account: Acc
     response = auth_client.post(
         app.url_path_for("request_email_update"),
         data={"email": test_account.email, "new_email": new_email},
-        follow_redirects=False
     )
-    
+
     assert response.status_code == 303
-    assert f"{app.url_path_for('read_profile')}?email_update_requested=true" in response.headers["location"]
-    
+    assert response.headers["location"] == str(app.url_path_for("read_profile"))
+    # Flash cookie should be set
+    assert "flash_message" in response.headers.get("set-cookie", "")
+
     # Verify email was "sent"
     mock_resend_send.assert_called_once()
     call_args = mock_resend_send.call_args[0][0]
@@ -316,7 +388,6 @@ def test_request_email_update_same_email_returns_error_page(auth_client: TestCli
     response = auth_client.post(
         app.url_path_for("request_email_update"),
         data={"email": test_account.email, "new_email": test_account.email},
-        follow_redirects=False,
     )
 
     assert response.status_code == 401
@@ -349,10 +420,10 @@ def test_request_email_update_unauthenticated(unauth_client: TestClient):
     response = unauth_client.post(
         app.url_path_for("request_email_update"),
         data={"email": "test@example.com", "new_email": "new@example.com"},
-        follow_redirects=False
     )
-    
+
     assert response.status_code == 303  # Redirect to login
+    assert response.headers["location"] == str(app.url_path_for("read_login"))
 
 
 def test_confirm_email_update_success(unauth_client: TestClient, session: Session, test_account: Account):
@@ -371,12 +442,13 @@ def test_confirm_email_update_success(unauth_client: TestClient, session: Sessio
             "token": update_token.token,
             "new_email": new_email
         },
-        follow_redirects=False
     )
     
     assert response.status_code == 303
-    assert f"{app.url_path_for('read_profile')}?email_updated=true" in response.headers["location"]
-    
+    assert response.headers["location"] == str(app.url_path_for("read_profile"))
+    # Flash cookie should be set
+    assert "flash_message" in response.headers.get("set-cookie", "")
+
     # Verify email was updated
     session.refresh(test_account)
     assert test_account.email == new_email
@@ -486,9 +558,9 @@ def test_login_success_resets_email_limiter(unauth_client: TestClient, test_acco
     response = unauth_client.post(
         app.url_path_for("login"),
         data={"email": test_account.email, "password": "Test123!@#"},
-        follow_redirects=False,
     )
     assert response.status_code == 303
+    assert response.headers["location"] == str(app.url_path_for("read_dashboard"))
 
     # Verify the limiter was reset — full allowance available
     assert login_email_limiter.remaining(f"email:{test_account.email.lower().strip()}") == login_email_limiter.max_attempts
@@ -505,7 +577,6 @@ def test_register_ip_rate_limit(unauth_client: TestClient, session: Session):
                 "password": "Test123!@#",
                 "confirm_password": "Test123!@#",
             },
-            follow_redirects=False,
         )
 
     response = unauth_client.post(
@@ -526,13 +597,11 @@ def test_forgot_password_ip_rate_limit(unauth_client: TestClient):
         unauth_client.post(
             app.url_path_for("forgot_password"),
             data={"email": f"user{i}@example.com"},
-            follow_redirects=False,
         )
 
     response = unauth_client.post(
         app.url_path_for("forgot_password"),
         data={"email": "extra@example.com"},
-        follow_redirects=False,
     )
     assert response.status_code == 429
 
@@ -543,7 +612,6 @@ def test_forgot_password_email_rate_limit(unauth_client: TestClient, test_accoun
         unauth_client.post(
             app.url_path_for("forgot_password"),
             data={"email": test_account.email},
-            follow_redirects=False,
         )
 
     response = unauth_client.post(

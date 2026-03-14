@@ -4,9 +4,24 @@
 <div class="container my-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
+            {% if errors %}
+            <h1 class="text-center">Invalid Input</h1>
+            <div class="alert alert-danger">
+                <h4 class="alert-heading">Please correct the following errors:</h4>
+                <ul>
+                {% for field, message in errors.items() %}
+                    <li><strong>{{ field|title }}:</strong> {{ message }}</li>
+                {% endfor %}
+                </ul>
+            </div>
+            {% else %}
             <h1 class="text-center">Error {{ status_code }}</h1>
             <p class="text-center">{{ detail }}</p>
-            <p class="text-center"><a href="{{ url_for('read_home') }}">Return to Home</a></p>
+            {% endif %}
+            <p class="text-center">
+                <a href="javascript:history.back()" class="btn btn-secondary">Go Back</a>
+                <a href="{{ url_for('read_home') }}" class="btn btn-primary">Return to Home</a>
+            </p>
         </div>
     </div>
 </div>

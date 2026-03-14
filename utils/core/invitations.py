@@ -75,14 +75,14 @@ def send_invitation_email(invitation: Invitation, session: Session) -> None:
             }
         )
 
-        params: resend.Emails.SendParams = {
+        params = {
             "from": os.getenv("EMAIL_FROM", ""),
             "to": [invitation.invitee_email],
             "subject": f"You're invited to join {org_name}",
             "html": html_content,
         }
 
-        sent_email: resend.Email = resend.Emails.send(params)
+        sent_email = resend.Emails.send(params)  # ty: ignore[invalid-argument-type]
         logger.info(
             f"Organization invitation email sent to {invitation.invitee_email}: {sent_email.get('id')}"
         )

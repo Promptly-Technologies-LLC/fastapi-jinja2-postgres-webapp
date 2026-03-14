@@ -24,7 +24,7 @@
   },
   "initializeCommand": "bash \"${localWorkspaceFolder}/.devcontainer/ensure-env.sh\"",
   "postStartCommand": "bash .devcontainer/post-start.sh",
-  "postCreateCommand": "bash .devcontainer/init-env.sh && { curl -LsSf https://astral.sh/uv/install.sh | sh && ~/.local/bin/uv sync; } >> /tmp/devcontainer-postcreate.log 2>&1",
+  "postCreateCommand": "bash .devcontainer/init-env.sh && { curl -LsSf https://astral.sh/uv/install.sh | sh && ~/.local/bin/uv sync && curl -sSLO https://github.com/hetznercloud/cli/releases/latest/download/hcloud-linux-amd64.tar.gz && sudo tar -C /usr/local/bin --no-same-owner -xzf hcloud-linux-amd64.tar.gz hcloud && rm hcloud-linux-amd64.tar.gz; } >> /tmp/devcontainer-postcreate.log 2>&1",
   "customizations": {
     "vscode": {
       "extensions": [

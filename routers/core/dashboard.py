@@ -17,6 +17,7 @@ async def read_dashboard(
     user: Optional[User] = Depends(get_user_with_relations)
 ):
     return templates.TemplateResponse(
+        request,
         "dashboard/index.html",
-        {"request": request, "user": user}
+        {"user": user}
     )

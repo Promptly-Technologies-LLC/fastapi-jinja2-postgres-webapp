@@ -40,8 +40,7 @@ def test_create_role_success(auth_client, admin_user, test_organization, session
             "name": "Test Role",
             "organization_id": test_organization.id,
             "permissions": [ValidPermissions.EDIT_ROLE.value]
-        },
-        follow_redirects=False
+        }
     )
 
     assert response.status_code == 303
@@ -69,8 +68,7 @@ def test_create_role_unauthorized(auth_client, test_user, test_organization):
             "name": "Test Role",
             "organization_id": test_organization.id,
             "permissions": [ValidPermissions.EDIT_ROLE.value]
-        },
-        follow_redirects=False
+        }
     )
 
     assert response.status_code == 403
@@ -93,8 +91,7 @@ def test_create_duplicate_role(auth_client, admin_user, test_organization, sessi
             "name": "Existing Role",
             "organization_id": test_organization.id,
             "permissions": [ValidPermissions.EDIT_ROLE.value]
-        },
-        follow_redirects=False
+        }
     )
 
     assert response.status_code == 400
@@ -108,11 +105,11 @@ def test_create_role_unauthenticated(unauth_client, test_organization):
             "name": "Test Role",
             "organization_id": test_organization.id,
             "permissions": [ValidPermissions.EDIT_ROLE.value]
-        },
-        follow_redirects=False
+        }
     )
 
     assert response.status_code == 303
+    assert response.headers["location"] == app.url_path_for("read_login")
 
 
 @pytest.fixture
@@ -176,8 +173,7 @@ def test_update_role_success(auth_client, editor_user, test_organization, sessio
             "name": "New Role Name",
             "organization_id": test_organization.id,
             "permissions": [ValidPermissions.EDIT_ROLE.value]  # remove CREATE_ROLE, add EDIT_ROLE
-        },
-        follow_redirects=False
+        }
     )
 
     assert response.status_code == 303
@@ -320,10 +316,10 @@ def test_update_role_unauthenticated(unauth_client, test_organization, session: 
             "name": "Should Not Succeed",
             "organization_id": test_organization.id,
             "permissions": [ValidPermissions.EDIT_ROLE.value]
-        },
-        follow_redirects=False
+        }
     )
     assert response.status_code == 303
+    assert response.headers["location"] == app.url_path_for("read_login")
 
 
 @pytest.fixture
@@ -369,12 +365,12 @@ def test_delete_role_success(auth_client, delete_role_user, test_organization, s
         data={
             "id": role_id,
             "organization_id": test_organization.id
-        },
-        follow_redirects=False
+        }
     )
 
     assert response.status_code == 303
-    
+    assert app.url_path_for("read_organization", org_id=test_organization.id) in response.headers["location"]
+
     # Expire all objects in the session to force a refresh from the database
     session.expire_all()
 
@@ -400,8 +396,7 @@ def test_delete_role_unauthorized(auth_client, test_user, test_organization, ses
         data={
             "id": role.id,
             "organization_id": test_organization.id
-        },
-        follow_redirects=False
+        }
     )
 
     assert response.status_code == 403
@@ -414,8 +409,7 @@ def test_delete_nonexistent_role(auth_client, delete_role_user, test_organizatio
         data={
             "id": 99999,  # Non-existent role ID
             "organization_id": test_organization.id
-        },
-        follow_redirects=False
+        }
     )
 
     assert response.status_code == 404
@@ -440,8 +434,7 @@ def test_delete_role_with_users(auth_client, delete_role_user, test_organization
         data={
             "id": role_with_users.id,
             "organization_id": test_organization.id
-        },
-        follow_redirects=False
+        }
     )
 
     assert response.status_code == 400
@@ -462,11 +455,11 @@ def test_delete_role_unauthenticated(unauth_client, test_organization, session: 
         data={
             "id": role.id,
             "organization_id": test_organization.id
-        },
-        follow_redirects=False
+        }
     )
 
     assert response.status_code == 303  # Redirects to login page
+    assert response.headers["location"] == app.url_path_for("read_login")
 
 
 # --- Organization Page Role Tests ---
@@ -475,26 +468,23 @@ def test_organization_page_role_creation_access(auth_client_owner, auth_client_a
     """Test that role creation UI elements are only shown to users with CREATE_ROLE permission"""
     # Owner should see role creation
     owner_response = auth_client_owner.get(
-        app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
+        app.url_path_for("read_organization", org_id=test_organization.id)
     )
     assert owner_response.status_code == 200
     # Check for the button's modal trigger specifically
     assert 'data-bs-target="#createRoleModal"' in owner_response.text
-    
+
     # Admin should see role creation
     admin_response = auth_client_admin.get(
-        app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
+        app.url_path_for("read_organization", org_id=test_organization.id)
     )
     assert admin_response.status_code == 200
     # Check for the button's modal trigger specifically
     assert 'data-bs-target="#createRoleModal"' in admin_response.text
-    
+
     # Member should not see role creation
     member_response = auth_client_member.get(
-        app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
+        app.url_path_for("read_organization", org_id=test_organization.id)
     )
     assert member_response.status_code == 200
     # Check that the button's modal trigger is NOT present
@@ -514,24 +504,21 @@ def test_organization_page_role_edit_access(auth_client_owner, auth_client_admin
 
     # Owner should see the edit button for the custom role
     owner_response = auth_client_owner.get(
-        app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
+        app.url_path_for("read_organization", org_id=test_organization.id)
     )
     assert owner_response.status_code == 200
     assert re.search(edit_button_pattern, owner_response.text) is not None, "Owner should see edit button for custom role"
-    
+
     # Admin should see the edit button for the custom role
     admin_response = auth_client_admin.get(
-        app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
+        app.url_path_for("read_organization", org_id=test_organization.id)
     )
     assert admin_response.status_code == 200
     assert re.search(edit_button_pattern, admin_response.text) is not None, "Admin should see edit button for custom role"
 
     # Member should not see *any* edit role button
     member_response = auth_client_member.get(
-        app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
+        app.url_path_for("read_organization", org_id=test_organization.id)
     )
     assert member_response.status_code == 200
     # Use a general pattern to ensure no edit buttons are present for the member
@@ -551,8 +538,7 @@ def test_organization_page_role_delete_access(auth_client_owner, auth_client_adm
 
     # Owner should see the delete role form action because a custom role exists and they have permission
     owner_response = auth_client_owner.get(
-        app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
+        app.url_path_for("read_organization", org_id=test_organization.id)
     )
     assert owner_response.status_code == 200
     delete_form_pattern = (
@@ -566,16 +552,14 @@ def test_organization_page_role_delete_access(auth_client_owner, auth_client_adm
 
     # Admin should see the delete role form action
     admin_response = auth_client_admin.get(
-        app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
+        app.url_path_for("read_organization", org_id=test_organization.id)
     )
     assert admin_response.status_code == 200
     assert re.search(delete_form_pattern, admin_response.text, re.DOTALL) is not None
 
     # Member should *not* see the delete role form action
     member_response = auth_client_member.get(
-        app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
+        app.url_path_for("read_organization", org_id=test_organization.id)
     )
     assert member_response.status_code == 200
     assert re.search(delete_form_pattern, member_response.text, re.DOTALL) is None
@@ -609,8 +593,7 @@ def test_organization_page_always_shows_default_roles(auth_client_member, test_o
     assert len(custom_roles) == 0, "Test setup failed: Custom roles exist unexpectedly."
 
     response = auth_client_member.get(
-        app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
+        app.url_path_for("read_organization", org_id=test_organization.id)
     )
     assert response.status_code == 200
 
@@ -627,8 +610,7 @@ def test_organization_page_no_edit_for_default_roles(auth_client_owner, test_org
     (Owner, Administrator, Member), even for the owner.
     """
     response = auth_client_owner.get(
-        app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
+        app.url_path_for("read_organization", org_id=test_organization.id)
     )
     assert response.status_code == 200
 
@@ -657,8 +639,7 @@ def test_organization_page_no_delete_for_default_roles(auth_client_owner, test_o
     This re-verifies and centralizes checks from test_organization_page_role_delete_access.
     """
     response = auth_client_owner.get(
-        app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
+        app.url_path_for("read_organization", org_id=test_organization.id)
     )
     assert response.status_code == 200
 
@@ -701,8 +682,7 @@ def test_update_default_role_api_forbidden(auth_client_owner, test_organization,
             "name": f"Attempt to Change {default_role_name} Role",
             "organization_id": test_organization.id,
             "permissions": [ValidPermissions.EDIT_ROLE.value] # Arbitrary permission
-        },
-        follow_redirects=False # We expect a direct 403, not a redirect
+        }
     )
 
     assert response.status_code == 403 # Expecting Forbidden
@@ -733,8 +713,7 @@ def test_delete_default_role_api_forbidden(auth_client_owner, test_organization,
         data={
             "id": default_role_id, # Use dynamically fetched ID
             "organization_id": test_organization.id
-        },
-        follow_redirects=False # We expect a direct 403, not a redirect
+        }
     )
 
     assert response.status_code == 403 # Expecting Forbidden
@@ -743,12 +722,11 @@ def test_delete_default_role_api_forbidden(auth_client_owner, test_organization,
 def test_create_role_form_modal(auth_client_owner, test_organization):
     """Test that the create role modal form contains all required elements"""
     response = auth_client_owner.get(
-        app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
+        app.url_path_for("read_organization", org_id=test_organization.id)
     )
-    
+
     assert response.status_code == 200
-    
+
     # Check for modal elements
     assert 'id="createRoleModal"' in response.text
     assert f'action="http://testserver{app.url_path_for('create_role')}"' in response.text
@@ -790,8 +768,7 @@ def test_edit_role_form_modal(auth_client_owner, session, test_organization):
     assert ValidPermissions.DELETE_ROLE not in role_permission_names, "DELETE_ROLE should not be in permissions before test"
 
     response = auth_client_owner.get(
-        app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
+        app.url_path_for("read_organization", org_id=test_organization.id)
     )
     assert response.status_code == 200
 
@@ -835,12 +812,11 @@ def test_delete_role_form(auth_client_owner, session, test_organization):
     session.refresh(test_role)
     
     response = auth_client_owner.get(
-        app.url_path_for("read_organization", org_id=test_organization.id),
-        follow_redirects=False
+        app.url_path_for("read_organization", org_id=test_organization.id)
     )
-    
+
     assert response.status_code == 200
-    
+
     # Check for delete form elements
     assert f'action="http://testserver{app.url_path_for('delete_role')}"' in response.text
     assert 'method="POST"' in response.text or 'method="post"' in response.text
