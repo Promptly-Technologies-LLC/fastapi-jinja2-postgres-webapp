@@ -6,10 +6,12 @@ from utils.core.db import (
     assign_permissions_to_role,
     create_default_roles,
     create_permissions,
+    seed_account_emails,
     tear_down_db,
     set_up_db,
 )
-from utils.core.models import Role, Permission, Organization, RolePermissionLink
+from utils.core.models import Account, AccountEmail, Role, Permission, Organization, RolePermissionLink
+from utils.core.auth import get_password_hash
 from utils.core.enums import ValidPermissions
 from utils.app.enums import AppPermissions
 from tests.conftest import SetupError
@@ -244,11 +246,11 @@ def test_set_up_db_creates_tables(engine: Engine, session: Session):
     # Check that private tables are NOT in the public schema
     assert "account" not in public_table_names
     assert "passwordresettoken" not in public_table_names
-    assert "emailupdatetoken" not in public_table_names
+    assert "emailverificationtoken" not in public_table_names
 
     # Check that private tables ARE in the private schema
     private_table_names = inspector.get_table_names(schema="private")
-    expected_private_tables = {"account", "passwordresettoken", "emailupdatetoken"}
+    expected_private_tables = {"account", "passwordresettoken", "emailverificationtoken"}
     assert expected_private_tables.issubset(set(private_table_names))
 
     # Verify permissions were created
@@ -264,10 +266,10 @@ def test_private_schema_exists_after_setup(engine: Engine):
 
 
 def test_private_tables_in_private_schema(engine: Engine):
-    """Account, PasswordResetToken, and EmailUpdateToken must be in the private schema."""
+    """Account, PasswordResetToken, and EmailVerificationToken must be in the private schema."""
     inspector = inspect(engine)
     private_tables = set(inspector.get_table_names(schema="private"))
-    assert {"account", "passwordresettoken", "emailupdatetoken"}.issubset(private_tables)
+    assert {"account", "passwordresettoken", "emailverificationtoken"}.issubset(private_tables)
 
 
 def test_public_tables_in_public_schema(engine: Engine):
@@ -278,7 +280,7 @@ def test_public_tables_in_public_schema(engine: Engine):
     # Private tables must not leak into public
     assert "account" not in public_tables
     assert "passwordresettoken" not in public_tables
-    assert "emailupdatetoken" not in public_tables
+    assert "emailverificationtoken" not in public_tables
 
 
 def test_set_up_db_drop_flag(engine: Engine, session: Session):
@@ -301,3 +303,43 @@ def test_set_up_db_drop_flag(engine: Engine, session: Session):
     # Verify organization exists
     assert session.exec(select(Organization).where(
         Organization.name == "Test Organization")).first() is not None
+
+
+# --- Seed AccountEmail Tests ---
+
+
+def test_seed_creates_account_email_for_existing_accounts(session: Session):
+    """Test that seed_account_emails creates AccountEmail rows for existing accounts."""
+    # Create accounts without AccountEmail rows
+    account1 = Account(email="seed1@example.com", hashed_password=get_password_hash("Test123!@#"))
+    account2 = Account(email="seed2@example.com", hashed_password=get_password_hash("Test123!@#"))
+    session.add(account1)
+    session.add(account2)
+    session.commit()
+
+    # Verify no AccountEmail rows exist
+    assert len(session.exec(select(AccountEmail)).all()) == 0
+
+    # Run seed
+    seed_account_emails(session)
+
+    # Verify AccountEmail rows were created
+    emails = session.exec(select(AccountEmail)).all()
+    assert len(emails) == 2
+    for ae in emails:
+        assert ae.is_primary is True
+        assert ae.verified is True
+        assert ae.verified_at is not None
+
+
+def test_seed_is_idempotent(session: Session):
+    """Test that running seed_account_emails twice doesn't create duplicates."""
+    account = Account(email="idempotent@example.com", hashed_password=get_password_hash("Test123!@#"))
+    session.add(account)
+    session.commit()
+
+    seed_account_emails(session)
+    seed_account_emails(session)
+
+    emails = session.exec(select(AccountEmail)).all()
+    assert len(emails) == 1

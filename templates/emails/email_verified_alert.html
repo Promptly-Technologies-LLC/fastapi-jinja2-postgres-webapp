@@ -1,0 +1,9 @@
+{% extends "emails/base_email.html" %}
+
+{% block email_title %}New Email Address Added{% endblock %}
+
+{% block email_content %}
+    <h1>A New Email Address Was Added to Your Account</h1>
+    <p>The email address <strong>{{ new_email }}</strong> has been verified and added to your account.</p>
+    <p>If you did not make this change, please secure your account immediately by changing your password.</p>
+{% endblock %}

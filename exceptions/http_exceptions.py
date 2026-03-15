@@ -224,6 +224,33 @@ class InvitationEmailMismatchError(HTTPException):
         )
 
 
+class MaxEmailsReachedError(HTTPException):
+    """Raised when an account already has the maximum number of email addresses."""
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            detail="Maximum number of email addresses reached"
+        )
+
+
+class EmailNotVerifiedError(HTTPException):
+    """Raised when attempting to promote an unverified email address."""
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            detail="Email address is not verified"
+        )
+
+
+class CannotRemovePrimaryEmailError(HTTPException):
+    """Raised when attempting to remove the primary email address."""
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            detail="Cannot remove primary email address"
+        )
+
+
 class InvitationProcessingError(HTTPException):
     """Raised when an error occurs during the processing of a valid invitation."""
     def __init__(self, detail: str = "Failed to process invitation. Please try again later."):

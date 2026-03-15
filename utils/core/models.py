@@ -45,13 +45,25 @@ class Account(SQLModel, table=True):
             "cascade": "all, delete-orphan"
         }
     )
-    email_update_tokens: Mapped[List["EmailUpdateToken"]] = Relationship(
+    emails: Mapped[List["AccountEmail"]] = Relationship(
+        back_populates="account",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan"
+        }
+    )
+    email_verification_tokens: Mapped[List["EmailVerificationToken"]] = Relationship(
         back_populates="account",
         sa_relationship_kwargs={
             "cascade": "all, delete-orphan"
         }
     )
     refresh_tokens: Mapped[List["RefreshToken"]] = Relationship(
+        back_populates="account",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan"
+        }
+    )
+    account_recovery_tokens: Mapped[List["AccountRecoveryToken"]] = Relationship(
         back_populates="account",
         sa_relationship_kwargs={
             "cascade": "all, delete-orphan"
@@ -79,24 +91,59 @@ class PasswordResetToken(SQLModel, table=True):
         return datetime.now(UTC) > self.expires_at.replace(tzinfo=UTC)
 
 
-class EmailUpdateToken(SQLModel, table=True):
+class AccountEmail(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint("email", name="uq_account_email_email"),
+        {"schema": "private"},
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    account_id: int = Field(foreign_key="private.account.id", index=True)
+    email: str = Field(index=True)
+    is_primary: bool = Field(default=False)
+    verified: bool = Field(default=False)
+    verified_at: Optional[datetime] = Field(default=None)
+    created_at: datetime = Field(default_factory=utc_now)
+
+    account: Mapped[Optional["Account"]] = Relationship(
+        back_populates="emails"
+    )
+
+
+class EmailVerificationToken(SQLModel, table=True):
     __table_args__ = {"schema": "private"}
 
     id: Optional[int] = Field(default=None, primary_key=True)
     account_id: Optional[int] = Field(foreign_key="private.account.id")
-    token: str = Field(default_factory=lambda: str(
-        uuid4()), index=True, unique=True)
+    token: str = Field(default_factory=lambda: str(uuid4()), index=True, unique=True)
+    new_email: str
     expires_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC) + timedelta(hours=1))
     used: bool = Field(default=False)
 
-    account: Mapped[Optional[Account]] = Relationship(
-        back_populates="email_update_tokens")
+    account: Mapped[Optional["Account"]] = Relationship(
+        back_populates="email_verification_tokens"
+    )
 
     def is_expired(self) -> bool:
-        """
-        Check if the token has expired
-        """
+        return datetime.now(UTC) > self.expires_at.replace(tzinfo=UTC)
+
+
+class AccountRecoveryToken(SQLModel, table=True):
+    __table_args__ = {"schema": "private"}
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    account_id: Optional[int] = Field(foreign_key="private.account.id")
+    token: str = Field(default_factory=lambda: str(uuid4()), index=True, unique=True)
+    email: str  # the email address to restore
+    expires_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC) + timedelta(days=7))
+    used: bool = Field(default=False)
+
+    account: Mapped[Optional[Account]] = Relationship(
+        back_populates="account_recovery_tokens")
+
+    def is_expired(self) -> bool:
         return datetime.now(UTC) > self.expires_at.replace(tzinfo=UTC)
 
 
