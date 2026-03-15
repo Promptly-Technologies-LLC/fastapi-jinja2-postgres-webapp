@@ -58,6 +58,7 @@ def validate_token_and_get_account(
         )).first()
 
         if account:
+            assert account.id is not None
             if token_type == "refresh":
                 jti = decoded_token.get("jti")
                 if not jti:

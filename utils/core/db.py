@@ -217,6 +217,7 @@ def seed_account_emails(session: Session) -> None:
             select(AccountEmail).where(AccountEmail.account_id == account.id)
         ).first()
         if not existing:
+            assert account.id is not None
             account_email = AccountEmail(
                 account_id=account.id,
                 email=account.email,

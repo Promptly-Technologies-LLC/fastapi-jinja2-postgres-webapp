@@ -51,7 +51,6 @@ from exceptions.http_exceptions import (
     InvitationEmailMismatchError,
     InvitationProcessingError
 )
-from utils.core.models import EmailVerificationToken
 from routers.core.dashboard import router as dashboard_router
 from routers.core.user import router as user_router
 from routers.core.organization import router as org_router
@@ -447,6 +446,7 @@ async def login(
         logger.info(f"Standard login for account {account.email}. Redirecting to dashboard.")
 
     # Create access token
+    assert account.id is not None
     access_token = create_access_token(
         data={"sub": account.email, "fresh": True}
     )
@@ -518,6 +518,7 @@ async def refresh_token(
     if not db_token or db_token.account_id != account.id:
         return RedirectResponse(url=router.url_path_for("read_login"), status_code=303)
 
+    assert account.id is not None
     if db_token.revoked:
         # Token reuse detected — revoke all tokens for this account
         logger.warning(
@@ -611,6 +612,7 @@ async def reset_password(
     if not authorized_account or not reset_token:
         raise CredentialsError("Invalid or expired password reset token; please request a new one")
 
+    assert authorized_account.id is not None
     # Update password and mark token as used
     authorized_account.hashed_password = get_password_hash(new_password)
 
@@ -659,6 +661,7 @@ async def recover_account(
     if not account or not recovery_token:
         raise CredentialsError(message="Invalid or expired recovery token")
 
+    assert account.id is not None
     # Mark recovery token as used
     recovery_token.used = True
 
@@ -733,6 +736,7 @@ async def add_email(
     if email_count >= MAX_EMAILS_PER_ACCOUNT:
         raise MaxEmailsReachedError()
 
+    assert account.id is not None
     # Send verification email (suppresses if unexpired token exists)
     sent = send_email_verification(account.id, new_email, session)
 
@@ -759,6 +763,8 @@ async def verify_email(
 
     if not account or not verification_token:
         raise CredentialsError(message="Invalid or expired verification token")
+
+    assert account.id is not None
 
     # Race condition guard: check email not already taken
     existing = session.exec(
@@ -814,6 +820,7 @@ async def promote_email(
     """
     Promote a secondary email address to primary.
     """
+    assert account.id is not None
     # Look up the AccountEmail
     target_email = session.exec(
         select(AccountEmail).where(
@@ -897,6 +904,7 @@ async def remove_email(
     """
     Remove a non-primary email address from the account.
     """
+    assert account.id is not None
     target_email = session.exec(
         select(AccountEmail).where(
             AccountEmail.id == email_id,

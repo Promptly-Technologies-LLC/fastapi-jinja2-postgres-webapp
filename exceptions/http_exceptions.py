@@ -106,7 +106,7 @@ class UserAlreadyMemberError(HTTPException):
 class InvalidPermissionError(HTTPException):
     """Raised when a user attempts to assign an invalid permission to a role"""
 
-    def __init__(self, permission: ValidPermissions):
+    def __init__(self, permission: str):
         super().__init__(
             status_code=400,
             detail=f"Invalid permission: {permission}"
