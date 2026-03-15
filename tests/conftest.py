@@ -5,7 +5,7 @@ from sqlmodel import create_engine, Session, select
 from fastapi.testclient import TestClient
 from dotenv import load_dotenv
 from utils.core.db import get_connection_url, tear_down_db, set_up_db, create_default_roles, ensure_database_exists
-from utils.core.models import User, Organization, Role, Account, Invitation
+from utils.core.models import User, Organization, Role, Account, AccountEmail, Invitation
 from utils.core.auth import get_password_hash, create_access_token, create_tracked_refresh_token
 from main import app
 from datetime import datetime, UTC, timedelta
@@ -95,6 +95,24 @@ def test_user(session: Session, test_account: Account) -> User:
     # Also refresh the account to ensure the relationship is loaded
     session.refresh(test_account)
     return user
+
+
+@pytest.fixture
+def test_account_email(session: Session, test_account: Account) -> AccountEmail:
+    """
+    Creates a primary AccountEmail for the test account.
+    """
+    account_email = AccountEmail(
+        account_id=test_account.id,
+        email=test_account.email,
+        is_primary=True,
+        verified=True,
+        verified_at=datetime.now(UTC),
+    )
+    session.add(account_email)
+    session.commit()
+    session.refresh(account_email)
+    return account_email
 
 
 @pytest.fixture
@@ -445,12 +463,21 @@ def used_invitation(session: Session, test_organization: Organization, member_ro
 
 @pytest.fixture
 def existing_invitee_account(session: Session) -> Account:
-    """Creates an Account for invitee@example.com."""
+    """Creates an Account for invitee@example.com with a primary AccountEmail."""
     account = Account(
         email="invitee@example.com",
         hashed_password=get_password_hash("Invitee123!@#")
     )
     session.add(account)
+    session.flush()
+    account_email = AccountEmail(
+        account_id=account.id,
+        email="invitee@example.com",
+        is_primary=True,
+        verified=True,
+        verified_at=datetime.now(UTC),
+    )
+    session.add(account_email)
     session.commit()
     session.refresh(account)
     return account

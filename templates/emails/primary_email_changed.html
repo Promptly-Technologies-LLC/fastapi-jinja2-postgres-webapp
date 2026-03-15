@@ -1,0 +1,15 @@
+{% extends "emails/base_email.html" %}
+
+{% block email_title %}Primary Email Changed{% endblock %}
+
+{% block email_content %}
+    <h1>Your Primary Email Has Been Changed</h1>
+    <p>Your primary email address has been changed from <strong>{{ old_email }}</strong> to <strong>{{ new_email }}</strong>.</p>
+    <p>If you did not make this change, click the button below to recover your account:</p>
+    <p style="margin: 25px 0;">
+        <a href="{{ recovery_url }}" style="background-color: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Recover Your Account</a>
+    </p>
+    <p>Or copy and paste this link into your browser:</p>
+    <p style="word-break: break-all;">{{ recovery_url }}</p>
+    <p>This recovery link will expire in 7 days.</p>
+{% endblock %}

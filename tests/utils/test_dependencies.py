@@ -1,11 +1,12 @@
 from unittest.mock import MagicMock, patch
 from datetime import datetime, timedelta, UTC
-from utils.core.models import EmailUpdateToken, Account, User, PasswordResetToken, Role
+from utils.core.models import Account, AccountRecoveryToken, User, PasswordResetToken, Role
 from utils.core.dependencies import (
-    get_account_from_email_update_token, validate_token_and_get_account,
+    validate_token_and_get_account,
     get_account_from_credentials, get_account_from_tokens, get_authenticated_account,
     validate_token_and_get_user, get_user_from_tokens, get_authenticated_user,
-    get_optional_user, get_account_from_reset_token, get_user_with_relations,
+    get_optional_user, get_account_from_reset_token, get_account_from_recovery_token,
+    get_user_with_relations,
     require_unauthenticated_client, get_verified_account
 )
 from exceptions.http_exceptions import (
@@ -14,33 +15,6 @@ from exceptions.http_exceptions import (
 )
 from exceptions.exceptions import NeedsNewTokens
 import pytest
-
-
-def test_get_account_from_email_update_token() -> None:
-    """
-    Tests retrieving a user using an email update token.
-    """
-    session = MagicMock()
-
-    # Test valid token
-    mock_account = Account(id=1, email="test@example.com")
-    mock_token = EmailUpdateToken(
-        account_id=1,
-        token="valid_token",
-        expires_at=datetime.now(UTC) + timedelta(hours=1),
-        used=False
-    )
-    session.exec.return_value.first.return_value = (mock_account, mock_token)
-
-    account, token = get_account_from_email_update_token(1, "valid_token", session)
-    assert account == mock_account
-    assert token == mock_token
-
-    # Test invalid token
-    session.exec.return_value.first.return_value = None
-    account, token = get_account_from_email_update_token(1, "invalid_token", session)
-    assert account is None
-    assert token is None
 
 
 def test_validate_token_and_get_account() -> None:
@@ -505,3 +479,54 @@ def test_get_verified_account() -> None:
                 account=mock_account
             )
         assert exc_info.value.detail["field"] == "password"
+
+
+# --- AccountRecoveryToken dependency tests ---
+
+
+def test_get_account_from_recovery_token_valid() -> None:
+    """Test valid recovery token returns (account, token)."""
+    session = MagicMock()
+    mock_account = Account(id=1, email="test@example.com")
+    mock_token = AccountRecoveryToken(
+        account_id=1,
+        token="valid_token",
+        email="victim@example.com",
+        expires_at=datetime.now(UTC) + timedelta(days=7),
+        used=False,
+    )
+    session.exec.return_value.first.return_value = (mock_account, mock_token)
+
+    account, token = get_account_from_recovery_token("valid_token", session)
+    assert account == mock_account
+    assert token == mock_token
+
+
+def test_get_account_from_recovery_token_expired() -> None:
+    """Test expired recovery token returns (None, None)."""
+    session = MagicMock()
+    session.exec.return_value.first.return_value = None
+
+    account, token = get_account_from_recovery_token("expired_token", session)
+    assert account is None
+    assert token is None
+
+
+def test_get_account_from_recovery_token_used() -> None:
+    """Test used recovery token returns (None, None)."""
+    session = MagicMock()
+    session.exec.return_value.first.return_value = None
+
+    account, token = get_account_from_recovery_token("used_token", session)
+    assert account is None
+    assert token is None
+
+
+def test_get_account_from_recovery_token_invalid() -> None:
+    """Test nonexistent recovery token returns (None, None)."""
+    session = MagicMock()
+    session.exec.return_value.first.return_value = None
+
+    account, token = get_account_from_recovery_token("nonexistent", session)
+    assert account is None
+    assert token is None

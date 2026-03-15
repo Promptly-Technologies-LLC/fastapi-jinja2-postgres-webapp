@@ -4,7 +4,7 @@ from itertools import chain
 from typing import Union, Sequence
 from sqlalchemy.engine import URL
 from sqlmodel import create_engine, Session, SQLModel, select, text
-from utils.core.models import Role, Permission, RolePermissionLink
+from utils.core.models import Account, AccountEmail, Role, Permission, RolePermissionLink
 from utils.core.enums import ValidPermissions
 from utils.app.enums import AppPermissions
 from utils.app.models import *  # noqa: F401, F403 — registers app models with SQLModel.metadata
@@ -205,6 +205,29 @@ def create_permissions(session: Session) -> None:
             session.add(db_permission)
 
 
+def seed_account_emails(session: Session) -> None:
+    """
+    Backfill AccountEmail rows for existing accounts that don't have one.
+    Each account gets a primary, verified AccountEmail matching its email field.
+    """
+    from datetime import datetime, UTC
+    accounts = session.exec(select(Account)).all()
+    for account in accounts:
+        existing = session.exec(
+            select(AccountEmail).where(AccountEmail.account_id == account.id)
+        ).first()
+        if not existing:
+            account_email = AccountEmail(
+                account_id=account.id,
+                email=account.email,
+                is_primary=True,
+                verified=True,
+                verified_at=datetime.now(UTC),
+            )
+            session.add(account_email)
+    session.commit()
+
+
 def set_up_db(drop: bool = False) -> None:
     """
     Sets up the database by creating tables and populating them with default permissions.
@@ -220,10 +243,11 @@ def set_up_db(drop: bool = False) -> None:
         conn.execute(text("CREATE SCHEMA IF NOT EXISTS private"))
         conn.commit()
     SQLModel.metadata.create_all(engine)
-    # Create default permissions
+    # Create default permissions and seed account emails
     with Session(engine) as session:
         create_permissions(session)
         session.commit()
+        seed_account_emails(session)
     engine.dispose()
 
 
