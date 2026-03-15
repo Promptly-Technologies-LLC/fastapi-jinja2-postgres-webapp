@@ -9,7 +9,6 @@ from sqlalchemy import inspect
 
 from main import app
 from utils.core.models import User, AccountEmail, AccountRecoveryToken, EmailVerificationToken, PasswordResetToken, RefreshToken, Account
-from tests.conftest import htmx_headers
 from utils.core.auth import (
     create_access_token,
     create_recovery_token,
