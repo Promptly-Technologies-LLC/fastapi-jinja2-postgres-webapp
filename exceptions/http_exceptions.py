@@ -1,5 +1,4 @@
 from fastapi import HTTPException, status
-from utils.core.enums import ValidPermissions
 
 class RateLimitError(HTTPException):
     """Raised when a client exceeds the allowed request rate."""
