@@ -62,15 +62,45 @@ async def read_profile(
     return templates.TemplateResponse(
         request,
         "users/profile.html", {
-            "max_file_size_mb": MAX_FILE_SIZE / (1024 * 1024),  # Convert bytes to MB
-            "min_dimension": MIN_DIMENSION,
-            "max_dimension": MAX_DIMENSION,
-            "allowed_formats": list(ALLOWED_CONTENT_TYPES.keys()),
             "show_form": show_form == "true",
             "user": user,
             "account_emails": account_emails,
             "max_emails": MAX_EMAILS_PER_ACCOUNT,
         }
+    )
+
+
+@router.get("/edit-form")
+async def edit_profile_form(
+    request: Request,
+    user: User = Depends(get_authenticated_user),
+):
+    if not is_htmx_request(request):
+        return RedirectResponse(url=router.url_path_for("read_profile"), status_code=303)
+    return templates.TemplateResponse(
+        request,
+        "users/partials/profile_form.html",
+        {
+            "user": user,
+            "max_file_size_mb": MAX_FILE_SIZE / (1024 * 1024),
+            "min_dimension": MIN_DIMENSION,
+            "max_dimension": MAX_DIMENSION,
+            "allowed_formats": list(ALLOWED_CONTENT_TYPES.keys()),
+        },
+    )
+
+
+@router.get("/profile-display")
+async def profile_display(
+    request: Request,
+    user: User = Depends(get_authenticated_user),
+):
+    if not is_htmx_request(request):
+        return RedirectResponse(url=router.url_path_for("read_profile"), status_code=303)
+    return templates.TemplateResponse(
+        request,
+        "users/partials/profile_display.html",
+        {"user": user},
     )
 
 
@@ -82,8 +112,10 @@ async def update_profile(
     user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session)
 ):
+    avatar_changed = bool(avatar_file and avatar_file.filename)
+
     # Handle avatar update
-    if avatar_file and avatar_file.filename:
+    if avatar_changed:
         avatar_data = await avatar_file.read()
         avatar_content_type = avatar_file.content_type
 
@@ -109,18 +141,17 @@ async def update_profile(
     session.refresh(user)
 
     if is_htmx_request(request):
+        if avatar_changed:
+            # Avatar affects the navbar, which is outside the swap target.
+            # Tell HTMX to do a full page refresh so everything updates.
+            response = Response(status_code=200)
+            response.headers["HX-Refresh"] = "true"
+            return response
         response = templates.TemplateResponse(
             request,
             "users/partials/profile_display.html",
-            {
-                "user": user,
-                "max_file_size_mb": MAX_FILE_SIZE / (1024 * 1024),
-                "min_dimension": MIN_DIMENSION,
-                "max_dimension": MAX_DIMENSION,
-                "allowed_formats": list(ALLOWED_CONTENT_TYPES.keys()),
-            },
+            {"user": user},
         )
-        response.headers["HX-Trigger"] = "profileUpdated"
         return append_toast(response, request, templates, "Profile updated successfully.")
     return RedirectResponse(url=router.url_path_for("read_profile"), status_code=303)
 

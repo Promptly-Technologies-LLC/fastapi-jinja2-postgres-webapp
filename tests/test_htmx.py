@@ -451,16 +451,63 @@ def test_update_profile_htmx_returns_profile_display(auth_client):
     assert "<!DOCTYPE html>" not in response.text
 
 
-def test_update_profile_htmx_returns_display_and_form_in_sync(auth_client):
+def test_update_profile_htmx_returns_display_without_oob_form(auth_client):
+    """After refactor, update_profile returns only the display partial — no
+    OOB form swap, since the edit form is fetched on demand via hx-get."""
     response = auth_client.post(
         "/user/update",
         data={"name": "Synced Name"},
         headers=htmx_headers(),
     )
-
     assert response.status_code == 200
     assert "Synced Name" in response.text
-    assert 'value="Synced Name"' in response.text
+    assert "profile-form" not in response.text
+
+
+def test_avatar_url_includes_cache_buster():
+    """The avatar img src in the display partial must include a cache-busting
+    query param so the browser doesn't show a stale image after upload."""
+    import pathlib
+    import re
+    template = (
+        pathlib.Path(__file__).resolve().parent.parent
+        / "templates" / "users" / "partials" / "profile_display.html"
+    ).read_text()
+    assert "get_avatar" in template, "Template should reference get_avatar"
+    # The src should NOT end right after url_for — it must have a query param
+    assert re.search(r"get_avatar.*\?\w+=", template), (
+        "Avatar URL in profile_display.html must include a cache-busting query param"
+    )
+
+
+def test_avatar_upload_htmx_triggers_full_refresh(auth_client):
+    """When an avatar is uploaded, the HTMX response should include
+    HX-Refresh so the navbar avatar updates too."""
+    import io
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.new("RGB", (100, 100), color="red").save(buf, format="PNG")
+    buf.seek(0)
+    response = auth_client.post(
+        "/user/update",
+        data={"name": "Avatar User"},
+        files={"avatar_file": ("test.png", buf, "image/png")},
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 200
+    assert response.headers.get("HX-Refresh") == "true"
+
+
+def test_name_only_update_htmx_no_refresh(auth_client):
+    """Name-only updates should return the display partial, not a full refresh."""
+    response = auth_client.post(
+        "/user/update",
+        data={"name": "No Refresh"},
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 200
+    assert "HX-Refresh" not in response.headers
+    assert "No Refresh" in response.text
 
 
 def test_update_profile_non_htmx_redirects(auth_client):
@@ -691,21 +738,33 @@ def test_update_profile_htmx_includes_success_toast(auth_client):
     assert "toast" in response.text
 
 
-def test_update_profile_htmx_triggers_profile_updated_event(auth_client):
-    """The response must include an HX-Trigger header so the client can
-    toggle display of the basic-info / edit-profile cards.  Using
-    hx-on::after-request on the form is unreliable because the OOB swap
-    for #profile-form replaces the form element before afterRequest fires
-    (HTMX 2.0 fires afterRequest AFTER the swap)."""
-    response = auth_client.post(
-        "/user/update",
-        data={"name": "Trigger Name"},
-        headers=htmx_headers(),
-    )
+def test_edit_profile_form_htmx_returns_form_partial(auth_client):
+    """GET /user/edit-form with HTMX headers returns the edit form partial."""
+    response = auth_client.get("/user/edit-form", headers=htmx_headers())
     assert response.status_code == 200
-    trigger = response.headers.get("HX-Trigger")
-    assert trigger is not None, "Missing HX-Trigger response header"
-    assert "profileUpdated" in trigger
+    assert "<form" in response.text
+    assert "<!DOCTYPE html>" not in response.text
+
+
+def test_edit_profile_form_non_htmx_redirects(auth_client):
+    """GET /user/edit-form without HTMX headers redirects to profile."""
+    response = auth_client.get("/user/edit-form")
+    assert response.status_code == 303
+    assert response.headers["location"] == "/user/profile"
+
+
+def test_profile_display_htmx_returns_display_partial(auth_client):
+    """GET /user/profile-display with HTMX headers returns the display partial."""
+    response = auth_client.get("/user/profile-display", headers=htmx_headers())
+    assert response.status_code == 200
+    assert "<!DOCTYPE html>" not in response.text
+
+
+def test_profile_display_non_htmx_redirects(auth_client):
+    """GET /user/profile-display without HTMX headers redirects to profile."""
+    response = auth_client.get("/user/profile-display")
+    assert response.status_code == 303
+    assert response.headers["location"] == "/user/profile"
 
 
 def test_create_role_htmx_includes_success_toast(auth_client_owner, test_organization):
@@ -899,13 +958,12 @@ def test_remove_user_htmx_includes_success_toast(
 # ---------------------------------------------------------------------------
 
 def test_no_templates_use_hx_on_after_request():
-    """In HTMX 2.0 afterRequest fires AFTER the swap, so any handler
+    """In HTMX 2.0 afterRequest fires BEFORE OOB swaps, so any handler
     on an element that is replaced by an OOB swap will silently fail.
-    Use HX-Trigger response headers instead."""
+    Use hx-on::after-settle instead (fires after swaps complete)."""
     import pathlib
     import re
 
-    # Match the attribute in HTML tags, not in JS comments or prose.
     attr_pattern = re.compile(r'hx-on::after-request=|hx-on:htmx:after-request=')
 
     templates_dir = pathlib.Path(__file__).resolve().parent.parent / "templates"
@@ -916,11 +974,12 @@ def test_no_templates_use_hx_on_after_request():
             violations.append(str(path.relative_to(templates_dir)))
 
     assert violations == [], (
-        f"Templates must not use hx-on::after-request (unreliable in HTMX 2.0). "
-        f"Use HX-Trigger response headers instead. Violations: {violations}"
+        f"Templates must not use hx-on::after-request (fires before OOB swaps in HTMX 2.0). "
+        f"Use hx-on::after-settle instead. Violations: {violations}"
     )
 
 
+# ---------------------------------------------------------------------------
 # --- Flash cookie encoding tests ---
 
 
