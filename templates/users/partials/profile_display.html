@@ -1,16 +1,20 @@
-{# Partial: profile display card body. Swapped into #profile-display. #}
+{# Partial: profile display card. Swapped into #profile-card. #}
 {% from 'base/macros/silhouette.html' import render_silhouette %}
-<p><strong>Name:</strong> {{ user.name }}</p>
-<p><strong>Email:</strong> {{ user.account.email }}</p>
-<div class="mb-3">
-    {% if user.avatar %}
-        <img src="{{ url_for('get_avatar') }}" alt="User Avatar" class="img-thumbnail" width="150">
-    {% else %}
-        {{ render_silhouette(width=150, height=150) }}
-    {% endif %}
+<div class="card-header">
+    Basic Information
 </div>
-<button class="btn btn-primary mt-3" onclick="toggleEditProfile()">Edit</button>
-
-<div id="profile-form" hx-swap-oob="innerHTML">
-    {% include 'users/partials/profile_form.html' %}
+<div class="card-body">
+    <p><strong>Name:</strong> {{ user.name }}</p>
+    <p><strong>Email:</strong> {{ user.account.email }}</p>
+    <div class="mb-3">
+        {% if user.avatar %}
+            <img src="{{ url_for('get_avatar') }}?v={{ range(1000000)|random }}" alt="User Avatar" class="img-thumbnail" width="150">
+        {% else %}
+            {{ render_silhouette(width=150, height=150) }}
+        {% endif %}
+    </div>
+    <button class="btn btn-primary mt-3"
+            hx-get="{{ url_for('edit_profile_form') }}"
+            hx-target="#profile-card"
+            hx-swap="innerHTML">Edit</button>
 </div>

@@ -1,25 +1,79 @@
-{# Partial: profile edit form card body. Swapped into #profile-form. #}
-<form action="{{ url_for('update_profile') }}" method="post" enctype="multipart/form-data"
-      hx-post="{{ url_for('update_profile') }}"
-      hx-target="#profile-display"
-      hx-swap="innerHTML"
-      hx-encoding="multipart/form-data">
-    <div class="mb-3">
-        <label for="name" class="form-label">Name</label>
-        <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}">
-    </div>
-    <div class="mb-3">
-        <label for="avatar_file" class="form-label">Avatar</label>
-        <input type="file" class="form-control" id="avatar_file" name="avatar_file" accept="image/*">
-        <div class="form-text">
-            <ul class="mb-0">
-                <li>Maximum file size: {{ max_file_size_mb }} MB</li>
-                <li>Minimum dimension: {{ min_dimension }}x{{ min_dimension }} pixels</li>
-                <li>Maximum dimension: {{ max_dimension }}x{{ max_dimension }} pixels</li>
-                <li>Allowed formats: {{ allowed_formats|join(', ') }}</li>
-                <li>Image will be cropped to a square</li>
-            </ul>
+{# Partial: profile edit form card. Swapped into #profile-card. #}
+<div class="card-header">
+    Edit Profile
+</div>
+<div class="card-body">
+    <form action="{{ url_for('update_profile') }}" method="post" enctype="multipart/form-data"
+          hx-post="{{ url_for('update_profile') }}"
+          hx-target="#profile-card"
+          hx-swap="innerHTML"
+          hx-encoding="multipart/form-data">
+        <div class="mb-3">
+            <label for="name" class="form-label">Name</label>
+            <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}">
         </div>
-    </div>
-    <button type="submit" class="btn btn-primary">Save Changes</button>
-</form>
+        <div class="mb-3">
+            <label for="avatar_file" class="form-label">Avatar</label>
+            <input type="file" class="form-control" id="avatar_file" name="avatar_file" accept="image/*"
+                   data-max-size-mb="{{ max_file_size_mb }}"
+                   data-min-dim="{{ min_dimension }}"
+                   data-max-dim="{{ max_dimension }}"
+                   data-allowed-formats="{{ allowed_formats|join(',') }}">
+            <div class="form-text">
+                <ul class="mb-0">
+                    <li>Maximum file size: {{ max_file_size_mb }} MB</li>
+                    <li>Minimum dimension: {{ min_dimension }}x{{ min_dimension }} pixels</li>
+                    <li>Maximum dimension: {{ max_dimension }}x{{ max_dimension }} pixels</li>
+                    <li>Allowed formats: {{ allowed_formats|join(', ') }}</li>
+                    <li>Image will be cropped to a square</li>
+                </ul>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <button type="button" class="btn btn-secondary ms-2"
+                hx-get="{{ url_for('profile_display') }}"
+                hx-target="#profile-card"
+                hx-swap="innerHTML">Cancel</button>
+    </form>
+</div>
+<script>
+    document.getElementById('avatar_file').addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+
+        var maxSizeMB = parseFloat(this.dataset.maxSizeMb);
+        var minDim = parseInt(this.dataset.minDim);
+        var maxDim = parseInt(this.dataset.maxDim);
+        var allowedFormats = this.dataset.allowedFormats.split(',');
+
+        var fileSizeMB = file.size / (1024 * 1024);
+        if (fileSizeMB > maxSizeMB) {
+            showToast('File size must be less than ' + maxSizeMB + 'MB', 'danger');
+            this.value = '';
+            return;
+        }
+
+        if (allowedFormats.indexOf(file.type) === -1) {
+            showToast('File format must be one of: ' + allowedFormats.join(', '), 'danger');
+            this.value = '';
+            return;
+        }
+
+        var input = this;
+        var img = new Image();
+        img.src = URL.createObjectURL(file);
+        img.onload = function() {
+            URL.revokeObjectURL(this.src);
+            if (this.width < minDim || this.height < minDim) {
+                showToast('Image dimensions must be at least ' + minDim + 'x' + minDim + ' pixels', 'danger');
+                input.value = '';
+                return;
+            }
+            if (this.width > maxDim || this.height > maxDim) {
+                showToast('Image dimensions must not exceed ' + maxDim + 'x' + maxDim + ' pixels', 'danger');
+                input.value = '';
+                return;
+            }
+        };
+    });
+</script>

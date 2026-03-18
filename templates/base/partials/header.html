@@ -37,7 +37,7 @@
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <button class="profile-button btn p-0 border-0 bg-transparent">
                             {% if user.avatar %}
-                                <img src="{{ url_for('get_avatar') }}" alt="User Avatar" class="d-inline-block align-top" width="30" height="30" style="border-radius: 50%;">
+                                <img src="{{ url_for('get_avatar') }}?v={{ range(1000000)|random }}" alt="User Avatar" class="d-inline-block align-top" width="30" height="30" style="border-radius: 50%;">
                             {% else %}
                                 {{ render_silhouette() }}
                             {% endif %}

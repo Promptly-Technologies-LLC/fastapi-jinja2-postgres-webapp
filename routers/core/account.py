@@ -743,7 +743,10 @@ async def add_email(
     message = "Verification email sent. Check your inbox." if sent else "A verification email was already sent. Please check your inbox."
 
     if is_htmx_request(request):
-        return toast_response(request, templates, message, level="success")
+        return toast_response(
+            request, templates, message, level="success",
+            headers={"HX-Trigger": "addEmailFormReset"},
+        )
     profile_path: URLPath = user_router.url_path_for("read_profile")
     response = RedirectResponse(url=str(profile_path), status_code=303)
     set_flash_cookie(response, message)
@@ -753,11 +756,14 @@ async def add_email(
 @router.get("/emails/verify")
 async def verify_email(
     token: str,
-    tokens: tuple[Optional[str], Optional[str]] = Depends(oauth2_scheme_cookie),
     session: Session = Depends(get_session),
 ):
     """
     Verify a new email address using the token from the verification link.
+
+    Always redirects to the login page because verification links are clicked
+    from an email client (cross-site navigation), so samesite=strict auth
+    cookies are never sent — even when the user has an active session.
     """
     account, verification_token = get_account_from_email_verification_token(token, session)
 
@@ -791,22 +797,9 @@ async def verify_email(
     # Send notification to primary email
     send_email_verified_notification(account.email, verification_token.new_email)
 
-    message = "Email address verified and added to your account."
-
-    # Lightweight auth check: just validate the access token to decide redirect target.
-    # We avoid get_optional_user here because it triggers NeedsNewTokens (token rotation)
-    # which would interrupt the verification flow before the route body runs.
-    access_token, _ = tokens
-    is_authenticated = access_token and validate_token(access_token, token_type="access") is not None
-
-    if is_authenticated:
-        profile_path: URLPath = user_router.url_path_for("read_profile")
-        response = RedirectResponse(url=str(profile_path), status_code=303)
-    else:
-        login_path: URLPath = router.url_path_for("read_login")
-        response = RedirectResponse(url=str(login_path), status_code=303)
-
-    set_flash_cookie(response, message)
+    login_path: URLPath = router.url_path_for("read_login")
+    response = RedirectResponse(url=str(login_path), status_code=303)
+    set_flash_cookie(response, "Email address verified and added to your account.")
     return response
 
 
