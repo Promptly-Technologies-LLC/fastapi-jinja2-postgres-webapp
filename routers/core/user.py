@@ -4,7 +4,8 @@ from sqlmodel import Session, select
 from typing import Optional, List
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import selectinload
-from utils.core.models import User, UserAvatar, DataIntegrityError, Organization, Role, Invitation
+from utils.core.models import User, UserAvatar, AccountEmail, DataIntegrityError, Organization, Role, Invitation
+from utils.core.auth import MAX_EMAILS_PER_ACCOUNT
 from utils.core.dependencies import get_authenticated_user, get_user_with_relations, get_session
 from utils.core.images import validate_and_process_image, MAX_FILE_SIZE, MIN_DIMENSION, MAX_DIMENSION, ALLOWED_CONTENT_TYPES
 from utils.core.enums import ValidPermissions
@@ -48,9 +49,14 @@ def _load_org_for_members_partial(session: Session, organization_id: int, user: 
 async def read_profile(
     request: Request,
     user: User = Depends(get_user_with_relations),
+    session: Session = Depends(get_session),
     show_form: Optional[str] = "true"
 ):
-    # Add image constraints to the template context
+    # Load account emails
+    account_emails = session.exec(
+        select(AccountEmail).where(AccountEmail.account_id == user.account_id)
+    ).all() if user.account_id else []
+
     return templates.TemplateResponse(
         request,
         "users/profile.html", {
@@ -59,7 +65,9 @@ async def read_profile(
             "max_dimension": MAX_DIMENSION,
             "allowed_formats": list(ALLOWED_CONTENT_TYPES.keys()),
             "show_form": show_form == "true",
-            "user": user
+            "user": user,
+            "account_emails": account_emails,
+            "max_emails": MAX_EMAILS_PER_ACCOUNT,
         }
     )
 

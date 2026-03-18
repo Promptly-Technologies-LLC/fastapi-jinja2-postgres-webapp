@@ -13,7 +13,7 @@ from jinja2.environment import Template
 from fastapi.templating import Jinja2Templates
 from fastapi import Cookie
 from utils.core.db import create_engine, get_connection_url
-from utils.core.models import PasswordResetToken, EmailUpdateToken, RefreshToken, Account
+from utils.core.models import AccountRecoveryToken, EmailVerificationToken, PasswordResetToken, RefreshToken, Account
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -267,62 +267,168 @@ def send_reset_email_task(email: str) -> None:
         send_reset_email(email, session)
 
 
-def generate_email_update_url(account_id: int, token: str, new_email: str) -> str:
-    """
-    Generates the email update confirmation URL with proper query parameters.
-    """
+# --- Multi-email functions ---
+
+
+MAX_EMAILS_PER_ACCOUNT = 2
+
+
+def generate_email_verification_url(token: str) -> str:
+    """Generates the email verification URL."""
     base_url = os.getenv('BASE_URL')
-    return f"{base_url}/account/confirm_email_update?account_id={account_id}&token={token}&new_email={new_email}"
+    return f"{base_url}/account/emails/verify?token={token}"
 
 
-def send_email_update_confirmation(
-    current_email: str,
-    new_email: str,
-    account_id: int,
-    session: Session
-) -> None:
-    # Check for an existing unexpired token
+def send_email_verification(account_id: int, new_email: str, session: Session) -> bool:
+    """
+    Send a verification email for adding a new email address.
+    Returns True if email was sent, False if suppressed (existing unexpired token).
+    """
+    # Check for existing unexpired token for this account+email
     existing_token = session.exec(
-        select(EmailUpdateToken)
+        select(EmailVerificationToken)
         .where(
-            EmailUpdateToken.account_id == account_id,
-            EmailUpdateToken.expires_at > datetime.now(UTC),
-            EmailUpdateToken.used == False  # noqa: E712 - SQL expression for boolean false
+            EmailVerificationToken.account_id == account_id,
+            EmailVerificationToken.new_email == new_email,
+            EmailVerificationToken.expires_at > datetime.now(UTC),
+            EmailVerificationToken.used == False  # noqa: E712
         )
     ).first()
 
     if existing_token:
-        logger.debug("An unexpired email update token already exists for this account.")
-        return
+        logger.debug("An unexpired verification token already exists for this email.")
+        return False
 
-    # Generate a new token
-    token = EmailUpdateToken(account_id=account_id)
+    # Create new token
+    token = EmailVerificationToken(
+        account_id=account_id,
+        new_email=new_email,
+    )
     session.add(token)
 
     try:
-        confirmation_url = generate_email_update_url(
-            account_id, token.token, new_email)
+        verification_url = generate_email_verification_url(token.token)
 
-        # Render the email template
-        template = templates.get_template("emails/update_email_email.html")
-        html_content = template.render({
-            "confirmation_url": confirmation_url,
-            "current_email": current_email,
-            "new_email": new_email
+        template: Template = templates.get_template("emails/verify_new_email.html")
+        html_content: str = template.render({"verification_url": verification_url})
+
+        resend.api_key = os.getenv("RESEND_API_KEY")
+        params = {
+            "from": os.getenv("EMAIL_FROM", ""),
+            "to": [new_email],
+            "subject": "Verify Your Email Address",
+            "html": html_content,
+        }
+
+        sent_email = resend.Emails.send(params)  # ty: ignore[invalid-argument-type]
+        logger.debug(f"Email verification sent: {sent_email.get('id')}")
+
+        session.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send email verification: {e}")
+        session.rollback()
+        return False
+
+
+def send_email_verified_notification(primary_email: str, new_email: str) -> None:
+    """Send a notification to the primary email that a new email was verified."""
+    try:
+        template: Template = templates.get_template("emails/email_verified_alert.html")
+        html_content: str = template.render({"new_email": new_email})
+
+        resend.api_key = os.getenv("RESEND_API_KEY")
+        params = {
+            "from": os.getenv("EMAIL_FROM", ""),
+            "to": [primary_email],
+            "subject": "New Email Address Added to Your Account",
+            "html": html_content,
+        }
+
+        sent_email = resend.Emails.send(params)  # ty: ignore[invalid-argument-type]
+        logger.debug(f"Email verified notification sent: {sent_email.get('id')}")
+    except Exception as e:
+        logger.error(f"Failed to send email verified notification: {e}")
+
+
+def send_primary_email_changed_notification(old_email: str, new_email: str, recovery_url: str) -> None:
+    """Send a notification to the old primary email that primary was changed."""
+    try:
+        template: Template = templates.get_template("emails/primary_email_changed.html")
+        html_content: str = template.render({
+            "old_email": old_email,
+            "new_email": new_email,
+            "recovery_url": recovery_url,
         })
 
         resend.api_key = os.getenv("RESEND_API_KEY")
         params = {
             "from": os.getenv("EMAIL_FROM", ""),
-            "to": [current_email],
-            "subject": "Confirm Email Update",
+            "to": [old_email],
+            "subject": "Your Primary Email Has Been Changed",
             "html": html_content,
         }
 
         sent_email = resend.Emails.send(params)  # ty: ignore[invalid-argument-type]
-        logger.debug(f"Email update confirmation sent: {sent_email.get('id')}")
-
-        session.commit()
+        logger.debug(f"Primary email changed notification sent: {sent_email.get('id')}")
     except Exception as e:
-        logger.error(f"Failed to send email update confirmation: {e}")
-        session.rollback()
+        logger.error(f"Failed to send primary email changed notification: {e}")
+
+
+def send_email_removed_notification(removed_email: str, recovery_url: str) -> None:
+    """Send a notification to the removed email address."""
+    try:
+        template: Template = templates.get_template("emails/email_removed_alert.html")
+        html_content: str = template.render({
+            "removed_email": removed_email,
+            "recovery_url": recovery_url,
+        })
+
+        resend.api_key = os.getenv("RESEND_API_KEY")
+        params = {
+            "from": os.getenv("EMAIL_FROM", ""),
+            "to": [removed_email],
+            "subject": "Email Address Removed from Your Account",
+            "html": html_content,
+        }
+
+        sent_email = resend.Emails.send(params)  # ty: ignore[invalid-argument-type]
+        logger.debug(f"Email removed notification sent: {sent_email.get('id')}")
+    except Exception as e:
+        logger.error(f"Failed to send email removed notification: {e}")
+
+
+# --- Account recovery functions ---
+
+
+def generate_recovery_url(token: str) -> str:
+    """Generates the account recovery URL."""
+    base_url = os.getenv('BASE_URL')
+    return f"{base_url}/account/recover?token={token}"
+
+
+def create_recovery_token(account_id: int, email: str, session: Session) -> str:
+    """
+    Create an account recovery token for the given email.
+    Returns the token string. Does NOT commit — caller is responsible.
+    If an unexpired token already exists for the same account+email, returns it.
+    """
+    existing = session.exec(
+        select(AccountRecoveryToken)
+        .where(
+            AccountRecoveryToken.account_id == account_id,
+            AccountRecoveryToken.email == email,
+            AccountRecoveryToken.expires_at > datetime.now(UTC),
+            AccountRecoveryToken.used == False,  # noqa: E712
+        )
+    ).first()
+
+    if existing:
+        return existing.token
+
+    token = AccountRecoveryToken(
+        account_id=account_id,
+        email=email,
+    )
+    session.add(token)
+    return token.token

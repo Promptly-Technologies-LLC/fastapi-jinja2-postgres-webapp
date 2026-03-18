@@ -10,7 +10,7 @@ from utils.core.auth import (
     revoke_all_refresh_tokens, oauth2_scheme_cookie, verify_password
 )
 from utils.core.db import create_engine, get_connection_url
-from utils.core.models import User, Role, PasswordResetToken, EmailUpdateToken, RefreshToken, Account
+from utils.core.models import User, Role, AccountRecoveryToken, PasswordResetToken, EmailVerificationToken, RefreshToken, Account
 from exceptions.http_exceptions import (
     AlreadyAuthenticatedError, AuthenticationError, CredentialsError,
     DataIntegrityError, PasswordValidationError
@@ -58,6 +58,7 @@ def validate_token_and_get_account(
         )).first()
 
         if account:
+            assert account.id is not None
             if token_type == "refresh":
                 jti = decoded_token.get("jti")
                 if not jti:
@@ -288,38 +289,58 @@ def get_verified_account(
     return account
 
 
-def get_account_from_email_update_token(
-    account_id: int,
+def get_account_from_email_verification_token(
     token: str,
     session: Session
-) -> tuple[Optional[Account], Optional[EmailUpdateToken]]:
+) -> tuple[Optional[Account], Optional[EmailVerificationToken]]:
     """
-    Get account from an email update token.
-    
-    Args:
-        account_id: ID of the account
-        token: Email update token
-        session: Database session
-        
+    Get account from an email verification token.
+
     Returns:
         Tuple of (account, token) if valid, or (None, None) if invalid
     """
     result = session.exec(
-        select(Account, EmailUpdateToken)
+        select(Account, EmailVerificationToken)
         .where(
-            Account.id == account_id,
-            EmailUpdateToken.token == token,
-            EmailUpdateToken.expires_at > datetime.now(UTC),
-            EmailUpdateToken.used == False,  # noqa: E712
-            EmailUpdateToken.account_id == Account.id
+            EmailVerificationToken.token == token,
+            EmailVerificationToken.expires_at > datetime.now(UTC),
+            EmailVerificationToken.used == False,  # noqa: E712
+            EmailVerificationToken.account_id == Account.id
         )
     ).first()
 
     if not result:
         return None, None
 
-    account, update_token = result
-    return account, update_token
+    account, verification_token = result
+    return account, verification_token
+
+
+def get_account_from_recovery_token(
+    token: str,
+    session: Session
+) -> tuple[Optional[Account], Optional[AccountRecoveryToken]]:
+    """
+    Get account from an account recovery token.
+
+    Returns:
+        Tuple of (account, token) if valid, or (None, None) if invalid
+    """
+    result = session.exec(
+        select(Account, AccountRecoveryToken)
+        .where(
+            AccountRecoveryToken.token == token,
+            AccountRecoveryToken.expires_at > datetime.now(UTC),
+            AccountRecoveryToken.used == False,  # noqa: E712
+            AccountRecoveryToken.account_id == Account.id
+        )
+    ).first()
+
+    if not result:
+        return None, None
+
+    account, recovery_token = result
+    return account, recovery_token
 
 
 def get_account_from_reset_token(

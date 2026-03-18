@@ -5,7 +5,9 @@ from sqlalchemy.exc import IntegrityError
 import pytest
 from utils.core.models import (
     Account,
-    EmailUpdateToken,
+    AccountEmail,
+    AccountRecoveryToken,
+    EmailVerificationToken,
     Organization,
     Permission,
     PasswordResetToken,
@@ -23,10 +25,10 @@ from tests.conftest import SetupError
 
 
 def test_private_models_have_private_schema():
-    """Account, PasswordResetToken, and EmailUpdateToken must live in the 'private' schema."""
+    """Account, PasswordResetToken, and EmailVerificationToken must live in the 'private' schema."""
     assert Account.__table__.schema == "private"
     assert PasswordResetToken.__table__.schema == "private"
-    assert EmailUpdateToken.__table__.schema == "private"
+    assert EmailVerificationToken.__table__.schema == "private"
 
 
 def test_public_models_not_in_private_schema():
@@ -333,3 +335,184 @@ def test_role_name_unique_per_organization(session: Session, test_organization: 
     # Org 2 should only have the one role we added
     assert len(roles_org2) == 1
     assert roles_org2[0].name == role_name
+
+
+# --- AccountEmail model tests ---
+
+
+def test_account_email_creation(session: Session, test_account: Account):
+    """Test creating an AccountEmail and verifying fields persist."""
+    account_email = AccountEmail(
+        account_id=test_account.id,
+        email="primary@example.com",
+        is_primary=True,
+        verified=True,
+        verified_at=datetime.now(UTC),
+    )
+    session.add(account_email)
+    session.commit()
+    session.refresh(account_email)
+
+    assert account_email.id is not None
+    assert account_email.account_id == test_account.id
+    assert account_email.email == "primary@example.com"
+    assert account_email.is_primary is True
+    assert account_email.verified is True
+    assert account_email.verified_at is not None
+    assert account_email.created_at is not None
+
+
+def test_account_email_unique_email_constraint(session: Session, test_account: Account):
+    """Test that the same email string cannot appear on two different accounts."""
+    # Create first AccountEmail
+    email1 = AccountEmail(
+        account_id=test_account.id,
+        email="unique@example.com",
+        is_primary=True,
+        verified=True,
+    )
+    session.add(email1)
+    session.commit()
+
+    # Create a second account
+    account2 = Account(email="other@example.com", hashed_password="hash")
+    session.add(account2)
+    session.commit()
+
+    # Try to create an AccountEmail with the same email on a different account
+    email2 = AccountEmail(
+        account_id=account2.id,
+        email="unique@example.com",
+        is_primary=True,
+        verified=True,
+    )
+    session.add(email2)
+    with pytest.raises(IntegrityError):
+        session.commit()
+    session.rollback()
+
+
+def test_account_relationship_to_emails(session: Session, test_account: Account):
+    """Test that account.emails returns a list of AccountEmail objects."""
+    email1 = AccountEmail(
+        account_id=test_account.id,
+        email="first@example.com",
+        is_primary=True,
+        verified=True,
+    )
+    email2 = AccountEmail(
+        account_id=test_account.id,
+        email="second@example.com",
+        is_primary=False,
+        verified=True,
+    )
+    session.add(email1)
+    session.add(email2)
+    session.commit()
+    session.refresh(test_account)
+
+    assert len(test_account.emails) == 2
+    emails = {e.email for e in test_account.emails}
+    assert emails == {"first@example.com", "second@example.com"}
+
+
+def test_account_email_cascade_delete(session: Session, test_account: Account):
+    """Test that AccountEmail rows are deleted when the account is deleted."""
+    email = AccountEmail(
+        account_id=test_account.id,
+        email="cascade@example.com",
+        is_primary=True,
+        verified=True,
+    )
+    session.add(email)
+    session.commit()
+
+    session.delete(test_account)
+    session.commit()
+
+    remaining = session.exec(select(AccountEmail)).all()
+    assert len(remaining) == 0
+
+
+# --- EmailVerificationToken model tests ---
+
+
+def test_email_verification_token_creation(session: Session, test_account: Account):
+    """Test creating an EmailVerificationToken and verifying fields persist."""
+    token = EmailVerificationToken(
+        account_id=test_account.id,
+        new_email="newemail@example.com",
+    )
+    session.add(token)
+    session.commit()
+    session.refresh(token)
+
+    assert token.id is not None
+    assert token.account_id == test_account.id
+    assert token.new_email == "newemail@example.com"
+    assert token.token is not None  # auto-generated uuid
+    assert token.expires_at is not None
+    assert token.used is False
+
+
+def test_email_verification_token_is_expired(session: Session, test_account: Account):
+    """Test that is_expired() correctly identifies expired tokens."""
+    expired_token = EmailVerificationToken(
+        account_id=test_account.id,
+        new_email="expired@example.com",
+        expires_at=datetime.now(UTC) - timedelta(hours=1),
+    )
+    valid_token = EmailVerificationToken(
+        account_id=test_account.id,
+        new_email="valid@example.com",
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
+    )
+    session.add(expired_token)
+    session.add(valid_token)
+    session.commit()
+
+    assert expired_token.is_expired()
+    assert not valid_token.is_expired()
+
+
+# --- AccountRecoveryToken tests ---
+
+
+def test_account_recovery_token_creation(session: Session, test_account: Account):
+    """Test that AccountRecoveryToken can be created with correct fields."""
+    token = AccountRecoveryToken(
+        account_id=test_account.id,
+        email="victim@example.com",
+    )
+    session.add(token)
+    session.commit()
+    session.refresh(token)
+
+    assert token.id is not None
+    assert token.account_id == test_account.id
+    assert token.email == "victim@example.com"
+    assert token.used is False
+    assert token.token is not None
+    # 7-day expiry
+    assert token.expires_at.replace(tzinfo=UTC) > datetime.now(UTC) + timedelta(days=6)
+    assert token.expires_at.replace(tzinfo=UTC) < datetime.now(UTC) + timedelta(days=8)
+
+
+def test_account_recovery_token_is_expired(session: Session, test_account: Account):
+    """Test is_expired() method on AccountRecoveryToken."""
+    expired_token = AccountRecoveryToken(
+        account_id=test_account.id,
+        email="expired@example.com",
+        expires_at=datetime.now(UTC) - timedelta(hours=1),
+    )
+    valid_token = AccountRecoveryToken(
+        account_id=test_account.id,
+        email="valid@example.com",
+        expires_at=datetime.now(UTC) + timedelta(days=7),
+    )
+    session.add(expired_token)
+    session.add(valid_token)
+    session.commit()
+
+    assert expired_token.is_expired()
+    assert not valid_token.is_expired()

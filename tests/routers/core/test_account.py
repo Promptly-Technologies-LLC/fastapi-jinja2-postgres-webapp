@@ -2,17 +2,19 @@ import pytest
 from fastapi.testclient import TestClient
 from starlette.datastructures import URLPath
 from sqlmodel import Session, select
-from datetime import timedelta
+from datetime import datetime, timedelta, UTC
 from urllib.parse import urlparse, parse_qs
 from html import unescape
 from sqlalchemy import inspect
 
 from main import app
-from utils.core.models import User, PasswordResetToken, EmailUpdateToken, RefreshToken, Account
+from utils.core.models import User, AccountEmail, AccountRecoveryToken, EmailVerificationToken, PasswordResetToken, RefreshToken, Account
 from utils.core.auth import (
     create_access_token,
+    create_recovery_token,
     create_refresh_token,
     create_tracked_refresh_token,
+    generate_recovery_url,
     verify_password,
     validate_token,
     get_password_hash
@@ -72,6 +74,32 @@ def test_register_endpoint(unauth_client: TestClient, session: Session):
     user = session.exec(select(User).where(User.account_id == account.id)).first()
     assert user is not None
     assert user.name == "New User"
+
+
+def test_register_creates_account_email_row(unauth_client: TestClient, session: Session):
+    """Test that registration creates an AccountEmail row with is_primary=True and verified=True."""
+    response = unauth_client.post(
+        app.url_path_for("register"),
+        data={
+            "name": "Email Test User",
+            "email": "emailtest@example.com",
+            "password": "NewPass123!@#",
+            "confirm_password": "NewPass123!@#"
+        },
+    )
+    assert response.status_code == 303
+
+    account = session.exec(select(Account).where(Account.email == "emailtest@example.com")).first()
+    assert account is not None
+
+    account_email = session.exec(
+        select(AccountEmail).where(AccountEmail.account_id == account.id)
+    ).first()
+    assert account_email is not None
+    assert account_email.email == "emailtest@example.com"
+    assert account_email.is_primary is True
+    assert account_email.verified is True
+    assert account_email.verified_at is not None
 
 
 def test_login_endpoint(unauth_client: TestClient, test_account: Account):
@@ -293,6 +321,130 @@ def test_password_reset_with_invalid_token(unauth_client: TestClient, test_accou
     assert app.url_path_for("read_login") not in response.headers.get("location", "")
 
 
+def test_password_reset_auto_logs_in_and_shows_flash(
+    unauth_client: TestClient, session: Session, test_account: Account
+):
+    """Password reset flow (standard forgot-password path):
+
+    1. User receives a password reset email and clicks the link.
+    2. User submits the reset form with a new password.
+    3. Server resets the password, issues auth cookies, and redirects
+       to the dashboard with a "Password reset successfully" toast.
+    4. User lands on the dashboard already logged in.
+    """
+    # Create a valid reset token
+    reset_token = PasswordResetToken(account_id=test_account.id)
+    session.add(reset_token)
+    session.commit()
+    session.refresh(reset_token)
+
+    response = unauth_client.post(
+        app.url_path_for("reset_password"),
+        data={
+            "email": test_account.email,
+            "token": reset_token.token,
+            "password": "NewPass123!@#",
+            "confirm_password": "NewPass123!@#",
+        }
+    )
+
+    assert response.status_code == 303
+
+    # Should redirect to dashboard, not login
+    dashboard_path = str(app.url_path_for("read_dashboard"))
+    assert dashboard_path in response.headers["location"]
+
+    # Should set auth cookies
+    cookie_headers = response.headers.get_list("set-cookie")
+    assert any("access_token=" in c for c in cookie_headers)
+    assert any("refresh_token=" in c for c in cookie_headers)
+
+    # Should set a flash cookie with success message
+    assert any("flash_message=" in c for c in cookie_headers)
+
+
+def test_password_reset_after_recovery_auto_logs_in(
+    unauth_client: TestClient, session: Session
+):
+    """Account recovery → password reset → auto-login flow:
+
+    1. An attacker has compromised the account (changed primary email).
+    2. The victim clicks the recovery link from a notification email.
+    3. Server restores the victim's email, revokes all sessions, and
+       redirects to the password reset page.
+    4. Victim submits a new password on the reset form.
+    5. Server resets the password, issues new auth cookies, and redirects
+       to the dashboard with a success flash toast.
+    6. Victim lands on the dashboard already logged in — no manual login
+       required despite all prior sessions having been revoked.
+    """
+    original_email = "recovery-login@example.com"
+    attacker_email = "attacker-login@example.com"
+
+    account = Account(
+        email=attacker_email,
+        hashed_password=get_password_hash("Attacker123!@#"),
+    )
+    session.add(account)
+    session.flush()
+
+    # Create user so auth works
+    user = User(name="Recovery User", account_id=account.id)
+    session.add(user)
+
+    attacker_account_email = AccountEmail(
+        account_id=account.id, email=attacker_email,
+        is_primary=True, verified=True, verified_at=datetime.now(UTC),
+    )
+    session.add(attacker_account_email)
+
+    recovery_token = AccountRecoveryToken(
+        account_id=account.id, email=original_email,
+    )
+    session.add(recovery_token)
+    session.commit()
+    session.refresh(recovery_token)
+
+    # Step 1: Hit recovery endpoint
+    recovery_response = unauth_client.get(
+        app.url_path_for("recover_account"),
+        params={"token": recovery_token.token},
+    )
+    assert recovery_response.status_code == 303
+    reset_location = recovery_response.headers["location"]
+    assert "reset_password" in reset_location
+    assert f"email={original_email}" in reset_location
+
+    # Extract reset token from redirect URL
+    parsed = urlparse(reset_location)
+    query_params = parse_qs(parsed.query)
+    reset_token_value = query_params["token"][0]
+
+    # Step 2: Submit password reset
+    reset_response = unauth_client.post(
+        app.url_path_for("reset_password"),
+        data={
+            "email": original_email,
+            "token": reset_token_value,
+            "password": "NewSecure123!@#",
+            "confirm_password": "NewSecure123!@#",
+        }
+    )
+    assert reset_response.status_code == 303
+
+    # Should redirect to dashboard, not login
+    dashboard_path = str(app.url_path_for("read_dashboard"))
+    assert dashboard_path in reset_response.headers["location"]
+
+    # Should have auth cookies
+    cookie_headers = reset_response.headers.get_list("set-cookie")
+    assert any("access_token=" in c for c in cookie_headers)
+    assert any("refresh_token=" in c for c in cookie_headers)
+
+    # Should have flash message
+    assert any("flash_message=" in c for c in cookie_headers)
+
+
 def test_password_reset_email_url(unauth_client: TestClient, session: Session, test_account: Account, mock_resend_send):
     """
     Tests that the password reset email contains a properly formatted reset URL.
@@ -358,158 +510,6 @@ def test_forgot_password_does_not_send_second_email_while_token_is_active(
     ).all()
     assert len(tokens) == 1
     assert mock_resend_send.call_count == 1
-
-
-def test_request_email_update_success(auth_client: TestClient, test_account: Account, mock_resend_send):
-    """Test successful email update request"""
-    new_email = "newemail@example.com"
-    
-    response = auth_client.post(
-        app.url_path_for("request_email_update"),
-        data={"email": test_account.email, "new_email": new_email},
-    )
-
-    assert response.status_code == 303
-    assert response.headers["location"] == str(app.url_path_for("read_profile"))
-    # Flash cookie should be set
-    assert "flash_message" in response.headers.get("set-cookie", "")
-
-    # Verify email was "sent"
-    mock_resend_send.assert_called_once()
-    call_args = mock_resend_send.call_args[0][0]
-    
-    # Verify email content
-    assert call_args["to"] == [test_account.email]
-    assert call_args["from"] == "test@example.com"
-    assert "Confirm Email Update" in call_args["subject"]
-    assert "confirm_email_update" in call_args["html"]
-    assert new_email in call_args["html"]
-
-
-def test_request_email_update_same_email_returns_error_page(auth_client: TestClient, test_account: Account):
-    response = auth_client.post(
-        app.url_path_for("request_email_update"),
-        data={"email": test_account.email, "new_email": test_account.email},
-    )
-
-    assert response.status_code == 401
-    assert response.headers.get("location") is None
-    assert "New email is the same as the current email" in response.text
-
-
-def test_request_email_update_already_registered(auth_client: TestClient, session: Session, test_account: Account):
-    """Test email update request with already registered email"""
-    # Create another account with the target email
-    existing_email = "existing@example.com"
-    existing_account = Account(
-        email=existing_email,
-        hashed_password=get_password_hash("Test123!@#")
-    )
-    session.add(existing_account)
-    session.commit()
-    
-    response = auth_client.post(
-        app.url_path_for("request_email_update"),
-        data={"email": test_account.email, "new_email": existing_email}
-    )
-    
-    assert response.status_code == 409
-    assert "already registered" in response.text
-
-
-def test_request_email_update_unauthenticated(unauth_client: TestClient):
-    """Test email update request without authentication"""
-    response = unauth_client.post(
-        app.url_path_for("request_email_update"),
-        data={"email": "test@example.com", "new_email": "new@example.com"},
-    )
-
-    assert response.status_code == 303  # Redirect to login
-    assert response.headers["location"] == str(app.url_path_for("read_login"))
-
-
-def test_confirm_email_update_success(unauth_client: TestClient, session: Session, test_account: Account):
-    """Test successful email update confirmation"""
-    new_email = "updated@example.com"
-    
-    # Create an email update token
-    update_token = EmailUpdateToken(account_id=test_account.id)
-    session.add(update_token)
-    session.commit()
-    
-    response = unauth_client.get(
-        app.url_path_for("confirm_email_update"),
-        params={
-            "account_id": test_account.id,
-            "token": update_token.token,
-            "new_email": new_email
-        },
-    )
-    
-    assert response.status_code == 303
-    assert response.headers["location"] == str(app.url_path_for("read_profile"))
-    # Flash cookie should be set
-    assert "flash_message" in response.headers.get("set-cookie", "")
-
-    # Verify email was updated
-    session.refresh(test_account)
-    assert test_account.email == new_email
-    
-    # Verify token was marked as used
-    session.refresh(update_token)
-    assert update_token.used
-    
-    # Verify new auth cookies were set
-    cookies = response.cookies
-    assert "access_token" in cookies
-    assert "refresh_token" in cookies
-
-
-def test_confirm_email_update_invalid_token(unauth_client: TestClient, session: Session, test_account: Account):
-    """Test email update confirmation with invalid token"""
-    response = unauth_client.get(
-        app.url_path_for("confirm_email_update"),
-        params={
-            "account_id": test_account.id,
-            "token": "invalid_token",
-            "new_email": "new@example.com"
-        }
-    )
-    
-    assert response.status_code == 401
-    assert "Invalid or expired" in response.text
-    
-    # Verify email was not updated
-    session.refresh(test_account)
-    assert test_account.email == "test@example.com"
-
-
-def test_confirm_email_update_used_token(unauth_client: TestClient, session: Session, test_account: Account):
-    """Test email update confirmation with already used token"""
-    # Create an already used token
-    used_token = EmailUpdateToken(
-        account_id=test_account.id,
-        token="test_used_token",
-        used=True
-    )
-    session.add(used_token)
-    session.commit()
-
-    response = unauth_client.get(
-        app.url_path_for("confirm_email_update"),
-        params={
-            "account_id": test_account.id,
-            "token": used_token.token,
-            "new_email": "new@example.com"
-        }
-    )
-
-    assert response.status_code == 401
-    assert "Invalid or expired" in response.text
-
-    # Verify email was not updated
-    session.refresh(test_account)
-    assert test_account.email == "test@example.com"
 
 
 # --- Rate Limiting Tests ---
@@ -828,3 +828,1073 @@ def test_automatic_token_refresh_via_dependency(
     ).all()
     # Should have exactly 1 active token (the new one)
     assert len(active_tokens) == 1
+
+
+# --- Add Email Tests ---
+
+
+def test_add_email_sends_verification(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+):
+    """Test that POST /account/emails/add creates a verification token and sends email."""
+    response = auth_client.post(
+        app.url_path_for("add_email"),
+        data={"new_email": "secondary@example.com"},
+    )
+    assert response.status_code in (200, 303)
+
+    # Verify token was created
+    token = session.exec(
+        select(EmailVerificationToken).where(
+            EmailVerificationToken.account_id == test_account.id,
+            EmailVerificationToken.new_email == "secondary@example.com",
+        )
+    ).first()
+    assert token is not None
+    assert token.used is False
+
+    # Verify email was sent to the NEW address
+    mock_resend_send.assert_called_once()
+    call_args = mock_resend_send.call_args
+    assert "secondary@example.com" in call_args[0][0]["to"]
+
+
+def test_add_email_already_registered_returns_409(
+    auth_client: TestClient, test_account_email, session: Session
+):
+    """Test that adding an email already registered on another account returns 409."""
+    # Create another account with an AccountEmail
+    other_account = Account(email="other@example.com", hashed_password="hash")
+    session.add(other_account)
+    session.commit()
+    other_email = AccountEmail(
+        account_id=other_account.id, email="taken@example.com",
+        is_primary=True, verified=True,
+    )
+    session.add(other_email)
+    session.commit()
+
+    response = auth_client.post(
+        app.url_path_for("add_email"),
+        data={"new_email": "taken@example.com"},
+    )
+    assert response.status_code == 409
+
+
+def test_add_email_already_on_own_account_returns_409(
+    auth_client: TestClient, test_account_email, session: Session
+):
+    """Test that adding an email already on own account returns 409."""
+    response = auth_client.post(
+        app.url_path_for("add_email"),
+        data={"new_email": test_account_email.email},
+    )
+    assert response.status_code == 409
+
+
+def test_add_email_max_limit_returns_400(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session
+):
+    """Test that adding a 3rd email returns 400 when account already has 2."""
+    # Add a second email to reach the limit
+    second_email = AccountEmail(
+        account_id=test_account.id, email="second@example.com",
+        is_primary=False, verified=True,
+    )
+    session.add(second_email)
+    session.commit()
+
+    response = auth_client.post(
+        app.url_path_for("add_email"),
+        data={"new_email": "third@example.com"},
+    )
+    assert response.status_code == 400
+
+
+def test_add_email_unauthenticated_redirects(unauth_client: TestClient):
+    """Test that unauthenticated users are redirected."""
+    response = unauth_client.post(
+        app.url_path_for("add_email"),
+        data={"new_email": "new@example.com"},
+    )
+    assert response.status_code == 303
+
+
+def test_add_email_suppresses_duplicate_token(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+):
+    """Test that a second request for the same email doesn't create a duplicate token."""
+    # Create an existing unexpired token
+    existing_token = EmailVerificationToken(
+        account_id=test_account.id,
+        new_email="dupe@example.com",
+    )
+    session.add(existing_token)
+    session.commit()
+
+    response = auth_client.post(
+        app.url_path_for("add_email"),
+        data={"new_email": "dupe@example.com"},
+    )
+    assert response.status_code in (200, 303)
+
+    # Should still only have 1 token
+    tokens = session.exec(
+        select(EmailVerificationToken).where(
+            EmailVerificationToken.account_id == test_account.id,
+            EmailVerificationToken.new_email == "dupe@example.com",
+        )
+    ).all()
+    assert len(tokens) == 1
+    mock_resend_send.assert_not_called()
+
+
+# --- Verify Email Tests ---
+
+
+def test_verify_email_creates_account_email(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+):
+    """Test that clicking a valid verification link creates an AccountEmail row."""
+    token = EmailVerificationToken(
+        account_id=test_account.id,
+        new_email="verified@example.com",
+    )
+    session.add(token)
+    session.commit()
+
+    response = auth_client.get(
+        app.url_path_for("verify_email"),
+        params={"token": token.token},
+    )
+    assert response.status_code == 303
+
+    # Verify AccountEmail was created
+    account_email = session.exec(
+        select(AccountEmail).where(
+            AccountEmail.account_id == test_account.id,
+            AccountEmail.email == "verified@example.com",
+        )
+    ).first()
+    assert account_email is not None
+    assert account_email.is_primary is False
+    assert account_email.verified is True
+
+    # Token should be marked as used
+    session.refresh(token)
+    assert token.used is True
+
+
+def test_verify_email_invalid_token_returns_401(
+    auth_client: TestClient, test_account_email
+):
+    """Test that an invalid token returns 401."""
+    response = auth_client.get(
+        app.url_path_for("verify_email"),
+        params={"token": "nonexistent-token"},
+    )
+    assert response.status_code == 401
+
+
+def test_verify_email_expired_token_returns_401(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session
+):
+    """Test that an expired token returns 401."""
+    from datetime import timedelta as td
+    token = EmailVerificationToken(
+        account_id=test_account.id,
+        new_email="expired@example.com",
+        expires_at=datetime.now(UTC) - td(hours=1),
+    )
+    session.add(token)
+    session.commit()
+
+    response = auth_client.get(
+        app.url_path_for("verify_email"),
+        params={"token": token.token},
+    )
+    assert response.status_code == 401
+
+
+def test_verify_email_used_token_returns_401(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session
+):
+    """Test that a used token returns 401."""
+    token = EmailVerificationToken(
+        account_id=test_account.id,
+        new_email="used@example.com",
+        used=True,
+    )
+    session.add(token)
+    session.commit()
+
+    response = auth_client.get(
+        app.url_path_for("verify_email"),
+        params={"token": token.token},
+    )
+    assert response.status_code == 401
+
+
+def test_verify_email_sends_notification_to_primary(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+):
+    """Test that a notification is sent to the primary email after verification."""
+    token = EmailVerificationToken(
+        account_id=test_account.id,
+        new_email="notify@example.com",
+    )
+    session.add(token)
+    session.commit()
+
+    response = auth_client.get(
+        app.url_path_for("verify_email"),
+        params={"token": token.token},
+    )
+    assert response.status_code == 303
+
+    # Notification should have been sent to the primary email
+    mock_resend_send.assert_called_once()
+    call_args = mock_resend_send.call_args
+    assert test_account.email in call_args[0][0]["to"]
+
+
+def test_verify_email_unauthenticated_redirects_to_login(
+    unauth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+):
+    """Email verification flow when session has expired or link opened in another browser:
+
+    1. User adds a secondary email and receives a verification link.
+    2. User clicks the link in their email (cross-site navigation, so
+       samesite=strict auth cookies are not sent).
+    3. Server verifies the email, adds it to the account, and redirects
+       to the login page with a success flash toast.
+    4. User sees "Email address verified and added to your account." on
+       the login page, logs in, and continues normally.
+    """
+    token = EmailVerificationToken(
+        account_id=test_account.id,
+        new_email="unauth-verify@example.com",
+    )
+    session.add(token)
+    session.commit()
+
+    response = unauth_client.get(
+        app.url_path_for("verify_email"),
+        params={"token": token.token},
+    )
+    assert response.status_code == 303
+    assert "/account/login" in response.headers["location"]
+
+    # Flash cookie should be set
+    assert "flash_message" in response.cookies
+
+    # Email should still be verified
+    account_email = session.exec(
+        select(AccountEmail).where(
+            AccountEmail.account_id == test_account.id,
+            AccountEmail.email == "unauth-verify@example.com",
+        )
+    ).first()
+    assert account_email is not None
+    assert account_email.verified is True
+
+
+def test_verify_email_race_condition_email_taken(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session
+):
+    """Test that if email was taken between request and verify, return 409."""
+    token = EmailVerificationToken(
+        account_id=test_account.id,
+        new_email="raced@example.com",
+    )
+    session.add(token)
+    session.commit()
+
+    # Simulate race condition: another account takes the email
+    other_account = Account(email="other2@example.com", hashed_password="hash")
+    session.add(other_account)
+    session.commit()
+    other_email = AccountEmail(
+        account_id=other_account.id, email="raced@example.com",
+        is_primary=True, verified=True,
+    )
+    session.add(other_email)
+    session.commit()
+
+    response = auth_client.get(
+        app.url_path_for("verify_email"),
+        params={"token": token.token},
+    )
+    assert response.status_code == 409
+
+
+# --- Promote Email Tests ---
+
+
+def test_promote_email_swaps_primary(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+):
+    """Test that promoting a secondary email swaps primary flags."""
+    secondary = AccountEmail(
+        account_id=test_account.id, email="secondary@example.com",
+        is_primary=False, verified=True, verified_at=datetime.now(UTC),
+    )
+    session.add(secondary)
+    session.commit()
+    session.refresh(secondary)
+
+    response = auth_client.post(
+        app.url_path_for("promote_email"),
+        data={"email_id": secondary.id},
+    )
+    assert response.status_code == 303
+
+    session.refresh(test_account_email)
+    session.refresh(secondary)
+    assert secondary.is_primary is True
+    assert test_account_email.is_primary is False
+
+
+def test_promote_email_updates_account_email_field(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+):
+    """Test that Account.email is updated to the new primary."""
+    secondary = AccountEmail(
+        account_id=test_account.id, email="newprimary@example.com",
+        is_primary=False, verified=True, verified_at=datetime.now(UTC),
+    )
+    session.add(secondary)
+    session.commit()
+    session.refresh(secondary)
+
+    response = auth_client.post(
+        app.url_path_for("promote_email"),
+        data={"email_id": secondary.id},
+    )
+    assert response.status_code == 303
+
+    session.refresh(test_account)
+    assert test_account.email == "newprimary@example.com"
+
+
+def test_promote_email_revokes_refresh_tokens(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+):
+    """Test that all refresh tokens are revoked and new ones issued."""
+    secondary = AccountEmail(
+        account_id=test_account.id, email="promoted@example.com",
+        is_primary=False, verified=True, verified_at=datetime.now(UTC),
+    )
+    session.add(secondary)
+    session.commit()
+    session.refresh(secondary)
+
+    response = auth_client.post(
+        app.url_path_for("promote_email"),
+        data={"email_id": secondary.id},
+    )
+    assert response.status_code == 303
+
+    # New cookies should be set
+    cookies = response.cookies
+    assert "access_token" in cookies
+    assert "refresh_token" in cookies
+
+
+def test_promote_email_sends_notification_to_old_primary(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+):
+    """Test that a notification is sent to the old primary email."""
+    old_primary_email = test_account.email
+    secondary = AccountEmail(
+        account_id=test_account.id, email="notified@example.com",
+        is_primary=False, verified=True, verified_at=datetime.now(UTC),
+    )
+    session.add(secondary)
+    session.commit()
+    session.refresh(secondary)
+
+    response = auth_client.post(
+        app.url_path_for("promote_email"),
+        data={"email_id": secondary.id},
+    )
+    assert response.status_code == 303
+
+    mock_resend_send.assert_called_once()
+    call_args = mock_resend_send.call_args
+    assert old_primary_email in call_args[0][0]["to"]
+
+
+def test_promote_email_unverified_fails_400(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session
+):
+    """Test that promoting an unverified email returns 400."""
+    unverified = AccountEmail(
+        account_id=test_account.id, email="unverified@example.com",
+        is_primary=False, verified=False,
+    )
+    session.add(unverified)
+    session.commit()
+    session.refresh(unverified)
+
+    response = auth_client.post(
+        app.url_path_for("promote_email"),
+        data={"email_id": unverified.id},
+    )
+    assert response.status_code == 400
+
+
+def test_promote_email_not_owned_returns_404(
+    auth_client: TestClient, test_account_email, session: Session
+):
+    """Test that promoting an email not owned by the account returns 404."""
+    other_account = Account(email="other3@example.com", hashed_password="hash")
+    session.add(other_account)
+    session.commit()
+    other_email = AccountEmail(
+        account_id=other_account.id, email="notmine@example.com",
+        is_primary=True, verified=True,
+    )
+    session.add(other_email)
+    session.commit()
+    session.refresh(other_email)
+
+    response = auth_client.post(
+        app.url_path_for("promote_email"),
+        data={"email_id": other_email.id},
+    )
+    assert response.status_code == 404
+
+
+def test_promote_email_already_primary_is_noop(
+    auth_client: TestClient, test_account_email, session: Session
+):
+    """Test that promoting the current primary is a no-op redirect."""
+    response = auth_client.post(
+        app.url_path_for("promote_email"),
+        data={"email_id": test_account_email.id},
+    )
+    # Should redirect without error
+    assert response.status_code == 303
+
+
+# --- Remove Email Tests ---
+
+
+def test_remove_secondary_email_succeeds(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+):
+    """Test that removing a secondary email deletes the AccountEmail row."""
+    secondary = AccountEmail(
+        account_id=test_account.id, email="removeme@example.com",
+        is_primary=False, verified=True, verified_at=datetime.now(UTC),
+    )
+    session.add(secondary)
+    session.commit()
+    session.refresh(secondary)
+    secondary_id = secondary.id
+
+    response = auth_client.post(
+        app.url_path_for("remove_email"),
+        data={"email_id": secondary.id},
+    )
+    assert response.status_code == 303
+
+    # Verify the email was deleted
+    remaining = session.exec(
+        select(AccountEmail).where(AccountEmail.id == secondary_id)
+    ).first()
+    assert remaining is None
+
+
+def test_remove_primary_email_fails_400(
+    auth_client: TestClient, test_account_email, session: Session
+):
+    """Test that removing the primary email returns 400."""
+    response = auth_client.post(
+        app.url_path_for("remove_email"),
+        data={"email_id": test_account_email.id},
+    )
+    assert response.status_code == 400
+
+
+def test_remove_email_not_owned_returns_404(
+    auth_client: TestClient, test_account_email, session: Session
+):
+    """Test that removing an email not owned by the account returns 404."""
+    other_account = Account(email="other4@example.com", hashed_password="hash")
+    session.add(other_account)
+    session.commit()
+    other_email = AccountEmail(
+        account_id=other_account.id, email="notmine2@example.com",
+        is_primary=True, verified=True,
+    )
+    session.add(other_email)
+    session.commit()
+    session.refresh(other_email)
+
+    response = auth_client.post(
+        app.url_path_for("remove_email"),
+        data={"email_id": other_email.id},
+    )
+    assert response.status_code == 404
+
+
+def test_remove_email_sends_notification(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+):
+    """Test that a notification is sent to the removed email address."""
+    secondary = AccountEmail(
+        account_id=test_account.id, email="goodbye@example.com",
+        is_primary=False, verified=True, verified_at=datetime.now(UTC),
+    )
+    session.add(secondary)
+    session.commit()
+    session.refresh(secondary)
+
+    response = auth_client.post(
+        app.url_path_for("remove_email"),
+        data={"email_id": secondary.id},
+    )
+    assert response.status_code == 303
+
+    mock_resend_send.assert_called_once()
+    call_args = mock_resend_send.call_args
+    assert "goodbye@example.com" in call_args[0][0]["to"]
+
+
+def test_remove_email_unauthenticated_redirects(unauth_client: TestClient):
+    """Test that unauthenticated users are redirected."""
+    response = unauth_client.post(
+        app.url_path_for("remove_email"),
+        data={"email_id": 1},
+    )
+    assert response.status_code == 303
+
+
+# --- Profile UI Tests ---
+
+
+def test_profile_shows_all_emails(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session
+):
+    """Test that profile page shows all email addresses."""
+    secondary = AccountEmail(
+        account_id=test_account.id, email="profile-secondary@example.com",
+        is_primary=False, verified=True, verified_at=datetime.now(UTC),
+    )
+    session.add(secondary)
+    session.commit()
+
+    response = auth_client.get(app.url_path_for("read_profile"))
+    assert response.status_code == 200
+    assert test_account.email in response.text
+    assert "profile-secondary@example.com" in response.text
+
+
+def test_profile_shows_primary_badge(
+    auth_client: TestClient, test_account_email, session: Session
+):
+    """Test that profile page shows primary badge."""
+    response = auth_client.get(app.url_path_for("read_profile"))
+    assert response.status_code == 200
+    assert "Primary" in response.text
+
+
+def test_profile_shows_add_form_when_under_limit(
+    auth_client: TestClient, test_account_email, session: Session
+):
+    """Test that add email form is shown when under the limit."""
+    response = auth_client.get(app.url_path_for("read_profile"))
+    assert response.status_code == 200
+    assert "/account/emails/add" in response.text
+
+
+def test_profile_hides_add_form_at_limit(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session
+):
+    """Test that add email form is hidden when at the limit."""
+    secondary = AccountEmail(
+        account_id=test_account.id, email="limit@example.com",
+        is_primary=False, verified=True,
+    )
+    session.add(secondary)
+    session.commit()
+
+    response = auth_client.get(app.url_path_for("read_profile"))
+    assert response.status_code == 200
+    # The add form should not be present
+    assert "Add Email" not in response.text
+
+
+# --- Account Recovery Token Helper Tests ---
+
+
+def test_generate_recovery_url(monkeypatch):
+    """Test that generate_recovery_url returns the correct URL."""
+    monkeypatch.setenv("BASE_URL", "https://example.com")
+    url = generate_recovery_url("abc123")
+    assert url == "https://example.com/account/recover?token=abc123"
+
+
+def test_create_recovery_token(
+    test_account: Account, session: Session
+):
+    """Test that create_recovery_token creates a DB row and returns the token string."""
+    token_str = create_recovery_token(test_account.id, "victim@example.com", session)
+    session.commit()
+
+    assert token_str is not None
+    # Verify DB row
+    db_token = session.exec(
+        select(AccountRecoveryToken).where(AccountRecoveryToken.token == token_str)
+    ).first()
+    assert db_token is not None
+    assert db_token.account_id == test_account.id
+    assert db_token.email == "victim@example.com"
+    assert db_token.used is False
+    assert db_token.expires_at.replace(tzinfo=UTC) > datetime.now(UTC) + timedelta(days=6)
+
+
+def test_create_recovery_token_deduplicates(
+    test_account: Account, session: Session
+):
+    """Test that create_recovery_token returns existing token if unexpired one exists."""
+    token1 = create_recovery_token(test_account.id, "victim@example.com", session)
+    session.commit()
+    token2 = create_recovery_token(test_account.id, "victim@example.com", session)
+    session.commit()
+
+    assert token1 == token2
+    # Only one token in DB
+    count = len(session.exec(
+        select(AccountRecoveryToken).where(
+            AccountRecoveryToken.account_id == test_account.id,
+            AccountRecoveryToken.email == "victim@example.com",
+        )
+    ).all())
+    assert count == 1
+
+
+# --- Notification function tests (recovery URL) ---
+
+
+def test_send_primary_email_changed_notification_includes_recovery_url(
+    mock_resend_send, monkeypatch
+):
+    """Test that primary email changed notification includes recovery URL in HTML."""
+    from utils.core.auth import send_primary_email_changed_notification
+    monkeypatch.setenv("EMAIL_FROM", "noreply@test.com")
+    monkeypatch.setenv("RESEND_API_KEY", "test_key")
+
+    send_primary_email_changed_notification(
+        "old@example.com", "new@example.com",
+        recovery_url="https://example.com/account/recover?token=abc123"
+    )
+
+    mock_resend_send.assert_called_once()
+    html = mock_resend_send.call_args[0][0]["html"]
+    assert "https://example.com/account/recover?token=abc123" in html
+    assert "Recover Your Account" in html
+
+
+def test_promote_email_creates_recovery_token(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+):
+    """Test that promoting an email creates an AccountRecoveryToken for the old primary."""
+    old_primary_email = test_account.email
+    secondary = AccountEmail(
+        account_id=test_account.id, email="attacker@example.com",
+        is_primary=False, verified=True, verified_at=datetime.now(UTC),
+    )
+    session.add(secondary)
+    session.commit()
+    session.refresh(secondary)
+
+    auth_client.post(app.url_path_for("promote_email"), data={"email_id": secondary.id})
+
+    recovery_token = session.exec(
+        select(AccountRecoveryToken).where(
+            AccountRecoveryToken.account_id == test_account.id,
+            AccountRecoveryToken.email == old_primary_email,
+        )
+    ).first()
+    assert recovery_token is not None
+    assert recovery_token.used is False
+
+
+def test_promote_email_notification_contains_recovery_url(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+):
+    """Test that the promote notification email contains a recovery URL."""
+    secondary = AccountEmail(
+        account_id=test_account.id, email="attacker2@example.com",
+        is_primary=False, verified=True, verified_at=datetime.now(UTC),
+    )
+    session.add(secondary)
+    session.commit()
+    session.refresh(secondary)
+
+    auth_client.post(app.url_path_for("promote_email"), data={"email_id": secondary.id})
+
+    mock_resend_send.assert_called_once()
+    html = mock_resend_send.call_args[0][0]["html"]
+    assert "/account/recover?token=" in html
+
+
+def test_remove_email_creates_recovery_token(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+):
+    """Test that removing an email creates an AccountRecoveryToken for the removed email."""
+    secondary = AccountEmail(
+        account_id=test_account.id, email="removed@example.com",
+        is_primary=False, verified=True, verified_at=datetime.now(UTC),
+    )
+    session.add(secondary)
+    session.commit()
+    session.refresh(secondary)
+
+    auth_client.post(app.url_path_for("remove_email"), data={"email_id": secondary.id})
+
+    recovery_token = session.exec(
+        select(AccountRecoveryToken).where(
+            AccountRecoveryToken.account_id == test_account.id,
+            AccountRecoveryToken.email == "removed@example.com",
+        )
+    ).first()
+    assert recovery_token is not None
+    assert recovery_token.used is False
+
+
+def test_remove_email_notification_contains_recovery_url(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+):
+    """Test that the remove notification email contains a recovery URL."""
+    secondary = AccountEmail(
+        account_id=test_account.id, email="removed2@example.com",
+        is_primary=False, verified=True, verified_at=datetime.now(UTC),
+    )
+    session.add(secondary)
+    session.commit()
+    session.refresh(secondary)
+
+    auth_client.post(app.url_path_for("remove_email"), data={"email_id": secondary.id})
+
+    mock_resend_send.assert_called_once()
+    html = mock_resend_send.call_args[0][0]["html"]
+    assert "/account/recover?token=" in html
+
+
+def test_send_email_removed_notification_includes_recovery_url(
+    mock_resend_send, monkeypatch
+):
+    """Test that email removed notification includes recovery URL in HTML."""
+    from utils.core.auth import send_email_removed_notification
+    monkeypatch.setenv("EMAIL_FROM", "noreply@test.com")
+    monkeypatch.setenv("RESEND_API_KEY", "test_key")
+
+    send_email_removed_notification(
+        "removed@example.com",
+        recovery_url="https://example.com/account/recover?token=xyz789"
+    )
+
+    mock_resend_send.assert_called_once()
+    html = mock_resend_send.call_args[0][0]["html"]
+    assert "https://example.com/account/recover?token=xyz789" in html
+    assert "Recover Your Account" in html
+
+
+# --- Account Recovery Route Tests ---
+
+
+def _setup_compromised_account(session: Session) -> tuple:
+    """Helper: create an account that has been taken over by an attacker.
+    Returns (account, recovery_token, original_email).
+    """
+    original_email = "victim@example.com"
+    attacker_email = "attacker@example.com"
+
+    account = Account(
+        email=attacker_email,
+        hashed_password=get_password_hash("Attacker123!@#"),
+    )
+    session.add(account)
+    session.flush()
+
+    # Attacker's email is now primary
+    attacker_account_email = AccountEmail(
+        account_id=account.id, email=attacker_email,
+        is_primary=True, verified=True, verified_at=datetime.now(UTC),
+    )
+    session.add(attacker_account_email)
+
+    # Create recovery token for the victim's original email
+    recovery_token = AccountRecoveryToken(
+        account_id=account.id,
+        email=original_email,
+    )
+    session.add(recovery_token)
+    session.commit()
+    session.refresh(recovery_token)
+
+    return account, recovery_token, original_email
+
+
+def test_recover_account_restores_email_as_primary(
+    unauth_client: TestClient, session: Session
+):
+    """Test that recovery restores the victim's email as primary."""
+    account, recovery_token, original_email = _setup_compromised_account(session)
+
+    response = unauth_client.get(
+        app.url_path_for("recover_account"),
+        params={"token": recovery_token.token},
+    )
+    assert response.status_code == 303
+
+    session.refresh(account)
+    assert account.email == original_email
+
+    primary = session.exec(
+        select(AccountEmail).where(
+            AccountEmail.account_id == account.id,
+            AccountEmail.is_primary == True,  # noqa: E712
+        )
+    ).first()
+    assert primary is not None
+    assert primary.email == original_email
+
+
+def test_recover_account_removes_attacker_emails(
+    unauth_client: TestClient, session: Session
+):
+    """Test that recovery removes all existing AccountEmail rows (attacker's emails)."""
+    account, recovery_token, original_email = _setup_compromised_account(session)
+
+    unauth_client.get(
+        app.url_path_for("recover_account"),
+        params={"token": recovery_token.token},
+    )
+
+    all_emails = session.exec(
+        select(AccountEmail).where(AccountEmail.account_id == account.id)
+    ).all()
+    assert len(all_emails) == 1
+    assert all_emails[0].email == original_email
+
+
+def test_recover_account_revokes_all_sessions(
+    unauth_client: TestClient, session: Session
+):
+    """Test that recovery revokes all refresh tokens."""
+    account, recovery_token, _ = _setup_compromised_account(session)
+
+    # Create a refresh token for the account
+    rt = RefreshToken(account_id=account.id, expires_at=datetime.now(UTC) + timedelta(days=30))
+    session.add(rt)
+    session.commit()
+
+    unauth_client.get(
+        app.url_path_for("recover_account"),
+        params={"token": recovery_token.token},
+    )
+
+    session.refresh(rt)
+    assert rt.revoked is True
+
+
+def test_recover_account_generates_password_reset_token(
+    unauth_client: TestClient, session: Session
+):
+    """Test that recovery creates a PasswordResetToken."""
+    account, recovery_token, _ = _setup_compromised_account(session)
+
+    unauth_client.get(
+        app.url_path_for("recover_account"),
+        params={"token": recovery_token.token},
+    )
+
+    reset_token = session.exec(
+        select(PasswordResetToken).where(
+            PasswordResetToken.account_id == account.id,
+            PasswordResetToken.used == False,  # noqa: E712
+        )
+    ).first()
+    assert reset_token is not None
+
+
+def test_recover_account_redirects_to_reset_password(
+    unauth_client: TestClient, session: Session
+):
+    """Test that recovery redirects to the reset password page."""
+    account, recovery_token, original_email = _setup_compromised_account(session)
+
+    response = unauth_client.get(
+        app.url_path_for("recover_account"),
+        params={"token": recovery_token.token},
+    )
+    assert response.status_code == 303
+    location = response.headers["location"]
+    assert "/account/reset_password" in location
+    assert f"email={original_email}" in location
+
+
+def test_recover_account_marks_token_used(
+    unauth_client: TestClient, session: Session
+):
+    """Test that the recovery token is marked as used after recovery."""
+    account, recovery_token, _ = _setup_compromised_account(session)
+
+    unauth_client.get(
+        app.url_path_for("recover_account"),
+        params={"token": recovery_token.token},
+    )
+
+    session.refresh(recovery_token)
+    assert recovery_token.used is True
+
+
+def test_recover_account_expired_token_fails(
+    unauth_client: TestClient, session: Session
+):
+    """Test that an expired recovery token fails."""
+    account, recovery_token, _ = _setup_compromised_account(session)
+    recovery_token.expires_at = datetime.now(UTC) - timedelta(hours=1)
+    session.commit()
+
+    response = unauth_client.get(
+        app.url_path_for("recover_account"),
+        params={"token": recovery_token.token},
+    )
+    assert response.status_code == 401
+
+
+def test_recover_account_used_token_fails(
+    unauth_client: TestClient, session: Session
+):
+    """Test that a used recovery token fails."""
+    account, recovery_token, _ = _setup_compromised_account(session)
+    recovery_token.used = True
+    session.commit()
+
+    response = unauth_client.get(
+        app.url_path_for("recover_account"),
+        params={"token": recovery_token.token},
+    )
+    assert response.status_code == 401
+
+
+def test_recover_account_invalid_token_fails(
+    unauth_client: TestClient, session: Session
+):
+    """Test that a nonexistent recovery token fails."""
+    response = unauth_client.get(
+        app.url_path_for("recover_account"),
+        params={"token": "nonexistent-token"},
+    )
+    assert response.status_code == 401
+
+
+def test_recover_account_readds_removed_email(
+    unauth_client: TestClient, session: Session
+):
+    """Test recovery works when the email was fully removed (no AccountEmail row)."""
+    original_email = "victim2@example.com"
+    account = Account(
+        email="attacker2@example.com",
+        hashed_password=get_password_hash("Attacker123!@#"),
+    )
+    session.add(account)
+    session.flush()
+
+    # No AccountEmail rows at all (simulating complete takeover)
+    recovery_token = AccountRecoveryToken(
+        account_id=account.id,
+        email=original_email,
+    )
+    session.add(recovery_token)
+    session.commit()
+    session.refresh(recovery_token)
+
+    response = unauth_client.get(
+        app.url_path_for("recover_account"),
+        params={"token": recovery_token.token},
+    )
+    assert response.status_code == 303
+
+    session.refresh(account)
+    assert account.email == original_email
+
+
+def test_recover_account_when_victim_email_still_exists_as_account_email(
+    unauth_client: TestClient, session: Session
+):
+    """Account recovery when the victim's email is still on the account:
+
+    1. Attacker promoted their email to primary; victim's email was demoted
+       to secondary (still exists as an AccountEmail row).
+    2. Victim clicks the recovery link from the notification email.
+    3. Server deletes ALL AccountEmail rows (including the victim's
+       secondary), then re-creates the victim's email as the sole primary.
+    4. Server revokes all sessions and redirects to password reset.
+
+    This scenario requires flushing the deletes before the insert to avoid
+    a unique constraint violation (SQLAlchemy processes INSERTs before
+    DELETEs within a single autoflush).
+    """
+    original_email = "victim-swap@example.com"
+    attacker_email = "attacker-swap@example.com"
+
+    account = Account(
+        email=attacker_email,
+        hashed_password=get_password_hash("Attacker123!@#"),
+    )
+    session.add(account)
+    session.flush()
+
+    # After a primary swap: attacker email is primary, victim email is still present as secondary
+    attacker_account_email = AccountEmail(
+        account_id=account.id, email=attacker_email,
+        is_primary=True, verified=True, verified_at=datetime.now(UTC),
+    )
+    victim_account_email = AccountEmail(
+        account_id=account.id, email=original_email,
+        is_primary=False, verified=True, verified_at=datetime.now(UTC),
+    )
+    session.add(attacker_account_email)
+    session.add(victim_account_email)
+
+    recovery_token = AccountRecoveryToken(
+        account_id=account.id,
+        email=original_email,
+    )
+    session.add(recovery_token)
+    session.commit()
+    session.refresh(recovery_token)
+
+    response = unauth_client.get(
+        app.url_path_for("recover_account"),
+        params={"token": recovery_token.token},
+    )
+    assert response.status_code == 303
+
+    # Verify the victim's email is now the only AccountEmail and is primary
+    session.refresh(account)
+    assert account.email == original_email
+
+    all_emails = session.exec(
+        select(AccountEmail).where(AccountEmail.account_id == account.id)
+    ).all()
+    assert len(all_emails) == 1
+    assert all_emails[0].email == original_email
+    assert all_emails[0].is_primary is True
+
+    restored = session.exec(
+        select(AccountEmail).where(
+            AccountEmail.account_id == account.id,
+            AccountEmail.email == original_email,
+        )
+    ).first()
+    assert restored is not None
+    assert restored.is_primary is True
+    assert restored.verified is True

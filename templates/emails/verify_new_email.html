@@ -1,0 +1,12 @@
+{% extends "emails/base_email.html" %}
+
+{% block email_title %}Verify Your Email Address{% endblock %}
+
+{% block email_content %}
+    <h1>Verify Your Email Address</h1>
+    <p>You have requested to add this email address to your account.</p>
+    <p>Click the link below to verify it:</p>
+    <p><a href="{{ verification_url }}">Verify Email Address</a></p>
+    <p>If you did not make this request, please ignore this email.</p>
+    <p>This link will expire in 1 hour.</p>
+{% endblock %}

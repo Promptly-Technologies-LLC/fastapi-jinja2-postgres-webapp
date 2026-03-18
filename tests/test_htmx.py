@@ -919,3 +919,47 @@ def test_no_templates_use_hx_on_after_request():
         f"Templates must not use hx-on::after-request (unreliable in HTMX 2.0). "
         f"Use HX-Trigger response headers instead. Violations: {violations}"
     )
+
+
+# --- Flash cookie encoding tests ---
+
+
+def test_flash_cookie_value_is_valid_json_decodable_by_js():
+    """Flash cookie round-trip: server → browser → JS:
+
+    1. Server calls set_flash_cookie(), which JSON-encodes the message
+       and URL-encodes the result before setting the cookie.
+    2. Browser stores the cookie and sends it back on subsequent requests.
+    3. Client JS reads document.cookie, applies decodeURIComponent(),
+       and calls JSON.parse() to extract the message and level.
+
+    This test verifies the cookie value survives Python's http.cookies
+    encoding (which mangles commas as \\054) by simulating the JS
+    decode path on the raw Set-Cookie header value.
+    """
+    from starlette.responses import Response
+    from utils.core.htmx import set_flash_cookie
+    import json
+    from urllib.parse import unquote
+
+    response = Response()
+    set_flash_cookie(response, "Email address verified and added to your account.")
+
+    # Extract the raw Set-Cookie header value
+    for header_name, header_value in response.raw_headers:
+        if header_name == b"set-cookie" and b"flash_message=" in header_value:
+            header_str = header_value.decode()
+            # Extract cookie value: everything between "flash_message=" and the first ";"
+            cookie_part = header_str.split("flash_message=")[1].split(";")[0]
+            # Strip surrounding quotes if present (http.cookies quoting)
+            if cookie_part.startswith('"') and cookie_part.endswith('"'):
+                cookie_part = cookie_part[1:-1]
+            # Simulate what JS decodeURIComponent does
+            decoded = unquote(cookie_part)
+            # Must be parseable as JSON
+            parsed = json.loads(decoded)
+            assert parsed["message"] == "Email address verified and added to your account."
+            assert parsed["level"] == "success"
+            return
+
+    raise AssertionError("flash_message cookie not found in response headers")
