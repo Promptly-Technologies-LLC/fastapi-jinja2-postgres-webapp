@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% from 'base/macros/silhouette.html' import render_silhouette %}
 {% from 'users/macros/organizations.html' import render_organizations with context %}
 
 {% block title %}Profile{% endblock %}
@@ -7,59 +6,10 @@
 {% block content %}
 <div class="container mt-5">
     <h1 class="mb-4">User Profile</h1>
-    
-    <!-- Basic Information -->
-    <div class="card mb-4" id="basic-info">
-        <div class="card-header">
-            Basic Information
-        </div>
-        <div class="card-body" id="profile-display">
-            <p><strong>Name:</strong> {{ user.name }}</p>
-            <p><strong>Email:</strong> {{ user.account.email }}</p>
-            <!-- Display user avatar or silhouette if no avatar is available -->
-            <div class="mb-3">
-                {% if user.avatar %}
-                    <img src="{{ url_for('get_avatar') }}" alt="User Avatar" class="img-thumbnail" width="150">
-                {% else %}
-                    {{ render_silhouette(width=150, height=150) }}
-                {% endif %}
-            </div>
-            <!-- Edit button placed below the image -->
-            <button class="btn btn-primary mt-3" onclick="toggleEditProfile()">Edit</button>
-        </div>
-    </div>
 
-    <!-- Edit Profile -->
-    <div class="card mb-4" id="edit-profile" style="display: none;">
-        <div class="card-header">
-            Edit Profile
-        </div>
-        <div class="card-body" id="profile-form">
-            <form action="{{ url_for('update_profile') }}" method="post" enctype="multipart/form-data"
-                  hx-post="{{ url_for('update_profile') }}"
-                  hx-target="#profile-display"
-                  hx-swap="innerHTML"
-                  hx-encoding="multipart/form-data">
-                <div class="mb-3">
-                    <label for="name" class="form-label">Name</label>
-                    <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}">
-                </div>
-                <div class="mb-3">
-                    <label for="avatar_file" class="form-label">Avatar</label>
-                    <input type="file" class="form-control" id="avatar_file" name="avatar_file" accept="image/*">
-                    <div class="form-text">
-                        <ul class="mb-0">
-                            <li>Maximum file size: {{ max_file_size_mb }} MB</li>
-                            <li>Minimum dimension: {{ min_dimension }}x{{ min_dimension }} pixels</li>
-                            <li>Maximum dimension: {{ max_dimension }}x{{ max_dimension }} pixels</li>
-                            <li>Allowed formats: {{ allowed_formats|join(', ') }}</li>
-                            <li>Image will be cropped to a square</li>
-                        </ul>
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-primary">Save Changes</button>
-            </form>
-        </div>
+    <!-- Profile (display or edit, server-driven via HTMX) -->
+    <div class="card mb-4" id="profile-card">
+        {% include 'users/partials/profile_display.html' %}
     </div>
 
     <!-- Email Addresses -->
@@ -105,7 +55,8 @@
 
             {% if account_emails|length < max_emails %}
             <form action="{{ url_for('add_email') }}" method="post"
-                  hx-post="{{ url_for('add_email') }}" hx-swap="none">
+                  hx-post="{{ url_for('add_email') }}" hx-swap="none"
+                  hx-on::after-settle="this.reset()">
                 <div class="input-group">
                     <input type="email" class="form-control" name="new_email" placeholder="Add Email Address" required>
                     <button type="submit" class="btn btn-primary">Add Email</button>
@@ -158,77 +109,4 @@
         </div>
     </div>
 </div>
-
-<script>
-    // Function to toggle visibility of Basic Information and Edit Profile sections
-    function toggleEditProfile() {
-        var basicInfo = document.getElementById('basic-info');
-        var editProfile = document.getElementById('edit-profile');
-
-        if (basicInfo.style.display === 'none') {
-            basicInfo.style.display = 'block';
-            editProfile.style.display = 'none';
-        } else {
-            basicInfo.style.display = 'none';
-            editProfile.style.display = 'block';
-        }
-    }
-
-    // After a successful profile update the server sends an HX-Trigger
-    // header with "profileUpdated".  Toggle back to the display card.
-    // (We cannot use hx-on::after-request on the form because the OOB
-    // swap for #profile-form replaces it before afterRequest fires.)
-    document.body.addEventListener('profileUpdated', function() {
-        document.getElementById('edit-profile').style.display = 'none';
-        document.getElementById('basic-info').style.display = 'block';
-    });
-
-    document.getElementById('avatar_file').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        // Get constraints from your template variables
-        const maxSizeMB = "{{ max_file_size_mb }}";
-        const minDimension = "{{ min_dimension }}";
-        const maxDimension = "{{ max_dimension }}";
-        const allowedFormats = "{{ allowed_formats }}";
-
-
-        // Check file size
-        const fileSizeMB = file.size / (1024 * 1024);
-        if (fileSizeMB > maxSizeMB) {
-            showToast(`File size must be less than ${maxSizeMB}MB`, 'danger');
-            this.value = '';
-            return;
-        }
-
-        // Check file format
-        const fileFormat = file.type.split('/')[1];
-        if (!allowedFormats.includes(fileFormat)) {
-            showToast(`File format must be one of: ${allowedFormats.join(', ')}`, 'danger');
-            this.value = '';
-            return;
-        }
-
-        // Check dimensions
-        const img = new Image();
-        img.src = URL.createObjectURL(file);
-
-        img.onload = function() {
-            URL.revokeObjectURL(this.src);
-
-            if (this.width < minDimension || this.height < minDimension) {
-                showToast(`Image dimensions must be at least ${minDimension}x${minDimension} pixels`, 'danger');
-                e.target.value = '';
-                return;
-            }
-
-            if (this.width > maxDimension || this.height > maxDimension) {
-                showToast(`Image dimensions must not exceed ${maxDimension}x${maxDimension} pixels`, 'danger');
-                e.target.value = '';
-                return;
-            }
-        };
-    });
-</script>
 {% endblock %}
