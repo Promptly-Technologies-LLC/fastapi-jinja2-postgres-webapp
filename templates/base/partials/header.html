@@ -1,5 +1,4 @@
 {% from 'base/macros/logo.html' import render_logo %}
-{% from 'base/macros/silhouette.html' import render_silhouette %}
 
 
 <header class="navbar navbar-expand-lg navbar-light bg-light" hx-boost="true">
@@ -35,13 +34,7 @@
             <ul class="navbar-nav ms-auto mb-lg-0 d-none d-lg-flex">
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <button class="profile-button btn p-0 border-0 bg-transparent">
-                            {% if user.avatar %}
-                                <img src="{{ url_for('get_avatar') }}?v={{ range(1000000)|random }}" alt="User Avatar" class="d-inline-block align-top" width="30" height="30" style="border-radius: 50%;">
-                            {% else %}
-                                {{ render_silhouette() }}
-                            {% endif %}
-                        </button>
+                        {% include 'base/partials/navbar_avatar.html' %}
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                         <li><a class="dropdown-item" href="{{ url_for('read_profile') }}">Profile</a></li>
