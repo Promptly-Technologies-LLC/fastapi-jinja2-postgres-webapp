@@ -953,9 +953,14 @@ def test_add_email_suppresses_duplicate_token(
 
 
 def test_verify_email_creates_account_email(
-    auth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+    unauth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
 ):
-    """Test that clicking a valid verification link creates an AccountEmail row."""
+    """Test that clicking a valid verification link creates an AccountEmail row.
+
+    Verification links are clicked from an email client (cross-site navigation),
+    so samesite=strict auth cookies are never sent. We use unauth_client to
+    simulate this realistic behavior.
+    """
     token = EmailVerificationToken(
         account_id=test_account.id,
         new_email="verified@example.com",
@@ -963,11 +968,13 @@ def test_verify_email_creates_account_email(
     session.add(token)
     session.commit()
 
-    response = auth_client.get(
+    response = unauth_client.get(
         app.url_path_for("verify_email"),
         params={"token": token.token},
     )
     assert response.status_code == 303
+    assert "/account/login" in response.headers["location"]
+    assert "flash_message" in response.cookies
 
     # Verify AccountEmail was created
     account_email = session.exec(
@@ -986,10 +993,10 @@ def test_verify_email_creates_account_email(
 
 
 def test_verify_email_invalid_token_returns_401(
-    auth_client: TestClient, test_account_email
+    unauth_client: TestClient, test_account_email
 ):
     """Test that an invalid token returns 401."""
-    response = auth_client.get(
+    response = unauth_client.get(
         app.url_path_for("verify_email"),
         params={"token": "nonexistent-token"},
     )
@@ -997,7 +1004,7 @@ def test_verify_email_invalid_token_returns_401(
 
 
 def test_verify_email_expired_token_returns_401(
-    auth_client: TestClient, test_account: Account, test_account_email, session: Session
+    unauth_client: TestClient, test_account: Account, test_account_email, session: Session
 ):
     """Test that an expired token returns 401."""
     from datetime import timedelta as td
@@ -1009,7 +1016,7 @@ def test_verify_email_expired_token_returns_401(
     session.add(token)
     session.commit()
 
-    response = auth_client.get(
+    response = unauth_client.get(
         app.url_path_for("verify_email"),
         params={"token": token.token},
     )
@@ -1017,7 +1024,7 @@ def test_verify_email_expired_token_returns_401(
 
 
 def test_verify_email_used_token_returns_401(
-    auth_client: TestClient, test_account: Account, test_account_email, session: Session
+    unauth_client: TestClient, test_account: Account, test_account_email, session: Session
 ):
     """Test that a used token returns 401."""
     token = EmailVerificationToken(
@@ -1028,7 +1035,7 @@ def test_verify_email_used_token_returns_401(
     session.add(token)
     session.commit()
 
-    response = auth_client.get(
+    response = unauth_client.get(
         app.url_path_for("verify_email"),
         params={"token": token.token},
     )
@@ -1036,7 +1043,7 @@ def test_verify_email_used_token_returns_401(
 
 
 def test_verify_email_sends_notification_to_primary(
-    auth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+    unauth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
 ):
     """Test that a notification is sent to the primary email after verification."""
     token = EmailVerificationToken(
@@ -1046,7 +1053,7 @@ def test_verify_email_sends_notification_to_primary(
     session.add(token)
     session.commit()
 
-    response = auth_client.get(
+    response = unauth_client.get(
         app.url_path_for("verify_email"),
         params={"token": token.token},
     )
@@ -1100,7 +1107,7 @@ def test_verify_email_unauthenticated_redirects_to_login(
 
 
 def test_verify_email_race_condition_email_taken(
-    auth_client: TestClient, test_account: Account, test_account_email, session: Session
+    unauth_client: TestClient, test_account: Account, test_account_email, session: Session
 ):
     """Test that if email was taken between request and verify, return 409."""
     token = EmailVerificationToken(
@@ -1121,7 +1128,7 @@ def test_verify_email_race_condition_email_taken(
     session.add(other_email)
     session.commit()
 
-    response = auth_client.get(
+    response = unauth_client.get(
         app.url_path_for("verify_email"),
         params={"token": token.token},
     )
