@@ -8,7 +8,6 @@ Covers three toast delivery paths:
 
 Also verifies auto-dismiss (~5 s) and manual close via the X button.
 """
-import io
 import pytest
 from PIL import Image
 from playwright.sync_api import Page, expect
