@@ -105,7 +105,8 @@
 
             {% if account_emails|length < max_emails %}
             <form action="{{ url_for('add_email') }}" method="post"
-                  hx-post="{{ url_for('add_email') }}" hx-swap="none">
+                  hx-post="{{ url_for('add_email') }}" hx-swap="none"
+                  hx-on::after-request="if(event.detail.successful) this.reset()">
                 <div class="input-group">
                     <input type="email" class="form-control" name="new_email" placeholder="Add Email Address" required>
                     <button type="submit" class="btn btn-primary">Add Email</button>

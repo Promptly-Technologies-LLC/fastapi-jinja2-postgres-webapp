@@ -743,7 +743,10 @@ async def add_email(
     message = "Verification email sent. Check your inbox." if sent else "A verification email was already sent. Please check your inbox."
 
     if is_htmx_request(request):
-        return toast_response(request, templates, message, level="success")
+        return toast_response(
+            request, templates, message, level="success",
+            headers={"HX-Trigger": "addEmailFormReset"},
+        )
     profile_path: URLPath = user_router.url_path_for("read_profile")
     response = RedirectResponse(url=str(profile_path), status_code=303)
     set_flash_cookie(response, message)

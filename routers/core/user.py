@@ -54,7 +54,9 @@ async def read_profile(
 ):
     # Load account emails
     account_emails = session.exec(
-        select(AccountEmail).where(AccountEmail.account_id == user.account_id)
+        select(AccountEmail)
+        .where(AccountEmail.account_id == user.account_id)
+        .order_by(AccountEmail.is_primary.desc())  # type: ignore[union-attr]
     ).all() if user.account_id else []
 
     return templates.TemplateResponse(
