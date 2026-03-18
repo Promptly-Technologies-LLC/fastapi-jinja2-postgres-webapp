@@ -1434,6 +1434,82 @@ def test_profile_hides_add_form_at_limit(
     assert "Add Email" not in response.text
 
 
+def test_add_email_htmx_triggers_form_reset(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+):
+    """HTMX add-email response should include HX-Trigger to reset the form."""
+    from tests.conftest import htmx_headers
+    response = auth_client.post(
+        app.url_path_for("add_email"),
+        data={"new_email": "reset-test@example.com"},
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 200
+    trigger = response.headers.get("HX-Trigger")
+    assert trigger is not None, "Missing HX-Trigger response header"
+    assert "addEmailFormReset" in trigger
+
+
+def test_profile_emails_ordered_primary_first(
+    auth_client: TestClient, test_account: Account, session: Session
+):
+    """Primary email should appear before secondary emails on the profile page,
+    even when the primary row has a higher ID (was created after the secondary)."""
+    # Create secondary FIRST so it gets a lower ID
+    secondary = AccountEmail(
+        account_id=test_account.id, email="order-secondary-unique@example.com",
+        is_primary=False, verified=True, verified_at=datetime.now(UTC),
+    )
+    session.add(secondary)
+    session.commit()
+
+    # Create primary SECOND so it gets a higher ID
+    primary = AccountEmail(
+        account_id=test_account.id, email="order-primary-unique@example.com",
+        is_primary=True, verified=True, verified_at=datetime.now(UTC),
+    )
+    session.add(primary)
+    session.commit()
+
+    response = auth_client.get(app.url_path_for("read_profile"))
+    assert response.status_code == 200
+    primary_pos = response.text.index("order-primary-unique@example.com")
+    secondary_pos = response.text.index("order-secondary-unique@example.com")
+    assert primary_pos < secondary_pos, "Primary email should appear before secondary emails"
+
+
+def test_profile_emails_ordered_primary_first_after_promote(
+    auth_client: TestClient, test_account: Account, test_account_email, session: Session, mock_resend_send
+):
+    """After promoting a secondary email, it should appear first on the profile page,
+    even though the original primary row has a lower ID."""
+    # Secondary gets a higher ID than the existing primary (test_account_email)
+    secondary = AccountEmail(
+        account_id=test_account.id, email="promote-target-unique@example.com",
+        is_primary=False, verified=True, verified_at=datetime.now(UTC),
+    )
+    session.add(secondary)
+    session.commit()
+    session.refresh(secondary)
+
+    # Promote the secondary email — it now has is_primary=True but a higher row ID
+    response = auth_client.post(
+        app.url_path_for("promote_email"),
+        data={"email_id": secondary.id},
+    )
+    assert response.status_code == 303
+
+    # Follow the redirect to profile page
+    response = auth_client.get(app.url_path_for("read_profile"))
+    assert response.status_code == 200
+
+    # Search within the email list section only to avoid matching navbar/header
+    email_section = response.text[response.text.index("Email Addresses"):]
+    new_primary_pos = email_section.index("promote-target-unique@example.com")
+    old_primary_pos = email_section.index(test_account_email.email)
+    assert new_primary_pos < old_primary_pos, "Newly promoted primary email should appear first"
+
+
 # --- Account Recovery Token Helper Tests ---
 
 
