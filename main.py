@@ -13,7 +13,7 @@ from utils.core.dependencies import (
     require_unauthenticated_client
 )
 from utils.core.auth import COOKIE_SECURE
-from utils.core.htmx import is_htmx_request, toast_response
+from utils.core.htmx import is_htmx_request, toast_response, get_flash_cookie, FLASH_COOKIE_NAME
 from exceptions.http_exceptions import (
     AlreadyAuthenticatedError,
     AuthenticationError,
@@ -45,6 +45,22 @@ app: FastAPI = FastAPI(lifespan=lifespan)
 # Mount static files (e.g., CSS, JS) and initialize Jinja2 templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+
+# --- Flash cookie middleware ---
+# Reads the flash cookie into request.state so templates can render it
+# server-side, then clears the cookie on the response.
+
+
+@app.middleware("http")
+async def flash_cookie_middleware(request: Request, call_next):
+    flash = get_flash_cookie(request)
+    request.state.flash = flash
+    response = await call_next(request)
+    if flash:
+        response.delete_cookie(FLASH_COOKIE_NAME, path="/")
+    return response
+
 
 
 # --- Include Routers ---

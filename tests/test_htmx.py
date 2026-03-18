@@ -480,9 +480,9 @@ def test_avatar_url_includes_cache_buster():
     )
 
 
-def test_avatar_upload_htmx_triggers_full_refresh(auth_client):
-    """When an avatar is uploaded, the HTMX response should include
-    HX-Refresh so the navbar avatar updates too."""
+def test_avatar_upload_htmx_returns_oob_swap(auth_client):
+    """When an avatar is uploaded, the HTMX response should include an OOB
+    swap for the navbar avatar instead of a full page refresh."""
     import io
     from PIL import Image
     buf = io.BytesIO()
@@ -495,7 +495,9 @@ def test_avatar_upload_htmx_triggers_full_refresh(auth_client):
         headers=htmx_headers(),
     )
     assert response.status_code == 200
-    assert response.headers.get("HX-Refresh") == "true"
+    assert response.headers.get("HX-Refresh") is None
+    assert 'id="navbar-avatar"' in response.text
+    assert 'hx-swap-oob="true"' in response.text
 
 
 def test_name_only_update_htmx_no_refresh(auth_client):

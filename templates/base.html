@@ -21,13 +21,26 @@
          order and waits for DOM parsing to complete. -->
     <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/htmx-ext-remove-me@2.0.0/remove-me.js"></script>
     <script defer src="{{ url_for('static', path='js/app.js') }}"></script>
     {% block extra_head %}{% endblock %}
 </head>
 <body class="min-vh-100 d-flex flex-column">
     <div id="toast-container"
          class="toast-container position-fixed bottom-0 end-0 p-3"
+         hx-ext="remove-me"
          aria-live="polite">
+      {% set flash = request.state.flash %}
+      {% if flash %}
+      <div class="toast align-items-center text-bg-{{ flash.level|default('success') }} border-0 show"
+           role="alert" aria-atomic="true" remove-me="5s">
+        <div class="d-flex">
+          <div class="toast-body">{{ flash.message }}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                  data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      </div>
+      {% endif %}
     </div>
 
     <header>

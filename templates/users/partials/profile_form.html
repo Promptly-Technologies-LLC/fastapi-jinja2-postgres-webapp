@@ -37,6 +37,22 @@
     </form>
 </div>
 <script>
+    function _clientToast(message, level) {
+        var container = document.getElementById('toast-container');
+        var wrapper = document.createElement('div');
+        wrapper.className = 'toast align-items-center text-bg-' + level + ' border-0 show';
+        wrapper.setAttribute('role', 'alert');
+        wrapper.setAttribute('aria-atomic', 'true');
+        wrapper.setAttribute('remove-me', '5s');
+        wrapper.innerHTML =
+            '<div class="d-flex">' +
+                '<div class="toast-body">' + message + '</div>' +
+                '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>' +
+            '</div>';
+        container.appendChild(wrapper);
+        htmx.process(wrapper);
+    }
+
     document.getElementById('avatar_file').addEventListener('change', function(e) {
         var file = e.target.files[0];
         if (!file) return;
@@ -48,13 +64,13 @@
 
         var fileSizeMB = file.size / (1024 * 1024);
         if (fileSizeMB > maxSizeMB) {
-            showToast('File size must be less than ' + maxSizeMB + 'MB', 'danger');
+            _clientToast('File size must be less than ' + maxSizeMB + 'MB', 'danger');
             this.value = '';
             return;
         }
 
         if (allowedFormats.indexOf(file.type) === -1) {
-            showToast('File format must be one of: ' + allowedFormats.join(', '), 'danger');
+            _clientToast('File format must be one of: ' + allowedFormats.join(', '), 'danger');
             this.value = '';
             return;
         }
@@ -65,12 +81,12 @@
         img.onload = function() {
             URL.revokeObjectURL(this.src);
             if (this.width < minDim || this.height < minDim) {
-                showToast('Image dimensions must be at least ' + minDim + 'x' + minDim + ' pixels', 'danger');
+                _clientToast('Image dimensions must be at least ' + minDim + 'x' + minDim + ' pixels', 'danger');
                 input.value = '';
                 return;
             }
             if (this.width > maxDim || this.height > maxDim) {
-                showToast('Image dimensions must not exceed ' + maxDim + 'x' + maxDim + ' pixels', 'danger');
+                _clientToast('Image dimensions must not exceed ' + maxDim + 'x' + maxDim + ' pixels', 'danger');
                 input.value = '';
                 return;
             }
