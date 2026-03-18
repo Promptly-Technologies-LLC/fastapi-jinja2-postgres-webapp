@@ -62,23 +62,57 @@
         </div>
     </div>
 
-    <!-- New Email Update Section -->
+    <!-- Email Addresses -->
     <div class="card mb-4">
         <div class="card-header">
-            Update Email
+            Email Addresses
         </div>
         <div class="card-body">
-            <form action="{{ url_for('request_email_update') }}" method="post"
-                  hx-post="{{ url_for('request_email_update') }}"
-                  hx-swap="none">
-                <input type="hidden" name="email" value="{{ user.account.email }}">
-                <div class="mb-3">
-                    <label for="new_email" class="form-label">New Email Address</label>
-                    <input type="email" class="form-control" id="new_email" name="new_email" placeholder="newemail@example.com">
+            {% if account_emails %}
+            <ul class="list-group mb-3">
+                {% for email in account_emails %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        {{ email.email }}
+                        {% if email.is_primary %}
+                            <span class="badge bg-primary ms-2">Primary</span>
+                        {% elif not email.verified %}
+                            <span class="badge bg-warning ms-2">Pending verification</span>
+                        {% else %}
+                            <span class="badge bg-secondary ms-2">Secondary</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        {% if not email.is_primary and email.verified %}
+                        <form action="{{ url_for('promote_email') }}" method="post" class="d-inline"
+                              hx-post="{{ url_for('promote_email') }}" hx-swap="none">
+                            <input type="hidden" name="email_id" value="{{ email.id }}">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Make Primary</button>
+                        </form>
+                        {% endif %}
+                        {% if not email.is_primary %}
+                        <form action="{{ url_for('remove_email') }}" method="post" class="d-inline"
+                              hx-post="{{ url_for('remove_email') }}" hx-swap="none">
+                            <input type="hidden" name="email_id" value="{{ email.id }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            {% if account_emails|length < max_emails %}
+            <form action="{{ url_for('add_email') }}" method="post"
+                  hx-post="{{ url_for('add_email') }}" hx-swap="none">
+                <div class="input-group">
+                    <input type="email" class="form-control" name="new_email" placeholder="Add Email Address" required>
+                    <button type="submit" class="btn btn-primary">Add Email</button>
                 </div>
-                <p class="form-text">A confirmation link will be sent to your current email address to verify the change.</p>
-                <button type="submit" class="btn btn-primary">Update Email</button>
+                <p class="form-text mt-1">A verification link will be sent to the new email address.</p>
             </form>
+            {% endif %}
         </div>
     </div>
 

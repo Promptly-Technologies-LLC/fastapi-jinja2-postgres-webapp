@@ -127,8 +127,10 @@ async def credentials_exception_handler(request: Request, exc: CredentialsError)
 # Handle NeedsNewTokens by setting new tokens and redirecting to same page
 @app.exception_handler(NeedsNewTokens)
 async def needs_new_tokens_handler(request: Request, exc: NeedsNewTokens):
+    # Preserve query string so GET routes with query params work after token refresh
+    redirect_url = str(request.url)
     response = RedirectResponse(
-        url=request.url.path, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+        url=redirect_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
     response.set_cookie(
         key="access_token",
         value=exc.access_token,

@@ -1,5 +1,4 @@
 from fastapi import HTTPException, status
-from utils.core.enums import ValidPermissions
 
 class RateLimitError(HTTPException):
     """Raised when a client exceeds the allowed request rate."""
@@ -106,7 +105,7 @@ class UserAlreadyMemberError(HTTPException):
 class InvalidPermissionError(HTTPException):
     """Raised when a user attempts to assign an invalid permission to a role"""
 
-    def __init__(self, permission: ValidPermissions):
+    def __init__(self, permission: str):
         super().__init__(
             status_code=400,
             detail=f"Invalid permission: {permission}"
@@ -221,6 +220,33 @@ class InvitationEmailMismatchError(HTTPException):
         super().__init__(
             status_code=403,
             detail="This invitation was sent to a different email address"
+        )
+
+
+class MaxEmailsReachedError(HTTPException):
+    """Raised when an account already has the maximum number of email addresses."""
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            detail="Maximum number of email addresses reached"
+        )
+
+
+class EmailNotVerifiedError(HTTPException):
+    """Raised when attempting to promote an unverified email address."""
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            detail="Email address is not verified"
+        )
+
+
+class CannotRemovePrimaryEmailError(HTTPException):
+    """Raised when attempting to remove the primary email address."""
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            detail="Cannot remove primary email address"
         )
 
 

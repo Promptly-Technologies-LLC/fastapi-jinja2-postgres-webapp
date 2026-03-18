@@ -1,4 +1,5 @@
 import json
+from urllib.parse import quote, unquote
 from starlette.requests import Request
 from starlette.responses import Response
 from fastapi.templating import Jinja2Templates
@@ -72,8 +73,13 @@ FLASH_COOKIE_NAME = "flash_message"
 
 
 def set_flash_cookie(response: Response, message: str, level: str = "success") -> None:
-    """Set a flash message cookie that will be consumed on the next page load."""
-    value = json.dumps({"message": message, "level": level})
+    """Set a flash message cookie that will be consumed on the next page load.
+
+    The JSON value is URL-encoded before being set as a cookie to avoid
+    Python's http.cookies module mangling characters like commas (\\054)
+    and quotes, which breaks client-side JSON.parse().
+    """
+    value = quote(json.dumps({"message": message, "level": level}), safe="")
     response.set_cookie(
         key=FLASH_COOKIE_NAME,
         value=value,
@@ -90,6 +96,6 @@ def get_flash_cookie(request: Request) -> dict | None:
     if not raw:
         return None
     try:
-        return json.loads(raw)
+        return json.loads(unquote(raw))
     except (json.JSONDecodeError, TypeError):
         return None

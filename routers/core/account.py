@@ -8,13 +8,14 @@ from fastapi.templating import Jinja2Templates
 from starlette.datastructures import URLPath
 from pydantic import EmailStr
 from sqlmodel import Session, select
-from utils.core.models import User, DataIntegrityError, Account, Invitation
+from utils.core.models import User, DataIntegrityError, Account, AccountEmail, Invitation
 from utils.core.dependencies import get_session
 from utils.core.models import RefreshToken
 from utils.core.auth import (
     HTML_PASSWORD_PATTERN,
     COMPILED_PASSWORD_PATTERN,
     COOKIE_SECURE,
+    MAX_EMAILS_PER_ACCOUNT,
     oauth2_scheme_cookie,
     get_password_hash,
     create_access_token,
@@ -22,20 +23,29 @@ from utils.core.auth import (
     revoke_all_refresh_tokens,
     validate_token,
     send_reset_email_task,
-    send_email_update_confirmation
+    send_email_verification,
+    send_email_verified_notification,
+    send_primary_email_changed_notification,
+    send_email_removed_notification,
+    create_recovery_token,
+    generate_recovery_url,
 )
 from utils.core.dependencies import (
     get_authenticated_account,
     get_optional_user,
     get_account_from_reset_token,
-    get_account_from_email_update_token,
+    get_account_from_email_verification_token,
+    get_account_from_recovery_token,
     get_account_from_credentials,
     require_unauthenticated_client,
     get_verified_account
 )
 from exceptions.http_exceptions import (
     EmailAlreadyRegisteredError,
+    CannotRemovePrimaryEmailError,
     CredentialsError,
+    EmailNotVerifiedError,
+    MaxEmailsReachedError,
     PasswordValidationError,
     InvalidInvitationTokenError,
     InvitationEmailMismatchError,
@@ -262,6 +272,17 @@ async def register(
     new_user = User(name=name, account_id=account.id) # Use account.id
     session.add(new_user)
 
+    # Create the primary AccountEmail entry
+    from datetime import datetime, UTC
+    account_email = AccountEmail(
+        account_id=account.id,
+        email=email,
+        is_primary=True,
+        verified=True,
+        verified_at=datetime.now(UTC),
+    )
+    session.add(account_email)
+
     # Default redirect target
     redirect_url = dashboard_router.url_path_for("read_dashboard")
 
@@ -377,8 +398,14 @@ async def login(
             logger.warning(f"Invalid or inactive invitation token provided during login: {invitation_token}")
             raise InvalidInvitationTokenError()
 
-        # Verify email matches
-        if account.email != invitation.invitee_email:
+        # Verify email matches (check primary and any verified secondary emails)
+        account_emails = session.exec(
+            select(AccountEmail.email).where(
+                AccountEmail.account_id == account.id,
+                AccountEmail.verified == True,  # noqa: E712
+            )
+        ).all()
+        if invitation.invitee_email not in account_emails:
             logger.warning(
                 f"Invitation email mismatch for token {invitation_token}. "
                 f"Account: {account.email}, Invitation: {invitation.invitee_email}"
@@ -419,6 +446,7 @@ async def login(
         logger.info(f"Standard login for account {account.email}. Redirecting to dashboard.")
 
     # Create access token
+    assert account.id is not None
     access_token = create_access_token(
         data={"sub": account.email, "fresh": True}
     )
@@ -490,6 +518,7 @@ async def refresh_token(
     if not db_token or db_token.account_id != account.id:
         return RedirectResponse(url=router.url_path_for("read_login"), status_code=303)
 
+    assert account.id is not None
     if db_token.revoked:
         # Token reuse detected — revoke all tokens for this account
         logger.warning(
@@ -583,6 +612,7 @@ async def reset_password(
     if not authorized_account or not reset_token:
         raise CredentialsError("Invalid or expired password reset token; please request a new one")
 
+    assert authorized_account.id is not None
     # Update password and mark token as used
     authorized_account.hashed_password = get_password_hash(new_password)
 
@@ -590,109 +620,318 @@ async def reset_password(
     session.commit()
     session.refresh(authorized_account)
 
+    # Auto-login: issue new auth cookies so the user doesn't have to re-enter credentials
+    access_token = create_access_token(data={"sub": authorized_account.email, "fresh": True})
+    refresh_token = create_tracked_refresh_token(authorized_account.id, authorized_account.email, session)
+    session.commit()
+
+    redirect_url = str(dashboard_router.url_path_for("read_dashboard"))
+    message = "Password reset successfully."
+
     if is_htmx_request(request):
         response = Response(status_code=200)
-        response.headers["HX-Redirect"] = str(router.url_path_for("read_login"))
-        set_flash_cookie(response, "Password reset successfully. Please log in.")
-        return response
-    return RedirectResponse(url=router.url_path_for("read_login"), status_code=303)
+        response.headers["HX-Redirect"] = redirect_url
+    else:
+        response = RedirectResponse(url=redirect_url, status_code=303)
 
-
-@router.post("/update_email")
-async def request_email_update(
-    request: Request,
-    email: EmailStr = Form(..., title="Current email", description="Current account email address"),
-    new_email: EmailStr = Form(..., title="New email", description="New email address to update to"),
-    account: Account = Depends(get_authenticated_account),
-    session: Session = Depends(get_session)
-):
-    """
-    Request to update a user's email address.
-    """
-    # Verify the provided email matches the authenticated user
-    if email != account.email:
-        raise CredentialsError(message="Email does not match authenticated user")
-
-    if email == new_email:
-        raise CredentialsError(message="New email is the same as the current email")
-
-    # Check if the new email is already registered
-    existing_user = session.exec(
-        select(Account.id).where(Account.email == new_email)
-    ).first()
-
-    if existing_user:
-        raise EmailAlreadyRegisteredError()
-
-    if not account.id:
-        raise DataIntegrityError(resource="Account id")
-
-    # Send confirmation email
-    send_email_update_confirmation(
-        current_email=email,
-        new_email=new_email,
-        account_id=account.id,
-        session=session
+    response.set_cookie(
+        key="access_token", value=access_token,
+        httponly=True, secure=COOKIE_SECURE, samesite="strict",
     )
-
-    if is_htmx_request(request):
-        return toast_response(
-            request, templates,
-            "Confirmation email sent. Check your inbox.", level="success",
-        )
-    profile_path: URLPath = user_router.url_path_for("read_profile")
-    response = RedirectResponse(url=str(profile_path), status_code=303)
-    set_flash_cookie(response, "Confirmation email sent. Check your inbox.")
+    response.set_cookie(
+        key="refresh_token", value=refresh_token,
+        httponly=True, secure=COOKIE_SECURE, samesite="strict",
+    )
+    set_flash_cookie(response, message)
     return response
 
 
-@router.get("/confirm_email_update")
-async def confirm_email_update(
-    account_id: int,
-    token: str,
-    new_email: str,
-    session: Session = Depends(get_session)
+@router.get("/recover")
+async def recover_account(
+    token: str = Query(...),
+    session: Session = Depends(get_session),
 ):
     """
-    Confirm an email update using a valid token.
+    Recover an account using a recovery token sent via email.
+    Restores the victim's email as primary, revokes all sessions,
+    and redirects to password reset.
     """
-    # TODO: Just eager load the update token with the account
-    account, update_token = get_account_from_email_update_token(
-        account_id, token, session
+    account, recovery_token = get_account_from_recovery_token(token, session)
+
+    if not account or not recovery_token:
+        raise CredentialsError(message="Invalid or expired recovery token")
+
+    assert account.id is not None
+    # Mark recovery token as used
+    recovery_token.used = True
+
+    # Delete ALL existing AccountEmail rows (purge attacker's emails)
+    # Flush deletes before inserting the restored email to avoid unique constraint
+    # violations — SQLAlchemy's autoflush processes INSERTs before DELETEs.
+    existing_emails = session.exec(
+        select(AccountEmail).where(AccountEmail.account_id == account.id)
+    ).all()
+    for email_row in existing_emails:
+        session.delete(email_row)
+    session.flush()
+
+    # Restore the victim's email as primary
+    from datetime import datetime as dt, UTC as utc_tz
+    restored_email = AccountEmail(
+        account_id=account.id,
+        email=recovery_token.email,
+        is_primary=True,
+        verified=True,
+        verified_at=dt.now(utc_tz),
     )
+    session.add(restored_email)
 
-    if not account or not update_token:
-        raise CredentialsError("Invalid or expired email update token; please request a new one")
-        
-    account.email = new_email
-    update_token.used = True
+    # Update Account.email
+    account.email = recovery_token.email
 
-    # Revoke all existing refresh tokens since the email changed
+    # Revoke all refresh tokens
+    revoke_all_refresh_tokens(account.id, session)
+
+    # Create a password reset token
+    from utils.core.models import PasswordResetToken
+    reset_token = PasswordResetToken(account_id=account.id)
+    session.add(reset_token)
+
+    session.commit()
+    session.refresh(reset_token)
+
+    # Redirect to password reset page
+    from utils.core.auth import generate_password_reset_url
+    reset_url = generate_password_reset_url(recovery_token.email, reset_token.token)
+    response = RedirectResponse(url=reset_url, status_code=303)
+    set_flash_cookie(response, "Account recovered. Please set a new password.")
+    return response
+
+
+# --- Multi-email management routes ---
+
+
+@router.post("/emails/add")
+async def add_email(
+    request: Request,
+    new_email: EmailStr = Form(..., title="New email", description="New email address to add"),
+    account: Account = Depends(get_authenticated_account),
+    session: Session = Depends(get_session),
+):
+    """
+    Request to add a new email address to the account.
+    Sends a verification link to the new email address.
+    """
+    # Check email not already registered on any account
+    existing = session.exec(
+        select(AccountEmail).where(AccountEmail.email == new_email)
+    ).first()
+    if existing:
+        raise EmailAlreadyRegisteredError()
+
+    # Check account hasn't reached the limit
+    email_count = len(session.exec(
+        select(AccountEmail).where(AccountEmail.account_id == account.id)
+    ).all())
+    if email_count >= MAX_EMAILS_PER_ACCOUNT:
+        raise MaxEmailsReachedError()
+
+    assert account.id is not None
+    # Send verification email (suppresses if unexpired token exists)
+    sent = send_email_verification(account.id, new_email, session)
+
+    message = "Verification email sent. Check your inbox." if sent else "A verification email was already sent. Please check your inbox."
+
+    if is_htmx_request(request):
+        return toast_response(request, templates, message, level="success")
+    profile_path: URLPath = user_router.url_path_for("read_profile")
+    response = RedirectResponse(url=str(profile_path), status_code=303)
+    set_flash_cookie(response, message)
+    return response
+
+
+@router.get("/emails/verify")
+async def verify_email(
+    token: str,
+    tokens: tuple[Optional[str], Optional[str]] = Depends(oauth2_scheme_cookie),
+    session: Session = Depends(get_session),
+):
+    """
+    Verify a new email address using the token from the verification link.
+    """
+    account, verification_token = get_account_from_email_verification_token(token, session)
+
+    if not account or not verification_token:
+        raise CredentialsError(message="Invalid or expired verification token")
+
+    assert account.id is not None
+
+    # Race condition guard: check email not already taken
+    existing = session.exec(
+        select(AccountEmail).where(AccountEmail.email == verification_token.new_email)
+    ).first()
+    if existing:
+        raise EmailAlreadyRegisteredError()
+
+    # Create the AccountEmail row
+    from datetime import datetime as dt, UTC as utc_tz
+    account_email = AccountEmail(
+        account_id=account.id,
+        email=verification_token.new_email,
+        is_primary=False,
+        verified=True,
+        verified_at=dt.now(utc_tz),
+    )
+    session.add(account_email)
+
+    # Mark token as used
+    verification_token.used = True
+    session.commit()
+
+    # Send notification to primary email
+    send_email_verified_notification(account.email, verification_token.new_email)
+
+    message = "Email address verified and added to your account."
+
+    # Lightweight auth check: just validate the access token to decide redirect target.
+    # We avoid get_optional_user here because it triggers NeedsNewTokens (token rotation)
+    # which would interrupt the verification flow before the route body runs.
+    access_token, _ = tokens
+    is_authenticated = access_token and validate_token(access_token, token_type="access") is not None
+
+    if is_authenticated:
+        profile_path: URLPath = user_router.url_path_for("read_profile")
+        response = RedirectResponse(url=str(profile_path), status_code=303)
+    else:
+        login_path: URLPath = router.url_path_for("read_login")
+        response = RedirectResponse(url=str(login_path), status_code=303)
+
+    set_flash_cookie(response, message)
+    return response
+
+
+@router.post("/emails/promote")
+async def promote_email(
+    request: Request,
+    email_id: int = Form(..., title="Email ID", description="ID of the email to promote"),
+    account: Account = Depends(get_authenticated_account),
+    session: Session = Depends(get_session),
+):
+    """
+    Promote a secondary email address to primary.
+    """
+    assert account.id is not None
+    # Look up the AccountEmail
+    target_email = session.exec(
+        select(AccountEmail).where(
+            AccountEmail.id == email_id,
+            AccountEmail.account_id == account.id,
+        )
+    ).first()
+
+    if not target_email:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Email address not found")
+
+    # If already primary, no-op
+    if target_email.is_primary:
+        profile_path: URLPath = user_router.url_path_for("read_profile")
+        response = RedirectResponse(url=str(profile_path), status_code=303)
+        return response
+
+    # Must be verified
+    if not target_email.verified:
+        raise EmailNotVerifiedError()
+
+    # Find the current primary
+    current_primary = session.exec(
+        select(AccountEmail).where(
+            AccountEmail.account_id == account.id,
+            AccountEmail.is_primary == True,  # noqa: E712
+        )
+    ).first()
+
+    old_primary_email = account.email
+
+    # Swap primary flags
+    if current_primary:
+        current_primary.is_primary = False
+    target_email.is_primary = True
+
+    # Update Account.email
+    account.email = target_email.email
+
+    # Revoke all refresh tokens
     revoke_all_refresh_tokens(account.id, session)
     session.commit()
 
-    # Create new tokens with the updated email
-    access_token = create_access_token(data={"sub": new_email, "fresh": True})
-    refresh_token = create_tracked_refresh_token(account.id, new_email, session)
+    # Issue new tokens with the new primary email
+    access_token = create_access_token(data={"sub": account.email, "fresh": True})
+    refresh_token = create_tracked_refresh_token(account.id, account.email, session)
     session.commit()
 
+    # Create recovery token and send notification to the old primary
+    recovery_token_str = create_recovery_token(account.id, old_primary_email, session)
+    session.commit()
+    recovery_url = generate_recovery_url(recovery_token_str)
+    send_primary_email_changed_notification(old_primary_email, target_email.email, recovery_url)
+
+    profile_path = user_router.url_path_for("read_profile")
+    if is_htmx_request(request):
+        response = Response(status_code=200)
+        response.headers["HX-Redirect"] = str(profile_path)
+    else:
+        response = RedirectResponse(url=str(profile_path), status_code=303)
+    set_flash_cookie(response, "Primary email address updated.")
+    response.set_cookie(
+        key="access_token", value=access_token,
+        httponly=True, secure=COOKIE_SECURE, samesite="lax",
+    )
+    response.set_cookie(
+        key="refresh_token", value=refresh_token,
+        httponly=True, secure=COOKIE_SECURE, samesite="lax",
+    )
+    return response
+
+
+@router.post("/emails/remove")
+async def remove_email(
+    request: Request,
+    email_id: int = Form(..., title="Email ID", description="ID of the email to remove"),
+    account: Account = Depends(get_authenticated_account),
+    session: Session = Depends(get_session),
+):
+    """
+    Remove a non-primary email address from the account.
+    """
+    assert account.id is not None
+    target_email = session.exec(
+        select(AccountEmail).where(
+            AccountEmail.id == email_id,
+            AccountEmail.account_id == account.id,
+        )
+    ).first()
+
+    if not target_email:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Email address not found")
+
+    if target_email.is_primary:
+        raise CannotRemovePrimaryEmailError()
+
+    removed_address = target_email.email
+    session.delete(target_email)
+    session.commit()
+
+    # Create recovery token and send notification to the removed address
+    recovery_token_str = create_recovery_token(account.id, removed_address, session)
+    session.commit()
+    recovery_url = generate_recovery_url(recovery_token_str)
+    send_email_removed_notification(removed_address, recovery_url)
+
+    if is_htmx_request(request):
+        return toast_response(request, templates, "Email address removed.", level="success")
     profile_path: URLPath = user_router.url_path_for("read_profile")
     response = RedirectResponse(url=str(profile_path), status_code=303)
-    set_flash_cookie(response, "Your email address has been successfully updated.")
-
-    # Add secure cookie attributes
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        secure=COOKIE_SECURE,
-        samesite="lax"
-    )
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=COOKIE_SECURE,
-        samesite="lax"
-    )
+    set_flash_cookie(response, "Email address removed.")
     return response
