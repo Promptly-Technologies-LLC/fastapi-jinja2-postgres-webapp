@@ -1,6 +1,6 @@
 [project]
 name = "fastapi-jinja2-postgres-webapp"
-version = "0.1.17"
+version = "0.1.18"
 description = "A template webapp with a pure-Python FastAPI backend, frontend templating with Jinja2, and a Postgres database to power user auth"
 readme = "README.md"
 package-mode = false
