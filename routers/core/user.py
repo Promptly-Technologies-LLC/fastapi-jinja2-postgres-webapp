@@ -116,6 +116,7 @@ async def update_profile(
 
     # Handle avatar update
     if avatar_changed:
+        assert avatar_file is not None
         avatar_data = await avatar_file.read()
         avatar_content_type = avatar_file.content_type
 
