@@ -116,6 +116,7 @@ async def update_profile(
 
     # Handle avatar update
     if avatar_changed:
+        assert avatar_file is not None
         avatar_data = await avatar_file.read()
         avatar_content_type = avatar_file.content_type
 
@@ -141,17 +142,21 @@ async def update_profile(
     session.refresh(user)
 
     if is_htmx_request(request):
-        if avatar_changed:
-            # Avatar affects the navbar, which is outside the swap target.
-            # Tell HTMX to do a full page refresh so everything updates.
-            response = Response(status_code=200)
-            response.headers["HX-Refresh"] = "true"
-            return response
         response = templates.TemplateResponse(
             request,
             "users/partials/profile_display.html",
             {"user": user},
         )
+        if avatar_changed:
+            # Avatar also appears in the navbar — append an OOB swap for it.
+            navbar_html = bytes(templates.TemplateResponse(
+                request,
+                "base/partials/navbar_avatar_oob.html",
+                {"user": user},
+            ).body).decode()
+            original = bytes(response.body).decode()
+            response.body = (original + navbar_html).encode()
+            response.headers["content-length"] = str(len(response.body))
         return append_toast(response, request, templates, "Profile updated successfully.")
     return RedirectResponse(url=router.url_path_for("read_profile"), status_code=303)
 

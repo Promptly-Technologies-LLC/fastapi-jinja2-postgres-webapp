@@ -2,9 +2,10 @@
 <div id="toast-container"
      class="toast-container position-fixed bottom-0 end-0 p-3"
      hx-swap-oob="true"
+     hx-ext="remove-me"
      aria-live="polite">
   <div class="toast align-items-center text-bg-{{ level|default('danger') }} border-0 show"
-       role="alert" aria-atomic="true">
+       role="alert" aria-atomic="true" remove-me="5s">
     <div class="d-flex">
       <div class="toast-body">{{ message }}</div>
       <button type="button" class="btn-close btn-close-white me-2 m-auto"
