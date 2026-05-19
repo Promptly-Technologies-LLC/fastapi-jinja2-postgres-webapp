@@ -21,6 +21,12 @@ document.body.addEventListener('htmx:configRequest', function() {
 // clean up any Bootstrap modal backdrop left behind by OOB swaps that
 // replaced the modal element before afterRequest could call .hide().
 document.body.addEventListener('modalDismiss', function() {
+    document.querySelectorAll('.modal.show').forEach(function(el) {
+        var modal = bootstrap.Modal.getInstance(el);
+        if (modal) {
+            modal.hide();
+        }
+    });
     document.querySelectorAll('.modal-backdrop').forEach(function(el) { el.remove(); });
     document.body.classList.remove('modal-open');
     document.body.style.removeProperty('overflow');
