@@ -371,7 +371,7 @@ class Invitation(SQLModel, table=True):
         cls, session: Session, organization_id: int
     ) -> list["Invitation"]:
         statement = select(cls).where(
-            cls.organization_id == organization_id, cls.used == False
-        )  # noqa: E712
+            cls.organization_id == organization_id, cls.used.is_(False)
+        )
         results = session.exec(statement).all()
         return [inv for inv in results if not inv.is_expired()]
