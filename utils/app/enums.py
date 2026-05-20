@@ -6,6 +6,7 @@ These are automatically registered alongside the core ValidPermissions
 during database setup, and can be used with User.has_permission() in the
 same way as core permissions.
 """
+
 from enum import StrEnum
 
 

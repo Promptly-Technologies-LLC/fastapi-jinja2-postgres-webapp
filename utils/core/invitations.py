@@ -47,11 +47,11 @@ def send_invitation_email(invitation: Invitation, session: Session) -> None:
 
     try:
         # Ensure the organization relationship is loaded or fetch it
-        org_name = "the organization" # Default name
+        org_name = "the organization"  # Default name
         if invitation.organization:
             org_name = invitation.organization.name
         elif invitation.organization_id:
-             # Attempt to fetch if not loaded - requires Organization model import
+            # Attempt to fetch if not loaded - requires Organization model import
             org = session.get(Organization, invitation.organization_id)
             if org:
                 org_name = org.name
@@ -61,7 +61,6 @@ def send_invitation_email(invitation: Invitation, session: Session) -> None:
                     f"for invitation {invitation.id}"
                 )
                 raise DataIntegrityError(resource="Organization")
-
 
         invitation_link = generate_invitation_link(invitation.token)
 
@@ -90,12 +89,14 @@ def send_invitation_email(invitation: Invitation, session: Session) -> None:
     except Exception as e:
         logger.error(
             f"Failed to send organization invitation email to {invitation.invitee_email}: {e}",
-            exc_info=True
+            exc_info=True,
         )
         raise EmailSendFailedError() from e
 
 
-def process_invitation(invitation: Invitation, accepted_by_user: User, session: Session) -> None:
+def process_invitation(
+    invitation: Invitation, accepted_by_user: User, session: Session
+) -> None:
     """
     Processes an accepted invitation.
 
@@ -117,7 +118,9 @@ def process_invitation(invitation: Invitation, accepted_by_user: User, session: 
         # Note: SQLAlchemy handles the association table updates automatically here.
     else:
         # This should ideally not happen if validation is correct upstream, but handle defensively.
-        logger.error(f"Invitation {invitation.id} is missing associated role during processing.")
+        logger.error(
+            f"Invitation {invitation.id} is missing associated role during processing."
+        )
         raise DataIntegrityError(resource="Invitation role")
 
     # Mark the invitation as used
@@ -128,4 +131,6 @@ def process_invitation(invitation: Invitation, accepted_by_user: User, session: 
     # Add the updated invitation to the session (will be updated on commit)
     session.add(invitation)
     # IMPORTANT: The session is NOT committed here. The calling endpoint must handle the commit.
-    logger.info(f"Processed invitation {invitation.id} for user {accepted_by_user.id} and role {invitation.role_id}")
+    logger.info(
+        f"Processed invitation {invitation.id} for user {accepted_by_user.id} and role {invitation.role_id}"
+    )

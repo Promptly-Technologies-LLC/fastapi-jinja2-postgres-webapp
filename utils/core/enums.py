@@ -9,6 +9,7 @@ class ValidPermissions(StrEnum):
     To add app-specific permissions, define them in a separate StrEnum in
     utils/app/enums.py (see AppPermissions for an example).
     """
+
     DELETE_ORGANIZATION = "Delete Organization"
     EDIT_ORGANIZATION = "Edit Organization"
     INVITE_USER = "Invite User"

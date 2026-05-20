@@ -4,6 +4,7 @@ Playwright tests for profile page HTMX form behaviors:
 1. Edit profile form: clicking Edit fetches form via hx-get, submitting swaps back to display
 2. Add email form: after submit, the email input is cleared
 """
+
 import pytest
 from playwright.sync_api import Page, expect
 

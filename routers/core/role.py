@@ -9,10 +9,24 @@ from sqlmodel import Session, select, col
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 from utils.core.dependencies import get_authenticated_user, get_session
-from utils.core.models import Role, Permission, utc_now, User, DataIntegrityError, Organization
+from utils.core.models import (
+    Role,
+    Permission,
+    utc_now,
+    User,
+    DataIntegrityError,
+    Organization,
+)
 from utils.core.enums import ValidPermissions
 from utils.app.enums import AppPermissions
-from exceptions.http_exceptions import InsufficientPermissionsError, InvalidPermissionError, RoleAlreadyExistsError, RoleNotFoundError, RoleHasUsersError, CannotModifyDefaultRoleError
+from exceptions.http_exceptions import (
+    InsufficientPermissionsError,
+    InvalidPermissionError,
+    RoleAlreadyExistsError,
+    RoleNotFoundError,
+    RoleHasUsersError,
+    CannotModifyDefaultRoleError,
+)
 from routers.core.organization import router as organization_router
 from utils.core.htmx import is_htmx_request, append_toast
 
@@ -22,7 +36,9 @@ router = APIRouter(prefix="/roles", tags=["roles"])
 templates = Jinja2Templates(directory="templates")
 
 
-def _load_org_for_roles_partial(session: Session, organization_id: int, user: User) -> tuple:
+def _load_org_for_roles_partial(
+    session: Session, organization_id: int, user: User
+) -> tuple:
     """Re-query org with roles/users/permissions and compute user_permissions."""
     organization = session.exec(
         select(Organization)
@@ -42,21 +58,35 @@ def _load_org_for_roles_partial(session: Session, organization_id: int, user: Us
 
 # --- Routes ---
 
+
 @router.post("/create", response_class=RedirectResponse)
 def create_role(
     request: Request,
-    name: Annotated[str, Form(min_length=1, strip_whitespace=True, title="Role name", description="Name for the new role")],
-    organization_id: int = Form(..., title="Organization ID", description="ID of the organization this role belongs to"),
-    permissions: List[str] = Form(default=[], title="Permissions", description="List of permissions to assign to this role"),
+    name: Annotated[
+        str,
+        Form(
+            min_length=1,
+            strip_whitespace=True,
+            title="Role name",
+            description="Name for the new role",
+        ),
+    ],
+    organization_id: int = Form(
+        ...,
+        title="Organization ID",
+        description="ID of the organization this role belongs to",
+    ),
+    permissions: List[str] = Form(
+        default=[],
+        title="Permissions",
+        description="List of permissions to assign to this role",
+    ),
     user: User = Depends(get_authenticated_user),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
     # Check that the user-selected role name is unique for the organization
     if session.exec(
-        select(Role).where(
-            Role.name == name,
-            Role.organization_id == organization_id
-        )
+        select(Role).where(Role.name == name, Role.organization_id == organization_id)
     ).first():
         raise RoleAlreadyExistsError()
 
@@ -65,10 +95,7 @@ def create_role(
         raise InsufficientPermissionsError()
 
     # Create role
-    db_role = Role(
-        name=name,
-        organization_id=organization_id
-    )
+    db_role = Role(name=name, organization_id=organization_id)
     session.add(db_role)
 
     # Select Permission records corresponding to the user-selected permissions
@@ -87,7 +114,9 @@ def create_role(
         raise RoleAlreadyExistsError()
 
     if is_htmx_request(request):
-        organization, user_permissions = _load_org_for_roles_partial(session, organization_id, user)
+        organization, user_permissions = _load_org_for_roles_partial(
+            session, organization_id, user
+        )
         response = templates.TemplateResponse(
             request,
             "organization/partials/roles_table.html",
@@ -102,8 +131,10 @@ def create_role(
         response.headers["HX-Trigger"] = "modalDismiss"
         return append_toast(response, request, templates, "Role created successfully.")
     return RedirectResponse(
-        url=organization_router.url_path_for("read_organization", org_id=organization_id),
-        status_code=303
+        url=organization_router.url_path_for(
+            "read_organization", org_id=organization_id
+        ),
+        status_code=303,
     )
 
 
@@ -111,11 +142,25 @@ def create_role(
 def update_role(
     request: Request,
     id: int = Form(..., title="Role ID", description="ID of the role to update"),
-    name: str = Form(..., min_length=1, strip_whitespace=True, title="Role name", description="Updated name for the role"),
-    organization_id: int = Form(..., title="Organization ID", description="ID of the organization this role belongs to"),
-    permissions: List[str] = Form(default=[], title="Permissions", description="Updated list of permissions for this role"),
+    name: str = Form(
+        ...,
+        min_length=1,
+        strip_whitespace=True,
+        title="Role name",
+        description="Updated name for the role",
+    ),
+    organization_id: int = Form(
+        ...,
+        title="Organization ID",
+        description="ID of the organization this role belongs to",
+    ),
+    permissions: List[str] = Form(
+        default=[],
+        title="Permissions",
+        description="Updated list of permissions for this role",
+    ),
     user: User = Depends(get_authenticated_user),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
     # Check that the user is authorized to update the role
     if not user.has_permission(ValidPermissions.EDIT_ROLE, organization_id):
@@ -123,8 +168,7 @@ def update_role(
 
     # Select db_role to update, along with its permissions, by ID
     db_role: Optional[Role] = session.exec(
-        select(Role).where(Role.id == id).options(
-            selectinload(Role.permissions))
+        select(Role).where(Role.id == id).options(selectinload(Role.permissions))
     ).first()
 
     if not db_role:
@@ -159,9 +203,7 @@ def update_role(
     # Check that no existing organization role has the same name but a different ID
     if session.exec(
         select(Role).where(
-            Role.name == name,
-            Role.organization_id == organization_id,
-            Role.id != id
+            Role.name == name, Role.organization_id == organization_id, Role.id != id
         )
     ).first():
         raise RoleAlreadyExistsError()
@@ -179,7 +221,9 @@ def update_role(
     session.refresh(db_role)
 
     if is_htmx_request(request):
-        organization, user_permissions = _load_org_for_roles_partial(session, organization_id, user)
+        organization, user_permissions = _load_org_for_roles_partial(
+            session, organization_id, user
+        )
         response = templates.TemplateResponse(
             request,
             "organization/partials/roles_table.html",
@@ -194,8 +238,10 @@ def update_role(
         response.headers["HX-Trigger"] = "modalDismiss"
         return append_toast(response, request, templates, "Role updated successfully.")
     return RedirectResponse(
-        url=organization_router.url_path_for("read_organization", org_id=organization_id),
-        status_code=303
+        url=organization_router.url_path_for(
+            "read_organization", org_id=organization_id
+        ),
+        status_code=303,
     )
 
 
@@ -203,9 +249,13 @@ def update_role(
 def delete_role(
     request: Request,
     id: int = Form(..., title="Role ID", description="ID of the role to delete"),
-    organization_id: int = Form(..., title="Organization ID", description="ID of the organization this role belongs to"),
+    organization_id: int = Form(
+        ...,
+        title="Organization ID",
+        description="ID of the organization this role belongs to",
+    ),
     user: User = Depends(get_authenticated_user),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
     # Check that the user is authorized to delete the role
     if not user.has_permission(ValidPermissions.DELETE_ROLE, organization_id):
@@ -213,9 +263,7 @@ def delete_role(
 
     # Select the role to delete by ID, along with its users
     db_role: Role | None = session.exec(
-        select(Role).where(Role.id == id).options(
-            selectinload(Role.users)
-        )
+        select(Role).where(Role.id == id).options(selectinload(Role.users))
     ).first()
 
     if not db_role:
@@ -234,7 +282,9 @@ def delete_role(
     session.commit()
 
     if is_htmx_request(request):
-        organization, user_permissions = _load_org_for_roles_partial(session, organization_id, user)
+        organization, user_permissions = _load_org_for_roles_partial(
+            session, organization_id, user
+        )
         response = templates.TemplateResponse(
             request,
             "organization/partials/roles_table.html",
@@ -248,6 +298,8 @@ def delete_role(
         )
         return append_toast(response, request, templates, "Role deleted successfully.")
     return RedirectResponse(
-        url=organization_router.url_path_for("read_organization", org_id=organization_id),
-        status_code=303
+        url=organization_router.url_path_for(
+            "read_organization", org_id=organization_id
+        ),
+        status_code=303,
     )

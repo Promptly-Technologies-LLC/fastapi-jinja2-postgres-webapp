@@ -8,6 +8,7 @@ Covers three toast delivery paths:
 
 Also verifies auto-dismiss (~5 s) and manual close via the X button.
 """
+
 import pytest
 from PIL import Image
 from playwright.sync_api import Page, expect
@@ -137,7 +138,6 @@ def test_avatar_update_no_full_reload(logged_in_page: Page, live_server: str, tm
     # DOM marker should survive — proves no full page reload happened
     marker = page.evaluate("() => window.__noReload")
     assert marker is True, "Page was fully reloaded instead of using OOB swaps"
-
 
 
 # --- 2. HTMX error toast (error response path) ---

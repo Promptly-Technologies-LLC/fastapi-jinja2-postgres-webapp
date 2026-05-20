@@ -47,7 +47,8 @@ class RateLimitWindow:
         """Remove stale keys across the whole store."""
         cutoff = now - self.window_seconds
         stale_keys = [
-            key for key, timestamps in self._attempts.items()
+            key
+            for key, timestamps in self._attempts.items()
             if all(timestamp <= cutoff for timestamp in timestamps)
         ]
         for key in stale_keys:
@@ -117,13 +118,16 @@ class RateLimitWindow:
 
 # --- Configuration helpers ---
 
+
 def _int_env(name: str, default: int) -> int:
     val = os.environ.get(name)
     if val is not None:
         try:
             return int(val)
         except ValueError:
-            logger.warning(f"Invalid integer for {name}={val!r}, using default {default}")
+            logger.warning(
+                f"Invalid integer for {name}={val!r}, using default {default}"
+            )
     return default
 
 
@@ -152,6 +156,7 @@ forgot_password_email_limiter = RateLimitWindow(
 
 
 # --- Dependency helpers ---
+
 
 def get_client_ip(request: Request) -> str:
     """
@@ -183,6 +188,7 @@ def _enforce_rate_limit(limiter: RateLimitWindow, key: str, scope: str) -> int:
 
 
 # --- Per-endpoint FastAPI dependencies ---
+
 
 def check_login_ip_rate_limit(request: Request) -> None:
     ip = get_client_ip(request)
