@@ -6,14 +6,29 @@ from sqlalchemy.orm import selectinload
 from datetime import UTC, datetime
 from typing import Optional, Tuple, Generator
 from utils.core.auth import (
-    validate_token, create_access_token, create_tracked_refresh_token,
-    revoke_all_refresh_tokens, oauth2_scheme_cookie, verify_password
+    validate_token,
+    create_access_token,
+    create_tracked_refresh_token,
+    revoke_all_refresh_tokens,
+    oauth2_scheme_cookie,
+    verify_password,
 )
 from utils.core.db import create_engine, get_connection_url
-from utils.core.models import User, Role, AccountRecoveryToken, PasswordResetToken, EmailVerificationToken, RefreshToken, Account
+from utils.core.models import (
+    User,
+    Role,
+    AccountRecoveryToken,
+    PasswordResetToken,
+    EmailVerificationToken,
+    RefreshToken,
+    Account,
+)
 from exceptions.http_exceptions import (
-    AlreadyAuthenticatedError, AuthenticationError, CredentialsError,
-    DataIntegrityError, PasswordValidationError
+    AlreadyAuthenticatedError,
+    AuthenticationError,
+    CredentialsError,
+    DataIntegrityError,
+    PasswordValidationError,
 )
 from exceptions.exceptions import NeedsNewTokens
 
@@ -33,9 +48,7 @@ def get_session() -> Generator[Session, None, None]:
 
 
 def validate_token_and_get_account(
-    token: str,
-    token_type: str,
-    session: Session
+    token: str, token_type: str, session: Session
 ) -> tuple[Optional[Account], Optional[str], Optional[str]]:
     """
     Validates a token and returns the associated account if valid.
@@ -53,9 +66,9 @@ def validate_token_and_get_account(
 
     if decoded_token:
         user_email = decoded_token.get("sub")
-        account = session.exec(select(Account).where(
-            Account.email == user_email
-        )).first()
+        account = session.exec(
+            select(Account).where(Account.email == user_email)
+        ).first()
 
         if account:
             assert account.id is not None
@@ -84,10 +97,10 @@ def validate_token_and_get_account(
 
                 # Revoke the current token and issue new ones
                 db_token.revoked = True
-                new_access_token = create_access_token(
-                    data={"sub": account.email})
+                new_access_token = create_access_token(data={"sub": account.email})
                 new_refresh_token = create_tracked_refresh_token(
-                    account.id, account.email, session)
+                    account.id, account.email, session
+                )
                 session.commit()
                 return account, new_access_token, new_refresh_token
             return account, None, None
@@ -97,7 +110,7 @@ def validate_token_and_get_account(
 def get_account_from_credentials(
     email: EmailStr = Form(...),
     password: str = Form(...),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ) -> Tuple[Account, Session]:
     """
     Validates user credentials and returns the account if valid.
@@ -113,9 +126,8 @@ def get_account_from_credentials(
     Raises:
         HTTPException: If credentials are invalid
     """
-    account = session.exec(select(Account).where(
-        Account.email == email)).first()
-    
+    account = session.exec(select(Account).where(Account.email == email)).first()
+
     if not account or not verify_password(password, account.hashed_password):
         raise CredentialsError()
 
@@ -123,31 +135,34 @@ def get_account_from_credentials(
 
 
 def get_account_from_tokens(
-    tokens: tuple[Optional[str], Optional[str]],
-    session: Session
+    tokens: tuple[Optional[str], Optional[str]], session: Session
 ) -> tuple[Optional[Account], Optional[str], Optional[str]]:
     """
     Attempts to get an account from access or refresh tokens.
-    
+
     Args:
         tokens: Tuple of (access_token, refresh_token)
         session: Database session
-        
+
     Returns:
         Tuple containing the account (if valid), and new tokens (if using refresh token)
     """
     access_token, refresh_token = tokens
 
     # Try to validate the access token first
-    account, _, _ = validate_token_and_get_account(
-        access_token, "access", session) if access_token else (None, None, None)
+    account, _, _ = (
+        validate_token_and_get_account(access_token, "access", session)
+        if access_token
+        else (None, None, None)
+    )
     if account:
         return account, None, None
 
     # If access token is invalid or missing, try the refresh token
     if refresh_token:
         account, new_access_token, new_refresh_token = validate_token_and_get_account(
-            refresh_token, "refresh", session)
+            refresh_token, "refresh", session
+        )
         if account:
             return account, new_access_token, new_refresh_token
 
@@ -161,20 +176,21 @@ def get_authenticated_account(
 ) -> Account:
     """
     Dependency that returns the authenticated account or raises an exception.
-    
+
     Args:
         tokens: Tuple of (access_token, refresh_token)
         session: Database session
-        
+
     Returns:
         The authenticated account
-        
+
     Raises:
         AuthenticationError: If no valid account is found
         NeedsNewTokens: If using refresh token and new tokens are generated
     """
     account, new_access_token, new_refresh_token = get_account_from_tokens(
-        tokens, session)
+        tokens, session
+    )
 
     if account:
         if new_access_token and new_refresh_token:
@@ -182,16 +198,14 @@ def get_authenticated_account(
             if account.user:
                 raise NeedsNewTokens(account.user, new_access_token, new_refresh_token)
             else:
-                raise   DataIntegrityError("User")
+                raise DataIntegrityError("User")
         return account
 
     raise AuthenticationError()
 
 
 def validate_token_and_get_user(
-    token: str,
-    token_type: str,
-    session: Session
+    token: str, token_type: str, session: Session
 ) -> tuple[Optional[User], Optional[str], Optional[str]]:
     # Delegate to validate_token_and_get_account for shared JTI logic
     account, new_access_token, new_refresh_token = validate_token_and_get_account(
@@ -203,21 +217,24 @@ def validate_token_and_get_user(
 
 
 def get_user_from_tokens(
-    tokens: tuple[Optional[str], Optional[str]],
-    session: Session
+    tokens: tuple[Optional[str], Optional[str]], session: Session
 ) -> tuple[Optional[User], Optional[str], Optional[str]]:
     access_token, refresh_token = tokens
 
     # Try to validate the access token first
-    user, _, _ = validate_token_and_get_user(
-        access_token, "access", session) if access_token else (None, None, None)
+    user, _, _ = (
+        validate_token_and_get_user(access_token, "access", session)
+        if access_token
+        else (None, None, None)
+    )
     if user:
         return user, None, None
 
     # If access token is invalid or missing, try the refresh token
     if refresh_token:
         user, new_access_token, new_refresh_token = validate_token_and_get_user(
-            refresh_token, "refresh", session)
+            refresh_token, "refresh", session
+        )
         if user:
             return user, new_access_token, new_refresh_token
 
@@ -226,12 +243,10 @@ def get_user_from_tokens(
 
 
 def get_authenticated_user(
-    tokens: tuple[Optional[str], Optional[str]
-                  ] = Depends(oauth2_scheme_cookie),
+    tokens: tuple[Optional[str], Optional[str]] = Depends(oauth2_scheme_cookie),
     session: Session = Depends(get_session),
 ) -> User:
-    user, new_access_token, new_refresh_token = get_user_from_tokens(
-        tokens, session)
+    user, new_access_token, new_refresh_token = get_user_from_tokens(tokens, session)
 
     if user:
         if new_access_token and new_refresh_token:
@@ -244,12 +259,10 @@ def get_authenticated_user(
 # TODO: Maybe instead of an optional function, we have get_account and then
 # get_required_account, which just wraps it?
 def get_optional_user(
-    tokens: tuple[Optional[str], Optional[str]
-                  ] = Depends(oauth2_scheme_cookie),
-    session: Session = Depends(get_session)
+    tokens: tuple[Optional[str], Optional[str]] = Depends(oauth2_scheme_cookie),
+    session: Session = Depends(get_session),
 ) -> Optional[User]:
-    user, new_access_token, new_refresh_token = get_user_from_tokens(
-        tokens, session)
+    user, new_access_token, new_refresh_token = get_user_from_tokens(tokens, session)
 
     if user:
         if new_access_token and new_refresh_token:
@@ -271,8 +284,12 @@ def require_unauthenticated_client(
 
 
 def get_verified_account(
-    email: EmailStr = Form(..., title="Email", description="Account email address for verification"),
-    password: str = Form(..., title="Password", description="Account password for verification"),
+    email: EmailStr = Form(
+        ..., title="Email", description="Account email address for verification"
+    ),
+    password: str = Form(
+        ..., title="Password", description="Account password for verification"
+    ),
     account: Account = Depends(get_authenticated_account),
 ) -> Account:
     """
@@ -282,16 +299,12 @@ def get_verified_account(
     if email != account.email:
         raise CredentialsError(message="Email does not match authenticated account")
     if not verify_password(password, account.hashed_password):
-        raise PasswordValidationError(
-            field="password",
-            message="Password is incorrect"
-        )
+        raise PasswordValidationError(field="password", message="Password is incorrect")
     return account
 
 
 def get_account_from_email_verification_token(
-    token: str,
-    session: Session
+    token: str, session: Session
 ) -> tuple[Optional[Account], Optional[EmailVerificationToken]]:
     """
     Get account from an email verification token.
@@ -300,12 +313,11 @@ def get_account_from_email_verification_token(
         Tuple of (account, token) if valid, or (None, None) if invalid
     """
     result = session.exec(
-        select(Account, EmailVerificationToken)
-        .where(
+        select(Account, EmailVerificationToken).where(
             EmailVerificationToken.token == token,
             EmailVerificationToken.expires_at > datetime.now(UTC),
             EmailVerificationToken.used == False,  # noqa: E712
-            EmailVerificationToken.account_id == Account.id
+            EmailVerificationToken.account_id == Account.id,
         )
     ).first()
 
@@ -317,8 +329,7 @@ def get_account_from_email_verification_token(
 
 
 def get_account_from_recovery_token(
-    token: str,
-    session: Session
+    token: str, session: Session
 ) -> tuple[Optional[Account], Optional[AccountRecoveryToken]]:
     """
     Get account from an account recovery token.
@@ -327,12 +338,11 @@ def get_account_from_recovery_token(
         Tuple of (account, token) if valid, or (None, None) if invalid
     """
     result = session.exec(
-        select(Account, AccountRecoveryToken)
-        .where(
+        select(Account, AccountRecoveryToken).where(
             AccountRecoveryToken.token == token,
             AccountRecoveryToken.expires_at > datetime.now(UTC),
             AccountRecoveryToken.used == False,  # noqa: E712
-            AccountRecoveryToken.account_id == Account.id
+            AccountRecoveryToken.account_id == Account.id,
         )
     ).first()
 
@@ -344,29 +354,26 @@ def get_account_from_recovery_token(
 
 
 def get_account_from_reset_token(
-    email: str, 
-    token: str, 
-    session: Session
+    email: str, token: str, session: Session
 ) -> tuple[Optional[Account], Optional[PasswordResetToken]]:
     """
     Get account from a password reset token.
-    
+
     Args:
         email: Email address of the account
         token: Password reset token
         session: Database session
-        
+
     Returns:
         Tuple of (account, token) if valid, or (None, None) if invalid
     """
     result = session.exec(
-        select(Account, PasswordResetToken)
-        .where(
+        select(Account, PasswordResetToken).where(
             Account.email == email,
             PasswordResetToken.token == token,
             PasswordResetToken.expires_at > datetime.now(UTC),
             PasswordResetToken.used == False,  # noqa: E712
-            PasswordResetToken.account_id == Account.id
+            PasswordResetToken.account_id == Account.id,
         )
     ).first()
 
@@ -390,7 +397,7 @@ def get_user_with_relations(
         .where(User.id == user.id)
         .options(
             selectinload(User.roles).selectinload(Role.organization),
-            selectinload(User.roles).selectinload(Role.permissions)
+            selectinload(User.roles).selectinload(Role.permissions),
         )
     ).one()
 
@@ -409,7 +416,9 @@ async def get_user_from_request(request: Request) -> Optional[User]:
     # Get a database session
     engine = create_engine(get_connection_url())
     with Session(engine) as session:
-        user, new_access_token, new_refresh_token = get_user_from_tokens(tokens, session)
+        user, new_access_token, new_refresh_token = get_user_from_tokens(
+            tokens, session
+        )
 
         # If we got new tokens, we'd normally raise NeedsNewTokens, but in an exception
         # handler we can't do that easily. For now, just return the user.

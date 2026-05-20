@@ -4,7 +4,13 @@ from itertools import chain
 from typing import Union, Sequence
 from sqlalchemy.engine import URL
 from sqlmodel import create_engine, Session, SQLModel, select, text
-from utils.core.models import Account, AccountEmail, Role, Permission, RolePermissionLink
+from utils.core.models import (
+    Account,
+    AccountEmail,
+    Role,
+    Permission,
+    RolePermissionLink,
+)
 from utils.core.enums import ValidPermissions
 from utils.app.enums import AppPermissions
 from utils.app.models import *  # noqa: F401, F403 — registers app models with SQLModel.metadata
@@ -33,7 +39,7 @@ def ensure_database_exists(url: URL) -> None:
         ).scalar()
         if not exists:
             conn.execute(text(f'CREATE DATABASE "{dbname}"'))
-            
+
 
 def get_connection_url() -> URL:
     """
@@ -75,7 +81,13 @@ def get_connection_url() -> URL:
         database = os.getenv("DB_POOL_NAME")
         username = os.getenv("DB_APPUSER")
         password = os.getenv("DB_APPUSER_PASSWORD")
-        required = ["DB_HOST", "DB_POOL_PORT", "DB_POOL_NAME", "DB_APPUSER", "DB_APPUSER_PASSWORD"]
+        required = [
+            "DB_HOST",
+            "DB_POOL_PORT",
+            "DB_POOL_NAME",
+            "DB_APPUSER",
+            "DB_APPUSER_PASSWORD",
+        ]
     else:
         port = os.getenv("DB_PORT")
         database = os.getenv("DB_NAME")
@@ -101,10 +113,10 @@ def get_connection_url() -> URL:
 
 
 def assign_permissions_to_role(
-        session: Session,
-        role: Role,
-        permissions: Union[list[Permission], Sequence[Permission]],
-        check_first: bool = False
+    session: Session,
+    role: Role,
+    permissions: Union[list[Permission], Sequence[Permission]],
+    check_first: bool = False,
 ) -> None:
     """
     Assigns permissions to a role in the database.
@@ -122,7 +134,7 @@ def assign_permissions_to_role(
             db_role_permission_link: RolePermissionLink | None = session.exec(
                 select(RolePermissionLink).where(
                     RolePermissionLink.role_id == role.id,
-                    RolePermissionLink.permission_id == permission.id
+                    RolePermissionLink.permission_id == permission.id,
                 )
             ).first()
         else:
@@ -131,13 +143,14 @@ def assign_permissions_to_role(
         # Skip granting DELETE_ORGANIZATION permission to the Administrator role
         if not db_role_permission_link:
             role_permission_link = RolePermissionLink(
-                role_id=role.id,
-                permission_id=permission.id
+                role_id=role.id, permission_id=permission.id
             )
             session.add(role_permission_link)
 
 
-def create_default_roles(session: Session, organization_id: int, check_first: bool = True) -> list:
+def create_default_roles(
+    session: Session, organization_id: int, check_first: bool = True
+) -> list:
     """
     Creates default roles for a specified organization in the database if they do not already exist,
     and assigns permissions to the Owner and Administrator roles.
@@ -155,8 +168,7 @@ def create_default_roles(session: Session, organization_id: int, check_first: bo
     for role_name in default_roles:
         db_role = session.exec(
             select(Role).where(
-                Role.name == role_name,
-                Role.organization_id == organization_id
+                Role.name == role_name, Role.organization_id == organization_id
             )
         ).first()
         if not db_role:
@@ -168,22 +180,24 @@ def create_default_roles(session: Session, organization_id: int, check_first: bo
     # Fetch all permissions once
     owner_permissions = session.exec(select(Permission)).all()
     admin_permissions = [
-        permission for permission in owner_permissions
+        permission
+        for permission in owner_permissions
         if permission.name != ValidPermissions.DELETE_ORGANIZATION
     ]
 
     # Get Owner and Administrator roles by name
     owner_role = next(role for role in roles_in_db if role.name == "Owner")
-    admin_role = next(
-        role for role in roles_in_db if role.name == "Administrator")
+    admin_role = next(role for role in roles_in_db if role.name == "Administrator")
 
     # Assign all permissions to Owner
     assign_permissions_to_role(
-        session, owner_role, owner_permissions, check_first=check_first)
+        session, owner_role, owner_permissions, check_first=check_first
+    )
 
     # Assign filtered permissions to Administrator
     assign_permissions_to_role(
-        session, admin_role, admin_permissions, check_first=check_first)
+        session, admin_role, admin_permissions, check_first=check_first
+    )
 
     session.commit()
     return roles_in_db
@@ -198,8 +212,9 @@ def create_permissions(session: Session) -> None:
         session (Session): The database session to use for operations.
     """
     for permission in chain(ValidPermissions, AppPermissions):
-        db_permission = session.exec(select(Permission).where(
-            Permission.name == str(permission))).first()
+        db_permission = session.exec(
+            select(Permission).where(Permission.name == str(permission))
+        ).first()
         if not db_permission:
             db_permission = Permission(name=str(permission))
             session.add(db_permission)
@@ -211,6 +226,7 @@ def seed_account_emails(session: Session) -> None:
     Each account gets a primary, verified AccountEmail matching its email field.
     """
     from datetime import datetime, UTC
+
     accounts = session.exec(select(Account)).all()
     for account in accounts:
         existing = session.exec(

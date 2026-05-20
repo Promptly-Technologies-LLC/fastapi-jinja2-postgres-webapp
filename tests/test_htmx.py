@@ -7,6 +7,7 @@ Convention: HTMX requests send the HX-Request: true header.
 - Navigation responses return 200 with HX-Redirect header.
 - Non-HTMX paths remain unchanged (303 RedirectResponse or full-page error).
 """
+
 import pytest
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
@@ -39,6 +40,7 @@ def _reset_rate_limiters():
 # 1.3 — is_htmx_request helper
 # ---------------------------------------------------------------------------
 
+
 def test_is_htmx_request_true():
     scope = {
         "type": "http",
@@ -66,6 +68,7 @@ def test_is_htmx_request_false():
 # ---------------------------------------------------------------------------
 # 1.4 — Exception handler branches
 # ---------------------------------------------------------------------------
+
 
 def _assert_htmx_error_is_oob_only(response):
     """Assert an HTMX error response contains only OOB-swapped content.
@@ -153,9 +156,11 @@ def test_validation_error_returns_full_page_for_non_htmx(unauth_client):
 # 1.5 — Non-HTMX error pages: human-readable, consistent navigation
 # ---------------------------------------------------------------------------
 
+
 def test_password_validation_error_non_htmx_shows_readable_message(unauth_client):
     """PasswordValidationError must render human-readable text, not raw dicts."""
     from html import unescape
+
     response = unauth_client.post(
         "/account/register",
         data={
@@ -199,30 +204,32 @@ def test_non_htmx_error_pages_have_go_back_and_home_links(unauth_client):
 # 1.6 — Auth forms include hx-post for HTMX submission
 # ---------------------------------------------------------------------------
 
+
 def test_login_form_has_hx_post(unauth_client):
     """Login form must include hx-post so submissions go through HTMX."""
     response = unauth_client.get("/account/login")
     assert response.status_code == 200
-    assert 'hx-post' in response.text
+    assert "hx-post" in response.text
 
 
 def test_register_form_has_hx_post(unauth_client):
     """Register form must include hx-post so submissions go through HTMX."""
     response = unauth_client.get("/account/register")
     assert response.status_code == 200
-    assert 'hx-post' in response.text
+    assert "hx-post" in response.text
 
 
 def test_forgot_password_form_has_hx_post(unauth_client):
     """Forgot password form must include hx-post so submissions go through HTMX."""
     response = unauth_client.get("/account/forgot_password")
     assert response.status_code == 200
-    assert 'hx-post' in response.text
+    assert "hx-post" in response.text
 
 
 def test_reset_password_form_has_hx_post(unauth_client, session, test_account):
     """Reset password form must include hx-post so submissions go through HTMX."""
     from utils.core.models import PasswordResetToken
+
     token = PasswordResetToken(account_id=test_account.id)
     session.add(token)
     session.commit()
@@ -231,12 +238,13 @@ def test_reset_password_form_has_hx_post(unauth_client, session, test_account):
         params={"email": test_account.email, "token": token.token},
     )
     assert response.status_code == 200
-    assert 'hx-post' in response.text
+    assert "hx-post" in response.text
 
 
 # ---------------------------------------------------------------------------
 # 1.7 — Auth form HTMX success returns HX-Redirect (not 303)
 # ---------------------------------------------------------------------------
+
 
 def test_login_htmx_success_returns_hx_redirect(unauth_client, test_account):
     """HTMX login success must return HX-Redirect header, not a 303."""
@@ -286,6 +294,7 @@ def test_reset_password_htmx_success_returns_hx_redirect(
 ):
     """HTMX reset-password success must return HX-Redirect, not a 303."""
     from utils.core.models import PasswordResetToken
+
     token = PasswordResetToken(account_id=test_account.id)
     session.add(token)
     session.commit()
@@ -308,6 +317,7 @@ def test_reset_password_htmx_success_returns_hx_redirect(
 # 4.2 — Password mismatch on register/reset
 # ---------------------------------------------------------------------------
 
+
 def test_password_mismatch_htmx_returns_toast(unauth_client):
     response = unauth_client.post(
         "/account/register",
@@ -329,6 +339,7 @@ def test_password_mismatch_htmx_returns_toast(unauth_client):
 # 4.3 — Login failure toast
 # ---------------------------------------------------------------------------
 
+
 def test_bad_login_htmx_returns_toast(unauth_client):
     response = unauth_client.post(
         "/account/login",
@@ -344,6 +355,7 @@ def test_bad_login_htmx_returns_toast(unauth_client):
 # ---------------------------------------------------------------------------
 # 2.3 — Role CRUD endpoints
 # ---------------------------------------------------------------------------
+
 
 def test_create_role_htmx_returns_partial(auth_client_owner, test_organization):
     assert test_organization.id is not None
@@ -374,9 +386,12 @@ def test_create_role_non_htmx_redirects(auth_client_owner, test_organization):
     assert response.headers["location"] == f"/organizations/{test_organization.id}"
 
 
-def test_delete_role_htmx_returns_partial(auth_client_owner, test_organization, session):
+def test_delete_role_htmx_returns_partial(
+    auth_client_owner, test_organization, session
+):
     """After deleting a custom role with HTMX, returns updated roles table partial."""
     from utils.core.models import Role
+
     # Create a custom role to delete
     custom_role = Role(name="ToDelete", organization_id=test_organization.id)
     session.add(custom_role)
@@ -397,7 +412,9 @@ def test_delete_role_htmx_returns_partial(auth_client_owner, test_organization, 
     assert "ToDelete" not in response.text
 
 
-def test_create_role_htmx_returns_modal_markup_for_new_role(auth_client_owner, test_organization):
+def test_create_role_htmx_returns_modal_markup_for_new_role(
+    auth_client_owner, test_organization
+):
     assert test_organization.id is not None
     response = auth_client_owner.post(
         "/roles/create",
@@ -416,6 +433,7 @@ def test_create_role_htmx_returns_modal_markup_for_new_role(auth_client_owner, t
 # ---------------------------------------------------------------------------
 # 2.4 — Invitation endpoint
 # ---------------------------------------------------------------------------
+
 
 def test_create_invitation_htmx_returns_invitations_partial(
     auth_client_owner, test_organization, member_role, mock_resend_send
@@ -439,6 +457,7 @@ def test_create_invitation_htmx_returns_invitations_partial(
 # ---------------------------------------------------------------------------
 # 3.2 — Update profile endpoint
 # ---------------------------------------------------------------------------
+
 
 def test_update_profile_htmx_returns_profile_display(auth_client):
     response = auth_client.post(
@@ -469,9 +488,13 @@ def test_avatar_url_includes_cache_buster():
     query param so the browser doesn't show a stale image after upload."""
     import pathlib
     import re
+
     template = (
         pathlib.Path(__file__).resolve().parent.parent
-        / "templates" / "users" / "partials" / "profile_display.html"
+        / "templates"
+        / "users"
+        / "partials"
+        / "profile_display.html"
     ).read_text()
     assert "get_avatar" in template, "Template should reference get_avatar"
     # The src should NOT end right after url_for — it must have a query param
@@ -485,6 +508,7 @@ def test_avatar_upload_htmx_returns_oob_swap(auth_client):
     swap for the navbar avatar instead of a full page refresh."""
     import io
     from PIL import Image
+
     buf = io.BytesIO()
     Image.new("RGB", (100, 100), color="red").save(buf, format="PNG")
     buf.seek(0)
@@ -524,6 +548,7 @@ def test_update_profile_non_htmx_redirects(auth_client):
 # ---------------------------------------------------------------------------
 # 4.1 — Business logic errors via HTTPException handler
 # ---------------------------------------------------------------------------
+
 
 def test_duplicate_org_name_htmx_returns_toast(auth_client, test_organization):
     assert test_organization.id is not None
@@ -582,7 +607,10 @@ def test_remove_last_non_owner_member_htmx_preserves_empty_state(
 # 2.3 — update_role HTMX refreshes both table and modal container
 # ---------------------------------------------------------------------------
 
-def test_update_role_htmx_refreshes_modal_container(auth_client_owner, test_organization, session):
+
+def test_update_role_htmx_refreshes_modal_container(
+    auth_client_owner, test_organization, session
+):
     """
     update_role HTMX response includes the updated role name in the table
     and refreshes the role-modals-container OOB so the edit modal title
@@ -621,6 +649,7 @@ def test_update_role_htmx_refreshes_modal_container(auth_client_owner, test_orga
 # ---------------------------------------------------------------------------
 # 5.1 — Rate limit 429 toast responses
 # ---------------------------------------------------------------------------
+
 
 def test_login_rate_limit_htmx_returns_toast(unauth_client):
     """Rate-limited HTMX login returns a 429 toast partial with Retry-After."""
@@ -667,6 +696,7 @@ def test_forgot_password_rate_limit_htmx_returns_toast(unauth_client):
 # 6.1 — toast_response helper
 # ---------------------------------------------------------------------------
 
+
 def test_toast_response_helper():
     """toast_response returns a TemplateResponse with toast HTML."""
     templates = Jinja2Templates(directory="templates")
@@ -697,8 +727,12 @@ def test_toast_response_with_headers():
     }
     request = Request(scope)
     resp = toast_response(
-        request, templates, "Rate limited", level="danger",
-        status_code=429, headers={"Retry-After": "60"},
+        request,
+        templates,
+        "Rate limited",
+        level="danger",
+        status_code=429,
+        headers={"Retry-After": "60"},
     )
     assert resp.headers["Retry-After"] == "60"
 
@@ -728,6 +762,7 @@ def test_append_toast_helper():
 # ---------------------------------------------------------------------------
 # 6.2 — Success toasts in HTMX mutation responses
 # ---------------------------------------------------------------------------
+
 
 def test_update_profile_htmx_includes_success_toast(auth_client):
     response = auth_client.post(
@@ -782,8 +817,11 @@ def test_create_role_htmx_includes_success_toast(auth_client_owner, test_organiz
     assert "Role created successfully" in response.text
 
 
-def test_delete_role_htmx_includes_success_toast(auth_client_owner, test_organization, session):
+def test_delete_role_htmx_includes_success_toast(
+    auth_client_owner, test_organization, session
+):
     from utils.core.models import Role
+
     custom_role = Role(name="ToDeleteToast", organization_id=test_organization.id)
     session.add(custom_role)
     session.commit()
@@ -801,8 +839,11 @@ def test_delete_role_htmx_includes_success_toast(auth_client_owner, test_organiz
     assert "Role deleted successfully" in response.text
 
 
-def test_update_role_htmx_includes_success_toast(auth_client_owner, test_organization, session):
+def test_update_role_htmx_includes_success_toast(
+    auth_client_owner, test_organization, session
+):
     from utils.core.models import Role
+
     custom_role = Role(name="RenameMe", organization_id=test_organization.id)
     session.add(custom_role)
     session.commit()
@@ -821,12 +862,15 @@ def test_update_role_htmx_includes_success_toast(auth_client_owner, test_organiz
     assert "Role updated successfully" in response.text
 
 
-def test_update_role_htmx_triggers_modal_cleanup(auth_client_owner, test_organization, session):
+def test_update_role_htmx_triggers_modal_cleanup(
+    auth_client_owner, test_organization, session
+):
     """The response must include an HX-Trigger header so the client can
     dismiss the Bootstrap modal and its backdrop.  The OOB swap for
     #role-modals-container replaces the modal element before afterRequest
     fires, leaving the backdrop stuck on screen."""
     from utils.core.models import Role
+
     custom_role = Role(name="TriggerRole", organization_id=test_organization.id)
     session.add(custom_role)
     session.commit()
@@ -959,6 +1003,7 @@ def test_remove_user_htmx_includes_success_toast(
 # 7 — Architectural guard: ban hx-on::after-request in templates
 # ---------------------------------------------------------------------------
 
+
 def test_no_templates_use_hx_on_after_request():
     """In HTMX 2.0 afterRequest fires BEFORE OOB swaps, so any handler
     on an element that is replaced by an OOB swap will silently fail.
@@ -966,7 +1011,7 @@ def test_no_templates_use_hx_on_after_request():
     import pathlib
     import re
 
-    attr_pattern = re.compile(r'hx-on::after-request=|hx-on:htmx:after-request=')
+    attr_pattern = re.compile(r"hx-on::after-request=|hx-on:htmx:after-request=")
 
     templates_dir = pathlib.Path(__file__).resolve().parent.parent / "templates"
     violations = []
@@ -1019,7 +1064,9 @@ def test_flash_cookie_value_is_valid_json_decodable_by_js():
             decoded = unquote(cookie_part)
             # Must be parseable as JSON
             parsed = json.loads(decoded)
-            assert parsed["message"] == "Email address verified and added to your account."
+            assert (
+                parsed["message"] == "Email address verified and added to your account."
+            )
             assert parsed["level"] == "success"
             return
 

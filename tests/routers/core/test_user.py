@@ -15,8 +15,7 @@ MOCK_CONTENT_TYPE = "image/png"
 
 def test_read_profile_unauthorized(unauth_client: TestClient):
     """Test that unauthorized users cannot view profile"""
-    response = unauth_client.get(app.url_path_for(
-        "read_profile"))
+    response = unauth_client.get(app.url_path_for("read_profile"))
     assert response.status_code == 303  # Redirect to login
     assert response.headers["location"] == app.url_path_for("read_login")
 
@@ -25,17 +24,17 @@ def test_read_profile_authorized(auth_client: TestClient, test_user: User):
     """Test that authorized users can view their profile"""
     response = auth_client.get(app.url_path_for("read_profile"))
     assert response.status_code == 200
-    
+
     # Get the response text
     response_text = response.text
-    
+
     # Verify account exists
     assert test_user.account is not None
-    
+
     # Verify email is in the response if it exists
     if test_user.account.email is not None:
         assert response_text.find(str(test_user.account.email)) != -1
-    
+
     # Verify name is in the response if it exists
     if test_user.name is not None:
         assert response_text.find(str(test_user.name)) != -1
@@ -45,35 +44,27 @@ def test_update_profile_unauthorized(unauth_client: TestClient):
     """Test that unauthorized users cannot edit profile"""
     response: Response = unauth_client.post(
         app.url_path_for("update_profile"),
-        data={
-            "name": "New Name"
-        },
-        files={
-            "avatar_file": ("test_avatar.jpg", b"fake image data", "image/jpeg")
-        },
+        data={"name": "New Name"},
+        files={"avatar_file": ("test_avatar.jpg", b"fake image data", "image/jpeg")},
     )
     assert response.status_code == 303  # Redirect to login
     assert response.headers["location"] == app.url_path_for("read_login")
 
 
-@patch('routers.core.user.validate_and_process_image')
+@patch("routers.core.user.validate_and_process_image")
 def test_update_profile_authorized(
-        mock_validate: MagicMock, auth_client: TestClient, test_user: User, session: Session
-    ):
+    mock_validate: MagicMock, auth_client: TestClient, test_user: User, session: Session
+):
     """Test that authorized users can edit their profile"""
-    
+
     # Configure mock to return processed image data
     mock_validate.return_value = (MOCK_IMAGE_DATA, MOCK_CONTENT_TYPE)
-    
+
     # Update profile
     response: Response = auth_client.post(
         app.url_path_for("update_profile"),
-        data={
-            "name": "Updated Name"
-        },
-        files={
-            "avatar_file": ("test_avatar.jpg", b"fake image data", "image/jpeg")
-        },
+        data={"name": "Updated Name"},
+        files={"avatar_file": ("test_avatar.jpg", b"fake image data", "image/jpeg")},
     )
     assert response.status_code == 303
     assert response.headers["location"] == app.url_path_for("read_profile")
@@ -89,13 +80,13 @@ def test_update_profile_authorized(
     mock_validate.assert_called_once()
 
 
-def test_update_profile_without_avatar(auth_client: TestClient, test_user: User, session: Session):
+def test_update_profile_without_avatar(
+    auth_client: TestClient, test_user: User, session: Session
+):
     """Test that profile can be updated without changing the avatar"""
     response: Response = auth_client.post(
         app.url_path_for("update_profile"),
-        data={
-            "name": "Updated Name"
-        },
+        data={"name": "Updated Name"},
     )
     assert response.status_code == 303
     assert response.headers["location"] == app.url_path_for("read_profile")
@@ -121,14 +112,16 @@ def test_delete_account_wrong_password(auth_client: TestClient, test_user: User)
         app.url_path_for("delete_account"),
         data={
             "email": test_user.account.email if test_user.account else "",
-            "password": "WrongPassword123!"
+            "password": "WrongPassword123!",
         },
     )
     assert response.status_code == 422
     assert "Password is incorrect" in response.text.strip()
 
 
-def test_delete_account_success(auth_client: TestClient, test_user: User, session: Session):
+def test_delete_account_success(
+    auth_client: TestClient, test_user: User, session: Session
+):
     """Test successful account deletion"""
 
     # Store the user ID for later verification
@@ -139,7 +132,7 @@ def test_delete_account_success(auth_client: TestClient, test_user: User, sessio
         app.url_path_for("delete_account"),
         data={
             "email": test_user.account.email if test_user.account else "",
-            "password": "Test123!@#"
+            "password": "Test123!@#",
         },
     )
     assert response.status_code == 303
@@ -148,16 +141,16 @@ def test_delete_account_success(auth_client: TestClient, test_user: User, sessio
     # Clear the session and query for the user again to ensure we're not using a cached object
     session.close()
     session.expire_all()
-    
+
     # Verify user is deleted from database
     user = session.get(User, user_id)
     assert user is None
 
 
-@patch('routers.core.user.validate_and_process_image')
+@patch("routers.core.user.validate_and_process_image")
 def test_get_avatar_authorized(
-        mock_validate: MagicMock, auth_client: TestClient, test_user: User
-    ):
+    mock_validate: MagicMock, auth_client: TestClient, test_user: User
+):
     """Test getting user avatar"""
     # Configure mock to return processed image data
     mock_validate.return_value = (MOCK_IMAGE_DATA, MOCK_CONTENT_TYPE)
@@ -168,15 +161,11 @@ def test_get_avatar_authorized(
         data={
             "name": test_user.name or ""  # Ensure name is not None
         },
-        files={
-            "avatar_file": ("test_avatar.jpg", b"fake image data", "image/jpeg")
-        },
+        files={"avatar_file": ("test_avatar.jpg", b"fake image data", "image/jpeg")},
     )
 
     # Then try to retrieve it
-    response = auth_client.get(
-        app.url_path_for("get_avatar")
-    )
+    response = auth_client.get(app.url_path_for("get_avatar"))
     assert response.status_code == 200
     assert response.content == MOCK_IMAGE_DATA
     assert response.headers["content-type"] == MOCK_CONTENT_TYPE
@@ -192,22 +181,18 @@ def test_get_avatar_unauthorized(unauth_client: TestClient):
 
 
 # Add new test for invalid image
-@patch('routers.core.user.validate_and_process_image')
+@patch("routers.core.user.validate_and_process_image")
 def test_update_profile_invalid_image(
-        mock_validate: MagicMock, auth_client: TestClient
-    ):
+    mock_validate: MagicMock, auth_client: TestClient
+):
     """Test that invalid images are rejected"""
     # Configure mock to raise InvalidImageError
     mock_validate.side_effect = InvalidImageError("Invalid test image")
-    
+
     response: Response = auth_client.post(
         app.url_path_for("update_profile"),
-        data={
-            "name": "Updated Name"
-        },
-        files={
-            "avatar_file": ("test_avatar.jpg", b"invalid image data", "image/jpeg")
-        },
+        data={"name": "Updated Name"},
+        files={"avatar_file": ("test_avatar.jpg", b"invalid image data", "image/jpeg")},
     )
     assert response.status_code == 400
     assert "Invalid test image" in response.text
@@ -215,20 +200,22 @@ def test_update_profile_invalid_image(
 
 # --- Multi-Organization Profile Tests ---
 
+
 def test_profile_displays_multiple_organizations(
-        auth_client: TestClient, test_user: User, session: Session, test_organization: Organization, second_test_organization: Organization
-    ):
+    auth_client: TestClient,
+    test_user: User,
+    session: Session,
+    test_organization: Organization,
+    second_test_organization: Organization,
+):
     """Test that a user's profile page displays all organizations they belong to"""
     if second_test_organization.id is None:
         raise SetupError("Second test organization ID is None")
-    
+
     # Ensure test_user is part of both organizations
     # First org should already be set up through the org_owner fixture
     # Now add to second org
-    member_role = Role(
-        name="Member", 
-        organization_id=second_test_organization.id
-    )
+    member_role = Role(name="Member", organization_id=second_test_organization.id)
     test_user.roles.append(member_role)
     session.add(member_role)
     session.commit()
@@ -243,44 +230,51 @@ def test_profile_displays_multiple_organizations(
 
 
 def test_profile_displays_organization_list(
-        auth_client_owner: TestClient, session: Session, test_organization: Organization
-    ):
+    auth_client_owner: TestClient, session: Session, test_organization: Organization
+):
     """Test that the profile page shows organizations in a macro-rendered list"""
-    
+
     response = auth_client_owner.get(app.url_path_for("read_profile"))
     assert response.status_code == 200
-    
+
     # Find the entire Organizations card section using regex
     # This regex looks for the card div, the header with "Organizations" and the button,
     # and captures everything until the next card's div or the end of the container
     org_section_match = re.search(
         r'(<div class="card mb-4">\s*<div class="card-header.*?">\s*Organizations\s*<button.*?</div>.*?<div class="card-body">.*?</div>\s*</div>)',
-        response.text, 
-        re.DOTALL # Allow . to match newline characters
+        response.text,
+        re.DOTALL,  # Allow . to match newline characters
     )
-    
+
     # Check that the organizations section was found
     assert org_section_match, "Organizations card section not found in profile HTML"
-    
+
     # Extract the matched HTML for the organizations section
     org_section_html = org_section_match.group(1)
-    
+
     # Check that the organization name and link are rendered within this specific section
-    assert test_organization.name in org_section_html, f"Organization name '{test_organization.name}' not found within the organizations card section"
-    assert app.url_path_for("read_organization", org_id=test_organization.id) in org_section_html, f"Organization link '{app.url_path_for('read_organization', org_id=test_organization.id)}' not found within the organizations card section"
+    assert test_organization.name in org_section_html, (
+        f"Organization name '{test_organization.name}' not found within the organizations card section"
+    )
+    assert (
+        app.url_path_for("read_organization", org_id=test_organization.id)
+        in org_section_html
+    ), (
+        f"Organization link '{app.url_path_for('read_organization', org_id=test_organization.id)}' not found within the organizations card section"
+    )
 
 
 def test_profile_no_organizations(
-        auth_client: TestClient, test_user: User, session: Session
-    ):
+    auth_client: TestClient, test_user: User, session: Session
+):
     """Test profile display when user has no organizations"""
     # Remove user from all orgs by clearing roles
     test_user.roles = []
     session.commit()
-    
+
     # Visit profile page
     response = auth_client.get(app.url_path_for("read_profile"))
     assert response.status_code == 200
-    
+
     # Should show "no organizations" message
     assert "You are not a member of any organizations" in response.text

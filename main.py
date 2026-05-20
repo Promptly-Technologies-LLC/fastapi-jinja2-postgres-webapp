@@ -7,23 +7,34 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from routers.core import account, dashboard, organization, role, user, static_pages, invitation
+from routers.core import (
+    account,
+    dashboard,
+    organization,
+    role,
+    user,
+    static_pages,
+    invitation,
+)
 from utils.core.dependencies import (
     get_user_from_request,
-    require_unauthenticated_client
+    require_unauthenticated_client,
 )
 from utils.core.auth import COOKIE_SECURE
-from utils.core.htmx import is_htmx_request, toast_response, get_flash_cookie, FLASH_COOKIE_NAME
+from utils.core.htmx import (
+    is_htmx_request,
+    toast_response,
+    get_flash_cookie,
+    FLASH_COOKIE_NAME,
+)
 from exceptions.http_exceptions import (
     AlreadyAuthenticatedError,
     AuthenticationError,
     PasswordValidationError,
     CredentialsError,
-    RateLimitError
+    RateLimitError,
 )
-from exceptions.exceptions import (
-    NeedsNewTokens
-)
+from exceptions.exceptions import NeedsNewTokens
 from utils.core.db import set_up_db
 
 logger = logging.getLogger("uvicorn.error")
@@ -62,7 +73,6 @@ async def flash_cookie_middleware(request: Request, call_next):
     return response
 
 
-
 # --- Include Routers ---
 
 
@@ -86,21 +96,21 @@ async def authentication_error_handler(request: Request, exc: AuthenticationErro
         response.headers["HX-Redirect"] = str(request.url_for("read_login"))
         return response
     return RedirectResponse(
-        url=app.url_path_for("read_login"),
-        status_code=status.HTTP_303_SEE_OTHER
+        url=app.url_path_for("read_login"), status_code=status.HTTP_303_SEE_OTHER
     )
 
 
 # Handle AlreadyAuthenticatedError by redirecting to dashboard
 @app.exception_handler(AlreadyAuthenticatedError)
-async def already_authenticated_error_handler(request: Request, exc: AlreadyAuthenticatedError):
+async def already_authenticated_error_handler(
+    request: Request, exc: AlreadyAuthenticatedError
+):
     if is_htmx_request(request):
         response = Response(status_code=200)
         response.headers["HX-Redirect"] = str(request.url_for("read_dashboard"))
         return response
     return RedirectResponse(
-        url=app.url_path_for("read_dashboard"),
-        status_code=status.HTTP_302_FOUND
+        url=app.url_path_for("read_dashboard"), status_code=status.HTTP_302_FOUND
     )
 
 
@@ -109,8 +119,12 @@ async def already_authenticated_error_handler(request: Request, exc: AlreadyAuth
 async def rate_limit_error_handler(request: Request, exc: RateLimitError):
     if is_htmx_request(request):
         return toast_response(
-            request, templates, exc.detail, level="danger",
-            status_code=429, headers={"Retry-After": str(exc.retry_after)},
+            request,
+            templates,
+            exc.detail,
+            level="danger",
+            status_code=429,
+            headers={"Retry-After": str(exc.retry_after)},
         )
     user = await get_user_from_request(request)
     response = templates.TemplateResponse(
@@ -128,14 +142,22 @@ async def rate_limit_error_handler(request: Request, exc: RateLimitError):
 async def credentials_exception_handler(request: Request, exc: CredentialsError):
     if is_htmx_request(request):
         return toast_response(
-            request, templates, exc.detail or "Invalid email or password.",
-            level="danger", status_code=401,
+            request,
+            templates,
+            exc.detail or "Invalid email or password.",
+            level="danger",
+            status_code=401,
         )
     user = await get_user_from_request(request)
     return templates.TemplateResponse(
         request,
         "errors/error.html",
-        {"status_code": exc.status_code, "detail": exc.detail, "errors": None, "user": user},
+        {
+            "status_code": exc.status_code,
+            "detail": exc.detail,
+            "errors": None,
+            "user": user,
+        },
         status_code=exc.status_code,
     )
 
@@ -146,20 +168,21 @@ async def needs_new_tokens_handler(request: Request, exc: NeedsNewTokens):
     # Preserve query string so GET routes with query params work after token refresh
     redirect_url = str(request.url)
     response = RedirectResponse(
-        url=redirect_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+        url=redirect_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT
+    )
     response.set_cookie(
         key="access_token",
         value=exc.access_token,
         httponly=True,
         secure=COOKIE_SECURE,
-        samesite="strict"
+        samesite="strict",
     )
     response.set_cookie(
         key="refresh_token",
         value=exc.refresh_token,
         httponly=True,
         secure=COOKIE_SECURE,
-        samesite="strict"
+        samesite="strict",
     )
     return response
 
@@ -167,8 +190,7 @@ async def needs_new_tokens_handler(request: Request, exc: NeedsNewTokens):
 # Handle PasswordValidationError by rendering the validation_error page
 @app.exception_handler(PasswordValidationError)
 async def password_validation_exception_handler(
-    request: Request,
-    exc: PasswordValidationError
+    request: Request, exc: PasswordValidationError
 ) -> Response:
     if is_htmx_request(request):
         detail = exc.detail
@@ -177,7 +199,11 @@ async def password_validation_exception_handler(
         else:
             message = str(detail)
         return toast_response(
-            request, templates, message, level="danger", status_code=422,
+            request,
+            templates,
+            message,
+            level="danger",
+            status_code=422,
         )
     detail = exc.detail
     if isinstance(detail, dict):
@@ -194,7 +220,7 @@ async def password_validation_exception_handler(
             "status_code": 422,
             "detail": None,
             "errors": {field.replace("_", " ").title(): message},
-            "user": user
+            "user": user,
         },
         status_code=422,
     )
@@ -202,10 +228,7 @@ async def password_validation_exception_handler(
 
 # Handle RequestValidationError by rendering the error page
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(
-    request: Request,
-    exc: RequestValidationError
-):
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
     errors = {}
 
     # Map error types to user-friendly message templates
@@ -214,7 +237,7 @@ async def validation_exception_handler(
         "string_too_short": "this field is required",
         "missing": "this field is required",
         "string_pattern_mismatch": "this field cannot be empty or contain only whitespace",
-        "enum": "invalid value"
+        "enum": "invalid value",
     }
 
     for error in exc.errors():
@@ -244,23 +267,24 @@ async def validation_exception_handler(
         errors[display_name] = message_template
 
     if is_htmx_request(request):
-        message = "; ".join(
-            f"{k}: {v}" for k, v in errors.items()
-        ) if errors else "Validation error"
+        message = (
+            "; ".join(f"{k}: {v}" for k, v in errors.items())
+            if errors
+            else "Validation error"
+        )
         return toast_response(
-            request, templates, message, level="danger", status_code=422,
+            request,
+            templates,
+            message,
+            level="danger",
+            status_code=422,
         )
 
     user = await get_user_from_request(request)
     return templates.TemplateResponse(
         request,
         "errors/error.html",
-        {
-            "status_code": 422,
-            "detail": None,
-            "errors": errors,
-            "user": user
-        },
+        {"status_code": 422, "detail": None, "errors": errors, "user": user},
         status_code=422,
     )
 
@@ -271,14 +295,22 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     if is_htmx_request(request):
         detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
         return toast_response(
-            request, templates, detail, level="danger",
+            request,
+            templates,
+            detail,
+            level="danger",
             status_code=exc.status_code,
         )
     user = await get_user_from_request(request)
     return templates.TemplateResponse(
         request,
         "errors/error.html",
-        {"status_code": exc.status_code, "detail": exc.detail, "errors": None, "user": user},
+        {
+            "status_code": exc.status_code,
+            "detail": exc.detail,
+            "errors": None,
+            "user": user,
+        },
         status_code=exc.status_code,
     )
 
@@ -291,8 +323,11 @@ async def general_exception_handler(request: Request, exc: Exception):
 
     if is_htmx_request(request):
         return toast_response(
-            request, templates, "Internal Server Error",
-            level="danger", status_code=500,
+            request,
+            templates,
+            "Internal Server Error",
+            level="danger",
+            status_code=500,
         )
 
     user = await get_user_from_request(request)
@@ -304,7 +339,7 @@ async def general_exception_handler(request: Request, exc: Exception):
             "status_code": 500,
             "detail": "Internal Server Error",
             "errors": None,
-            "user": user
+            "user": user,
         },
         status_code=500,
     )
@@ -315,14 +350,9 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 @app.get("/")
 async def read_home(
-    request: Request,
-    _: None = Depends(require_unauthenticated_client)
+    request: Request, _: None = Depends(require_unauthenticated_client)
 ):
-    return templates.TemplateResponse(
-        request,
-        "index.html",
-        {"user": None}
-    )
+    return templates.TemplateResponse(request, "index.html", {"user": None})
 
 
 if __name__ == "__main__":

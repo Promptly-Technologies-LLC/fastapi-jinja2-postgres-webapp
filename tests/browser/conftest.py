@@ -4,7 +4,12 @@ import time
 import os
 import socket
 from dotenv import load_dotenv
-from utils.core.db import get_connection_url, set_up_db, tear_down_db, ensure_database_exists
+from utils.core.db import (
+    get_connection_url,
+    set_up_db,
+    tear_down_db,
+    ensure_database_exists,
+)
 
 
 def _port_free(port: int) -> bool:

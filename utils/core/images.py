@@ -9,11 +9,7 @@ from exceptions.http_exceptions import InvalidImageError
 
 
 MAX_FILE_SIZE = 2 * 1024 * 1024  # 2MB in bytes
-ALLOWED_CONTENT_TYPES = {
-    'image/jpeg': 'JPEG',
-    'image/png': 'PNG',
-    'image/webp': 'WEBP'
-}
+ALLOWED_CONTENT_TYPES = {"image/jpeg": "JPEG", "image/png": "PNG", "image/webp": "WEBP"}
 MIN_DIMENSION = 100
 MAX_DIMENSION = 2000
 
@@ -22,37 +18,30 @@ MAX_DIMENSION = 2000
 
 
 def validate_and_process_image(
-    image_data: bytes,
-    content_type: str | None
+    image_data: bytes, content_type: str | None
 ) -> Tuple[bytes, str]:
     """
     Validates and processes an image file.
     Returns a tuple of (processed_image_data, content_type).
     Ensures the image is square by center-cropping.
-    
+
     Raises:
         InvalidImageError: If the image is invalid or doesn't meet requirements
     """
     # Check file size
     if len(image_data) > MAX_FILE_SIZE:
-        raise InvalidImageError(
-            message="File too large (max 2MB)"
-        )
+        raise InvalidImageError(message="File too large (max 2MB)")
 
     # Check file type
     if not content_type or content_type not in ALLOWED_CONTENT_TYPES:
-        raise InvalidImageError(
-            message="Invalid file type. Must be JPEG, PNG, or WebP"
-        )
+        raise InvalidImageError(message="Invalid file type. Must be JPEG, PNG, or WebP")
 
     try:
         # Open and validate image
         image: Image.Image = Image.open(io.BytesIO(image_data))
         width, height = image.size
     except Exception:
-        raise InvalidImageError(
-            message="Invalid image file"
-        )
+        raise InvalidImageError(message="Invalid image file")
 
     # Check minimum dimensions
     if width < MIN_DIMENSION or height < MIN_DIMENSION:
@@ -72,7 +61,7 @@ def validate_and_process_image(
     top = (height - min_dim) // 2
     right = left + min_dim
     bottom = top + min_dim
-    
+
     image = image.crop((left, top, right, bottom))
 
     # Get the format from the content type

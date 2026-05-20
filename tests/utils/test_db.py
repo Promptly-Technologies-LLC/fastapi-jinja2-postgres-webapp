@@ -10,7 +10,14 @@ from utils.core.db import (
     tear_down_db,
     set_up_db,
 )
-from utils.core.models import Account, AccountEmail, Role, Permission, Organization, RolePermissionLink
+from utils.core.models import (
+    Account,
+    AccountEmail,
+    Role,
+    Permission,
+    Organization,
+    RolePermissionLink,
+)
 from utils.core.auth import get_password_hash
 from utils.core.enums import ValidPermissions
 from utils.app.enums import AppPermissions
@@ -30,8 +37,18 @@ def test_get_connection_url(env_vars):
 def test_get_connection_url_direct_mode(monkeypatch):
     """Test that direct mode uses standard DB vars."""
     # Clear any existing vars
-    for var in ["USE_POOL", "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD",
-                "DB_POOL_PORT", "DB_POOL_NAME", "DB_APPUSER", "DB_APPUSER_PASSWORD"]:
+    for var in [
+        "USE_POOL",
+        "DB_HOST",
+        "DB_PORT",
+        "DB_NAME",
+        "DB_USER",
+        "DB_PASSWORD",
+        "DB_POOL_PORT",
+        "DB_POOL_NAME",
+        "DB_APPUSER",
+        "DB_APPUSER_PASSWORD",
+    ]:
         monkeypatch.delenv(var, raising=False)
 
     # Set direct mode vars
@@ -52,8 +69,18 @@ def test_get_connection_url_direct_mode(monkeypatch):
 def test_get_connection_url_pooled_mode(monkeypatch):
     """Test that pooled mode uses pool-specific vars."""
     # Clear any existing vars
-    for var in ["USE_POOL", "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD",
-                "DB_POOL_PORT", "DB_POOL_NAME", "DB_APPUSER", "DB_APPUSER_PASSWORD"]:
+    for var in [
+        "USE_POOL",
+        "DB_HOST",
+        "DB_PORT",
+        "DB_NAME",
+        "DB_USER",
+        "DB_PASSWORD",
+        "DB_POOL_PORT",
+        "DB_POOL_NAME",
+        "DB_APPUSER",
+        "DB_APPUSER_PASSWORD",
+    ]:
         monkeypatch.delenv(var, raising=False)
 
     # Set pooled mode vars
@@ -76,8 +103,18 @@ def test_get_connection_url_pooled_mode(monkeypatch):
 def test_get_connection_url_missing_direct_vars(monkeypatch):
     """Test that missing direct mode vars raises ValueError."""
     # Clear all DB vars
-    for var in ["USE_POOL", "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD",
-                "DB_POOL_PORT", "DB_POOL_NAME", "DB_APPUSER", "DB_APPUSER_PASSWORD"]:
+    for var in [
+        "USE_POOL",
+        "DB_HOST",
+        "DB_PORT",
+        "DB_NAME",
+        "DB_USER",
+        "DB_PASSWORD",
+        "DB_POOL_PORT",
+        "DB_POOL_NAME",
+        "DB_APPUSER",
+        "DB_APPUSER_PASSWORD",
+    ]:
         monkeypatch.delenv(var, raising=False)
 
     with pytest.raises(ValueError, match="Missing environment variables"):
@@ -87,8 +124,18 @@ def test_get_connection_url_missing_direct_vars(monkeypatch):
 def test_get_connection_url_missing_pool_vars(monkeypatch):
     """Test that missing pooled mode vars raises ValueError."""
     # Clear all DB vars
-    for var in ["USE_POOL", "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD",
-                "DB_POOL_PORT", "DB_POOL_NAME", "DB_APPUSER", "DB_APPUSER_PASSWORD"]:
+    for var in [
+        "USE_POOL",
+        "DB_HOST",
+        "DB_PORT",
+        "DB_NAME",
+        "DB_USER",
+        "DB_PASSWORD",
+        "DB_POOL_PORT",
+        "DB_POOL_NAME",
+        "DB_APPUSER",
+        "DB_APPUSER_PASSWORD",
+    ]:
         monkeypatch.delenv(var, raising=False)
 
     monkeypatch.setenv("USE_POOL", "1")
@@ -131,8 +178,7 @@ def test_create_default_roles(session: Session, test_organization: Organization)
         roles = create_default_roles(session, test_organization.id)
         session.commit()
     else:
-        raise SetupError(
-            "Test setup failed; test_organization.id is None")
+        raise SetupError("Test setup failed; test_organization.id is None")
 
     # Verify roles were created
     assert len(roles) == 3  # Owner, Administrator, Member
@@ -157,7 +203,8 @@ def test_create_default_roles(session: Session, test_organization: Organization)
     # Admin should have all permissions except DELETE_ORGANIZATION
     assert len(admin_permissions) == len(all_perms) - 1
     assert str(ValidPermissions.DELETE_ORGANIZATION) not in {
-        p.name for p in admin_permissions}
+        p.name for p in admin_permissions
+    }
 
 
 def test_assign_permissions_to_role(session: Session, test_organization: Organization):
@@ -190,10 +237,14 @@ def test_assign_permissions_to_role(session: Session, test_organization: Organiz
 
     assert len(db_permissions) == 2
     assert {p.name for p in db_permissions} == {
-        str(ValidPermissions.CREATE_ROLE), str(ValidPermissions.DELETE_ROLE)}
+        str(ValidPermissions.CREATE_ROLE),
+        str(ValidPermissions.DELETE_ROLE),
+    }
 
 
-def test_assign_permissions_to_role_duplicate_check(session: Session, test_organization: Organization):
+def test_assign_permissions_to_role_duplicate_check(
+    session: Session, test_organization: Organization
+):
     """Test that assign_permissions_to_role doesn't create duplicates"""
     # Create a test role with the organization from fixture
     role = Role(name="Test Role", organization_id=test_organization.id)
@@ -212,10 +263,9 @@ def test_assign_permissions_to_role_duplicate_check(session: Session, test_organ
 
     # Verify only one assignment exists
     link_count = session.exec(
-        select(RolePermissionLink)
-        .where(
+        select(RolePermissionLink).where(
             RolePermissionLink.role_id == role.id,
-            RolePermissionLink.permission_id == perm.id
+            RolePermissionLink.permission_id == perm.id,
         )
     ).all()
     assert len(link_count) == 1
@@ -250,7 +300,11 @@ def test_set_up_db_creates_tables(engine: Engine, session: Session):
 
     # Check that private tables ARE in the private schema
     private_table_names = inspector.get_table_names(schema="private")
-    expected_private_tables = {"account", "passwordresettoken", "emailverificationtoken"}
+    expected_private_tables = {
+        "account",
+        "passwordresettoken",
+        "emailverificationtoken",
+    }
     assert expected_private_tables.issubset(set(private_table_names))
 
     # Verify permissions were created
@@ -269,7 +323,9 @@ def test_private_tables_in_private_schema(engine: Engine):
     """Account, PasswordResetToken, and EmailVerificationToken must be in the private schema."""
     inspector = inspect(engine)
     private_tables = set(inspector.get_table_names(schema="private"))
-    assert {"account", "passwordresettoken", "emailverificationtoken"}.issubset(private_tables)
+    assert {"account", "passwordresettoken", "emailverificationtoken"}.issubset(
+        private_tables
+    )
 
 
 def test_public_tables_in_public_schema(engine: Engine):
@@ -301,8 +357,12 @@ def test_set_up_db_drop_flag(engine: Engine, session: Session):
     set_up_db(drop=False)
 
     # Verify organization exists
-    assert session.exec(select(Organization).where(
-        Organization.name == "Test Organization")).first() is not None
+    assert (
+        session.exec(
+            select(Organization).where(Organization.name == "Test Organization")
+        ).first()
+        is not None
+    )
 
 
 # --- Seed AccountEmail Tests ---
@@ -311,8 +371,12 @@ def test_set_up_db_drop_flag(engine: Engine, session: Session):
 def test_seed_creates_account_email_for_existing_accounts(session: Session):
     """Test that seed_account_emails creates AccountEmail rows for existing accounts."""
     # Create accounts without AccountEmail rows
-    account1 = Account(email="seed1@example.com", hashed_password=get_password_hash("Test123!@#"))
-    account2 = Account(email="seed2@example.com", hashed_password=get_password_hash("Test123!@#"))
+    account1 = Account(
+        email="seed1@example.com", hashed_password=get_password_hash("Test123!@#")
+    )
+    account2 = Account(
+        email="seed2@example.com", hashed_password=get_password_hash("Test123!@#")
+    )
     session.add(account1)
     session.add(account2)
     session.commit()
@@ -334,7 +398,9 @@ def test_seed_creates_account_email_for_existing_accounts(session: Session):
 
 def test_seed_is_idempotent(session: Session):
     """Test that running seed_account_emails twice doesn't create duplicates."""
-    account = Account(email="idempotent@example.com", hashed_password=get_password_hash("Test123!@#"))
+    account = Account(
+        email="idempotent@example.com", hashed_password=get_password_hash("Test123!@#")
+    )
     session.add(account)
     session.commit()
 

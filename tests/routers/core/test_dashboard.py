@@ -87,9 +87,7 @@ def test_dashboard_respects_org_cookie(
     session.commit()
 
     # Set the cookie and load dashboard
-    auth_client_owner.cookies.set(
-        "selected_organization_id", str(test_organization.id)
-    )
+    auth_client_owner.cookies.set("selected_organization_id", str(test_organization.id))
     response = auth_client_owner.get(
         app.url_path_for("read_dashboard"),
         follow_redirects=True,
@@ -101,9 +99,7 @@ def test_dashboard_respects_org_cookie(
 
 def test_dashboard_no_resources(auth_client_owner, test_organization):
     """Test dashboard with no resources for the selected organization."""
-    auth_client_owner.cookies.set(
-        "selected_organization_id", str(test_organization.id)
-    )
+    auth_client_owner.cookies.set("selected_organization_id", str(test_organization.id))
     response = auth_client_owner.get(
         app.url_path_for("read_dashboard"),
         follow_redirects=True,
