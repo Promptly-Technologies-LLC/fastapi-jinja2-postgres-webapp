@@ -4,7 +4,7 @@ from uuid import uuid4
 from datetime import datetime, UTC, timedelta
 from typing import Optional, List, Union
 from pydantic import EmailStr
-from sqlmodel import SQLModel, Field, Relationship, Session, select
+from sqlmodel import SQLModel, Field, Relationship, Session, select, col
 from sqlalchemy import Column, LargeBinary, String, UniqueConstraint
 from sqlalchemy.orm import Mapped
 from exceptions.http_exceptions import DataIntegrityError
@@ -371,7 +371,7 @@ class Invitation(SQLModel, table=True):
         cls, session: Session, organization_id: int
     ) -> list["Invitation"]:
         statement = select(cls).where(
-            cls.organization_id == organization_id, cls.used.is_(False)
+            cls.organization_id == organization_id, col(cls.used).is_(False)
         )
         results = session.exec(statement).all()
         return [inv for inv in results if not inv.is_expired()]

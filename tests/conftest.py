@@ -1,6 +1,6 @@
 import pytest
 import os
-from typing import Generator
+from typing import Generator, cast
 from sqlmodel import create_engine, Session, select
 from fastapi.testclient import TestClient
 from dotenv import load_dotenv
@@ -576,7 +576,7 @@ def mock_email_response():
     # Ensure resend is imported
     import resend
 
-    return resend.Email(**email_data)
+    return cast(resend.Email, email_data)
 
 
 @pytest.fixture
