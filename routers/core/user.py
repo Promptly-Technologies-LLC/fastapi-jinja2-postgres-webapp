@@ -4,16 +4,34 @@ from sqlmodel import Session, select
 from typing import Optional, List
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import selectinload
-from utils.core.models import User, UserAvatar, AccountEmail, DataIntegrityError, Organization, Role, Invitation
+from utils.core.models import (
+    User,
+    UserAvatar,
+    AccountEmail,
+    DataIntegrityError,
+    Organization,
+    Role,
+    Invitation,
+)
 from utils.core.auth import MAX_EMAILS_PER_ACCOUNT
-from utils.core.dependencies import get_authenticated_user, get_user_with_relations, get_session
-from utils.core.images import validate_and_process_image, MAX_FILE_SIZE, MIN_DIMENSION, MAX_DIMENSION, ALLOWED_CONTENT_TYPES
+from utils.core.dependencies import (
+    get_authenticated_user,
+    get_user_with_relations,
+    get_session,
+)
+from utils.core.images import (
+    validate_and_process_image,
+    MAX_FILE_SIZE,
+    MIN_DIMENSION,
+    MAX_DIMENSION,
+    ALLOWED_CONTENT_TYPES,
+)
 from utils.core.enums import ValidPermissions
 from utils.app.enums import AppPermissions
 from exceptions.http_exceptions import (
     InsufficientPermissionsError,
     UserNotFoundError,
-    OrganizationNotFoundError
+    OrganizationNotFoundError,
 )
 from routers.core.organization import router as organization_router
 from utils.core.htmx import is_htmx_request, append_toast
@@ -22,14 +40,20 @@ router = APIRouter(prefix="/user", tags=["user"])
 templates = Jinja2Templates(directory="templates")
 
 
-def _load_org_for_members_partial(session: Session, organization_id: int, user: User) -> tuple:
+def _load_org_for_members_partial(
+    session: Session, organization_id: int, user: User
+) -> tuple:
     """Re-query org with members fully loaded and compute user_permissions."""
     organization = session.exec(
         select(Organization)
         .where(Organization.id == organization_id)
         .options(
-            selectinload(Organization.roles).selectinload(Role.users).selectinload(User.account),
-            selectinload(Organization.roles).selectinload(Role.users).selectinload(User.roles),
+            selectinload(Organization.roles)
+            .selectinload(Role.users)
+            .selectinload(User.account),
+            selectinload(Organization.roles)
+            .selectinload(Role.users)
+            .selectinload(User.roles),
             selectinload(Organization.roles).selectinload(Role.permissions),
         )
     ).first()
@@ -50,23 +74,28 @@ async def read_profile(
     request: Request,
     user: User = Depends(get_user_with_relations),
     session: Session = Depends(get_session),
-    show_form: Optional[str] = "true"
+    show_form: Optional[str] = "true",
 ):
     # Load account emails
-    account_emails = session.exec(
-        select(AccountEmail)
-        .where(AccountEmail.account_id == user.account_id)
-        .order_by(AccountEmail.is_primary.desc())  # type: ignore[union-attr]
-    ).all() if user.account_id else []
+    account_emails = (
+        session.exec(
+            select(AccountEmail)
+            .where(AccountEmail.account_id == user.account_id)
+            .order_by(AccountEmail.is_primary.desc())  # type: ignore[union-attr]
+        ).all()
+        if user.account_id
+        else []
+    )
 
     return templates.TemplateResponse(
         request,
-        "users/profile.html", {
+        "users/profile.html",
+        {
             "show_form": show_form == "true",
             "user": user,
             "account_emails": account_emails,
             "max_emails": MAX_EMAILS_PER_ACCOUNT,
-        }
+        },
     )
 
 
@@ -76,7 +105,9 @@ async def edit_profile_form(
     user: User = Depends(get_authenticated_user),
 ):
     if not is_htmx_request(request):
-        return RedirectResponse(url=router.url_path_for("read_profile"), status_code=303)
+        return RedirectResponse(
+            url=router.url_path_for("read_profile"), status_code=303
+        )
     return templates.TemplateResponse(
         request,
         "users/partials/profile_form.html",
@@ -96,7 +127,9 @@ async def profile_display(
     user: User = Depends(get_authenticated_user),
 ):
     if not is_htmx_request(request):
-        return RedirectResponse(url=router.url_path_for("read_profile"), status_code=303)
+        return RedirectResponse(
+            url=router.url_path_for("read_profile"), status_code=303
+        )
     return templates.TemplateResponse(
         request,
         "users/partials/profile_display.html",
@@ -107,10 +140,12 @@ async def profile_display(
 @router.post("/update", response_class=RedirectResponse)
 async def update_profile(
     request: Request,
-    name: Optional[str] = Form(None, strip_whitespace=True, title="Name", description="Updated display name"),
+    name: Optional[str] = Form(
+        None, strip_whitespace=True, title="Name", description="Updated display name"
+    ),
     avatar_file: Optional[UploadFile] = File(None),
     user: User = Depends(get_authenticated_user),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
     avatar_changed = bool(avatar_file and avatar_file.filename)
 
@@ -121,8 +156,7 @@ async def update_profile(
         avatar_content_type = avatar_file.content_type
 
         processed_image, content_type = validate_and_process_image(
-            avatar_data,
-            avatar_content_type
+            avatar_data, avatar_content_type
         )
         if user.avatar:
             user.avatar.avatar_data = processed_image
@@ -132,7 +166,7 @@ async def update_profile(
             user.avatar = UserAvatar(
                 user_id=user.id,
                 avatar_data=processed_image,
-                avatar_content_type=content_type
+                avatar_content_type=content_type,
             )
 
     # Update user details
@@ -149,42 +183,47 @@ async def update_profile(
         )
         if avatar_changed:
             # Avatar also appears in the navbar — append an OOB swap for it.
-            navbar_html = bytes(templates.TemplateResponse(
-                request,
-                "base/partials/navbar_avatar_oob.html",
-                {"user": user},
-            ).body).decode()
+            navbar_html = bytes(
+                templates.TemplateResponse(
+                    request,
+                    "base/partials/navbar_avatar_oob.html",
+                    {"user": user},
+                ).body
+            ).decode()
             original = bytes(response.body).decode()
             response.body = (original + navbar_html).encode()
             response.headers["content-length"] = str(len(response.body))
-        return append_toast(response, request, templates, "Profile updated successfully.")
+        return append_toast(
+            response, request, templates, "Profile updated successfully."
+        )
     return RedirectResponse(url=router.url_path_for("read_profile"), status_code=303)
 
 
 @router.get("/avatar")
-async def get_avatar(
-    user: User = Depends(get_authenticated_user)
-):
+async def get_avatar(user: User = Depends(get_authenticated_user)):
     """Serve avatar image from database"""
     if not user.avatar:
-        raise DataIntegrityError(
-            resource="User avatar"
-        )
+        raise DataIntegrityError(resource="User avatar")
 
     return Response(
-        content=user.avatar.avatar_data,
-        media_type=user.avatar.avatar_content_type
+        content=user.avatar.avatar_data, media_type=user.avatar.avatar_content_type
     )
 
 
 @router.post("/role/update", response_class=RedirectResponse)
 def update_user_role(
     request: Request,
-    user_id: int = Form(..., title="User ID", description="ID of the user whose roles are being updated"),
-    organization_id: int = Form(..., title="Organization ID", description="ID of the organization"),
-    roles: Optional[List[int]] = Form(None, title="Role IDs", description="List of role IDs to assign to the user"),
+    user_id: int = Form(
+        ..., title="User ID", description="ID of the user whose roles are being updated"
+    ),
+    organization_id: int = Form(
+        ..., title="Organization ID", description="ID of the organization"
+    ),
+    roles: Optional[List[int]] = Form(
+        None, title="Role IDs", description="List of role IDs to assign to the user"
+    ),
     user: User = Depends(get_authenticated_user),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ) -> Response:
     """Update the roles of a user in an organization"""
     # Check if the current user has permission to edit user roles
@@ -203,9 +242,7 @@ def update_user_role(
 
     # Find the target user
     target_user = session.exec(
-        select(User)
-        .where(User.id == user_id)
-        .options(selectinload(User.roles))
+        select(User).where(User.id == user_id).options(selectinload(User.roles))
     ).first()
 
     if not target_user:
@@ -229,7 +266,9 @@ def update_user_role(
     session.commit()
 
     if is_htmx_request(request):
-        organization, user_permissions, active_invitations = _load_org_for_members_partial(session, organization_id, user)
+        organization, user_permissions, active_invitations = (
+            _load_org_for_members_partial(session, organization_id, user)
+        )
         response = templates.TemplateResponse(
             request,
             "organization/partials/members_table.html",
@@ -243,10 +282,14 @@ def update_user_role(
             },
         )
         response.headers["HX-Trigger"] = "modalDismiss"
-        return append_toast(response, request, templates, "User role updated successfully.")
+        return append_toast(
+            response, request, templates, "User role updated successfully."
+        )
     return RedirectResponse(
-        url=organization_router.url_path_for("read_organization", org_id=organization_id),
-        status_code=303
+        url=organization_router.url_path_for(
+            "read_organization", org_id=organization_id
+        ),
+        status_code=303,
     )
 
 
@@ -254,9 +297,13 @@ def update_user_role(
 def remove_user_from_organization(
     request: Request,
     user_id: int = Form(..., title="User ID", description="ID of the user to remove"),
-    organization_id: int = Form(..., title="Organization ID", description="ID of the organization to remove the user from"),
+    organization_id: int = Form(
+        ...,
+        title="Organization ID",
+        description="ID of the organization to remove the user from",
+    ),
     user: User = Depends(get_authenticated_user),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ) -> Response:
     """Remove a user from an organization by removing all their roles in that organization"""
     # Check if the current user has permission to remove users
@@ -265,8 +312,7 @@ def remove_user_from_organization(
 
     # Find the organization
     organization = session.exec(
-        select(Organization)
-        .where(Organization.id == organization_id)
+        select(Organization).where(Organization.id == organization_id)
     ).first()
 
     if not organization:
@@ -274,9 +320,7 @@ def remove_user_from_organization(
 
     # Find the target user
     target_user = session.exec(
-        select(User)
-        .where(User.id == user_id)
-        .options(selectinload(User.roles))
+        select(User).where(User.id == user_id).options(selectinload(User.roles))
     ).first()
 
     if not target_user:
@@ -285,8 +329,7 @@ def remove_user_from_organization(
     # Prevent removing oneself
     if target_user.id == user.id:
         raise HTTPException(
-            status_code=400,
-            detail="You cannot remove yourself from the organization"
+            status_code=400, detail="You cannot remove yourself from the organization"
         )
 
     # Remove all organization roles from the user
@@ -297,7 +340,9 @@ def remove_user_from_organization(
     session.commit()
 
     if is_htmx_request(request):
-        organization, user_permissions, active_invitations = _load_org_for_members_partial(session, organization_id, user)
+        organization, user_permissions, active_invitations = (
+            _load_org_for_members_partial(session, organization_id, user)
+        )
         response = templates.TemplateResponse(
             request,
             "organization/partials/members_table.html",
@@ -310,8 +355,12 @@ def remove_user_from_organization(
                 "all_permissions": list(ValidPermissions) + list(AppPermissions),
             },
         )
-        return append_toast(response, request, templates, "User removed from organization.")
+        return append_toast(
+            response, request, templates, "User removed from organization."
+        )
     return RedirectResponse(
-        url=organization_router.url_path_for("read_organization", org_id=organization_id),
-        status_code=303
+        url=organization_router.url_path_for(
+            "read_organization", org_id=organization_id
+        ),
+        status_code=303,
     )

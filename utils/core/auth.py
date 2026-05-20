@@ -13,7 +13,13 @@ from jinja2.environment import Template
 from fastapi.templating import Jinja2Templates
 from fastapi import Cookie
 from utils.core.db import create_engine, get_connection_url
-from utils.core.models import AccountRecoveryToken, EmailVerificationToken, PasswordResetToken, RefreshToken, Account
+from utils.core.models import (
+    AccountRecoveryToken,
+    EmailVerificationToken,
+    PasswordResetToken,
+    RefreshToken,
+    Account,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -29,11 +35,11 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 30
 PASSWORD_PATTERN_COMPONENTS = [
-    r"(?=.*\d)",                   # At least one digit
-    r"(?=.*[a-z])",               # At least one lowercase letter
-    r"(?=.*[A-Z])",               # At least one uppercase letter
+    r"(?=.*\d)",  # At least one digit
+    r"(?=.*[a-z])",  # At least one lowercase letter
+    r"(?=.*[A-Z])",  # At least one uppercase letter
     r"(?=.*[\[\]\\@$!%*?&{}<>.,'#\-_=+\(\):;|~/\^])",  # At least one special character
-    r".{8,}"  # At least 8 characters long
+    r".{8,}",  # At least 8 characters long
 ]
 COMPILED_PASSWORD_PATTERN = re.compile(r"".join(PASSWORD_PATTERN_COMPONENTS))
 
@@ -45,14 +51,14 @@ def convert_python_regex_to_html(regex: str) -> str:
     """
     # Map each special char to its escaped form
     special_map = {
-        '{': r'\{',
-        '}': r'\}',
-        '<': r'\<',
-        '>': r'\>',
-        '.': r'\.',
-        '+': r'\+',
-        '|': r'\|',
-        ',': r'\,',
+        "{": r"\{",
+        "}": r"\}",
+        "<": r"\<",
+        ">": r"\>",
+        ".": r"\.",
+        "+": r"\+",
+        "|": r"\|",
+        ",": r"\,",
         "'": r"\\'",  # doubly escaped single quote
         "/": r"\/",
     }
@@ -94,17 +100,17 @@ def get_password_hash(password: str) -> str:
     Hash a password using bcrypt with a random salt
     """
     # Convert the password to bytes and generate the hash
-    password_bytes = password.encode('utf-8')
+    password_bytes = password.encode("utf-8")
     salt = gensalt()
-    return hashpw(password_bytes, salt).decode('utf-8')
+    return hashpw(password_bytes, salt).decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     Verify a password against a bcrypt hash
     """
-    password_bytes = plain_password.encode('utf-8')
-    hashed_bytes = hashed_password.encode('utf-8')
+    password_bytes = plain_password.encode("utf-8")
+    hashed_bytes = hashed_password.encode("utf-8")
     return checkpw(password_bytes, hashed_bytes)
 
 
@@ -114,14 +120,15 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     if expires_delta:
         expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(
-            UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, os.getenv("SECRET_KEY"), algorithm=ALGORITHM)
     return encoded_jwt
 
 
-def create_refresh_token(data: dict, jti: str, expires_delta: Optional[timedelta] = None) -> str:
+def create_refresh_token(
+    data: dict, jti: str, expires_delta: Optional[timedelta] = None
+) -> str:
     to_encode = data.copy()
     to_encode.update({"type": "refresh", "jti": jti})
     if expires_delta:
@@ -150,7 +157,7 @@ def revoke_all_refresh_tokens(account_id: int, session: Session) -> None:
     tokens = session.exec(
         select(RefreshToken).where(
             RefreshToken.account_id == account_id,
-            RefreshToken.revoked == False  # noqa: E712
+            RefreshToken.revoked == False,  # noqa: E712
         )
     ).all()
     for token in tokens:
@@ -170,7 +177,9 @@ def cleanup_expired_refresh_tokens(session: Session) -> int:
 
 def validate_token(token: str, token_type: str = "access") -> Optional[dict]:
     try:
-        decoded_token = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=[ALGORITHM])
+        decoded_token = jwt.decode(
+            token, os.getenv("SECRET_KEY"), algorithms=[ALGORITHM]
+        )
 
         # Check if the token has expired
         if decoded_token["exp"] < datetime.now(UTC).timestamp():
@@ -198,23 +207,22 @@ def generate_password_reset_url(email: str, token: str) -> str:
     Returns:
         Complete password reset URL
     """
-    base_url = os.getenv('BASE_URL')
+    base_url = os.getenv("BASE_URL")
     return f"{base_url}/account/reset_password?email={email}&token={token}"
 
 
 def send_reset_email(email: str, session: Session) -> None:
     # Check for an existing unexpired token
-    account: Optional[Account] = session.exec(select(Account).where(
-        Account.email == email
-    )).first()
-    
+    account: Optional[Account] = session.exec(
+        select(Account).where(Account.email == email)
+    ).first()
+
     if account:
         existing_token = session.exec(
-            select(PasswordResetToken)
-            .where(
+            select(PasswordResetToken).where(
                 PasswordResetToken.account_id == account.id,
                 PasswordResetToken.expires_at > datetime.now(UTC),
-                PasswordResetToken.used == False  # noqa: E712 - SQL expression for boolean false
+                PasswordResetToken.used == False,  # noqa: E712 - SQL expression for boolean false
             )
         ).first()
 
@@ -225,15 +233,15 @@ def send_reset_email(email: str, session: Session) -> None:
         # Generate a new token
         token: str = str(uuid.uuid4())
         reset_token: PasswordResetToken = PasswordResetToken(
-            account_id=account.id, token=token)
+            account_id=account.id, token=token
+        )
         session.add(reset_token)
 
         try:
             reset_url: str = generate_password_reset_url(email, token)
 
             # Render the email template
-            template: Template = templates.get_template(
-                "emails/reset_email.html")
+            template: Template = templates.get_template("emails/reset_email.html")
             html_content: str = template.render({"reset_url": reset_url})
 
             resend.api_key = os.getenv("RESEND_API_KEY")
@@ -275,7 +283,7 @@ MAX_EMAILS_PER_ACCOUNT = 2
 
 def generate_email_verification_url(token: str) -> str:
     """Generates the email verification URL."""
-    base_url = os.getenv('BASE_URL')
+    base_url = os.getenv("BASE_URL")
     return f"{base_url}/account/emails/verify?token={token}"
 
 
@@ -286,12 +294,11 @@ def send_email_verification(account_id: int, new_email: str, session: Session) -
     """
     # Check for existing unexpired token for this account+email
     existing_token = session.exec(
-        select(EmailVerificationToken)
-        .where(
+        select(EmailVerificationToken).where(
             EmailVerificationToken.account_id == account_id,
             EmailVerificationToken.new_email == new_email,
             EmailVerificationToken.expires_at > datetime.now(UTC),
-            EmailVerificationToken.used == False  # noqa: E712
+            EmailVerificationToken.used == False,  # noqa: E712
         )
     ).first()
 
@@ -351,15 +358,19 @@ def send_email_verified_notification(primary_email: str, new_email: str) -> None
         logger.error(f"Failed to send email verified notification: {e}")
 
 
-def send_primary_email_changed_notification(old_email: str, new_email: str, recovery_url: str) -> None:
+def send_primary_email_changed_notification(
+    old_email: str, new_email: str, recovery_url: str
+) -> None:
     """Send a notification to the old primary email that primary was changed."""
     try:
         template: Template = templates.get_template("emails/primary_email_changed.html")
-        html_content: str = template.render({
-            "old_email": old_email,
-            "new_email": new_email,
-            "recovery_url": recovery_url,
-        })
+        html_content: str = template.render(
+            {
+                "old_email": old_email,
+                "new_email": new_email,
+                "recovery_url": recovery_url,
+            }
+        )
 
         resend.api_key = os.getenv("RESEND_API_KEY")
         params = {
@@ -379,10 +390,12 @@ def send_email_removed_notification(removed_email: str, recovery_url: str) -> No
     """Send a notification to the removed email address."""
     try:
         template: Template = templates.get_template("emails/email_removed_alert.html")
-        html_content: str = template.render({
-            "removed_email": removed_email,
-            "recovery_url": recovery_url,
-        })
+        html_content: str = template.render(
+            {
+                "removed_email": removed_email,
+                "recovery_url": recovery_url,
+            }
+        )
 
         resend.api_key = os.getenv("RESEND_API_KEY")
         params = {
@@ -403,7 +416,7 @@ def send_email_removed_notification(removed_email: str, recovery_url: str) -> No
 
 def generate_recovery_url(token: str) -> str:
     """Generates the account recovery URL."""
-    base_url = os.getenv('BASE_URL')
+    base_url = os.getenv("BASE_URL")
     return f"{base_url}/account/recover?token={token}"
 
 
@@ -414,8 +427,7 @@ def create_recovery_token(account_id: int, email: str, session: Session) -> str:
     If an unexpired token already exists for the same account+email, returns it.
     """
     existing = session.exec(
-        select(AccountRecoveryToken)
-        .where(
+        select(AccountRecoveryToken).where(
             AccountRecoveryToken.account_id == account_id,
             AccountRecoveryToken.email == email,
             AccountRecoveryToken.expires_at > datetime.now(UTC),

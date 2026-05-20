@@ -6,6 +6,7 @@ Bug: hx-boost replaces body innerHTML via AJAX. If Bootstrap's event delegation
 or the app's custom delegation handler is lost during the swap, clicking
 [data-bs-toggle="dropdown"] elements does nothing until a full page refresh.
 """
+
 import pytest
 from playwright.sync_api import Page, expect
 
@@ -21,7 +22,9 @@ def _register_user(browser, live_server: str):
     p.fill("#password", "TestPass123!@#")
     p.fill("#confirm_password", "TestPass123!@#")
     p.click('button[type="submit"]')
-    p.wait_for_function("window.location.pathname.startsWith('/dashboard')", timeout=10_000)
+    p.wait_for_function(
+        "window.location.pathname.startsWith('/dashboard')", timeout=10_000
+    )
     context.close()
 
 
@@ -34,7 +37,9 @@ def logged_in_page(browser, live_server: str, _register_user):
     p.fill("#email", "playwright@example.com")
     p.fill("#password", "TestPass123!@#")
     p.click('button[type="submit"]')
-    p.wait_for_function("window.location.pathname.startsWith('/dashboard')", timeout=10_000)
+    p.wait_for_function(
+        "window.location.pathname.startsWith('/dashboard')", timeout=10_000
+    )
     yield p
     context.close()
 
@@ -48,7 +53,7 @@ def test_profile_dropdown_works_on_initial_load(logged_in_page: Page):
     expect(dropdown_toggle).to_be_visible(timeout=2_000)
     dropdown_toggle.click()
 
-    dropdown_menu = page.locator('.nav-item.dropdown .dropdown-menu')
+    dropdown_menu = page.locator(".nav-item.dropdown .dropdown-menu")
     expect(dropdown_menu).to_be_visible(timeout=2_000)
 
 
@@ -75,5 +80,5 @@ def test_profile_dropdown_works_after_boost_navigation(
     dropdown_toggle.click()
 
     # The dropdown menu should become visible.
-    dropdown_menu = page.locator('.nav-item.dropdown .dropdown-menu')
+    dropdown_menu = page.locator(".nav-item.dropdown .dropdown-menu")
     expect(dropdown_menu).to_be_visible(timeout=2_000)

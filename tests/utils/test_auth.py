@@ -68,6 +68,7 @@ def test_invalid_token_type(env_vars) -> None:
     decoded = validate_token(access_token, "refresh")
     assert decoded is None
 
+
 def test_password_reset_url_generation(env_vars) -> None:
     """
     Tests that the password reset URL is correctly formatted and contains
@@ -94,6 +95,7 @@ def test_password_reset_url_generation(env_vars) -> None:
     assert query_params["email"][0] == test_email
     assert query_params["token"][0] == test_token
 
+
 def test_password_pattern() -> None:
     """
     Tests that the password pattern is correctly defined. to require at least
@@ -110,7 +112,7 @@ def test_password_pattern() -> None:
         "special": special_characters,
         "uppercase": uppercase_letters,
         "lowercase": lowercase_letters,
-        "digit": digits
+        "digit": digits,
     }
 
     # Valid password tests
@@ -121,8 +123,10 @@ def test_password_pattern() -> None:
                 if other_element != element:
                     password += random.choice(required_elements[other_element])
             # Randomize the order of the characters in the string
-            password = ''.join(random.sample(password, len(password)))
-            assert re.match(COMPILED_PASSWORD_PATTERN, password) is not None, f"Password {password} does not match the pattern"
+            password = "".join(random.sample(password, len(password)))
+            assert re.match(COMPILED_PASSWORD_PATTERN, password) is not None, (
+                f"Password {password} does not match the pattern"
+            )
 
     # Invalid password tests
 
@@ -149,4 +153,3 @@ def test_password_pattern() -> None:
     # No special character
     password = "aA1" * 3
     assert re.match(COMPILED_PASSWORD_PATTERN, password) is None
-
