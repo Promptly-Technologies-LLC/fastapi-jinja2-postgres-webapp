@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Form, UploadFile, File, Request, HTTPException
 from fastapi.responses import RedirectResponse, Response
-from sqlmodel import Session, select
+from sqlmodel import Session, select, col
 from typing import Optional, List
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import selectinload
@@ -81,7 +81,7 @@ async def read_profile(
         session.exec(
             select(AccountEmail)
             .where(AccountEmail.account_id == user.account_id)
-            .order_by(AccountEmail.is_primary.desc())  # type: ignore[union-attr]
+            .order_by(col(AccountEmail.is_primary).desc())
         ).all()
         if user.account_id
         else []

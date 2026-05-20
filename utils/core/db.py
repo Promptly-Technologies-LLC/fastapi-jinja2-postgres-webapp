@@ -99,12 +99,18 @@ def get_connection_url() -> URL:
     if missing:
         raise ValueError(f"Missing environment variables: {', '.join(missing)}")
 
+    assert port is not None
+    assert database is not None
+    assert username is not None
+    assert password is not None
+    assert host is not None
+
     database_url: URL = URL.create(
         drivername="postgresql",
         username=username,
         password=password,
         host=host,
-        port=int(port),  # type: ignore[arg-type]
+        port=int(port),
         database=database,
         query={"sslmode": sslmode},
     )
