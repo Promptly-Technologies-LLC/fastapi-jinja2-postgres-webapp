@@ -67,15 +67,20 @@
 </div>
 
 <script>
-    // JavaScript to validate password match
-    document.getElementById('confirm_password').addEventListener('input', function() {
-        const password = document.getElementById('password').value;
-        const confirmPassword = this.value;
-        if (password !== confirmPassword) {
-            this.setCustomValidity('Passwords do not match.');
-        } else {
-            this.setCustomValidity('');
+    (function () {
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirm_password');
+
+        function syncConfirmPasswordValidity() {
+            if (password.value !== confirmPassword.value) {
+                confirmPassword.setCustomValidity('Passwords do not match.');
+            } else {
+                confirmPassword.setCustomValidity('');
+            }
         }
-    });
+
+        password.addEventListener('input', syncConfirmPasswordValidity);
+        confirmPassword.addEventListener('input', syncConfirmPasswordValidity);
+    })();
 </script>
 {% endblock %}
