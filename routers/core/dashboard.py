@@ -1,7 +1,7 @@
 from typing import Optional, List
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.templating import Jinja2Templates
-from sqlmodel import Session, select
+from sqlmodel import Session, select, col
 from utils.core.dependencies import get_user_with_relations, get_session
 from utils.core.models import User, Organization
 from utils.app.enums import AppPermissions
@@ -44,11 +44,13 @@ async def read_dashboard(
 
         # Load organization resources for the selected org
         if selected_org and selected_org.id is not None:
-            resources = list(session.exec(
-                select(OrganizationResource)
-                .where(OrganizationResource.organization_id == selected_org.id)
-                .order_by(OrganizationResource.created_at.desc())  # type: ignore[union-attr]
-            ).all())
+            resources = list(
+                session.exec(
+                    select(OrganizationResource)
+                    .where(OrganizationResource.organization_id == selected_org.id)
+                    .order_by(col(OrganizationResource.created_at).desc())
+                ).all()
+            )
             can_read = user.has_permission(
                 AppPermissions.READ_ORGANIZATION_RESOURCES, selected_org
             )
@@ -70,7 +72,7 @@ async def read_dashboard(
             "can_read": can_read,
             "can_write": can_write,
             "can_delete": can_delete,
-        }
+        },
     )
 
 

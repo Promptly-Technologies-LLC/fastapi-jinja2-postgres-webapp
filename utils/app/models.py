@@ -25,6 +25,7 @@ class OrganizationResource(SQLModel, table=True):
     resources, users with WRITE_ORGANIZATION_RESOURCES can create/edit them, and
     users with DELETE_ORGANIZATION_RESOURCES can delete them.
     """
+
     id: Optional[int] = Field(default=None, primary_key=True)
     organization_id: int = Field(foreign_key="organization.id", index=True)
     title: str

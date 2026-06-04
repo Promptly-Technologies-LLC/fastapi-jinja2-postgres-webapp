@@ -10,6 +10,7 @@ from utils.core.rate_limit import RateLimitWindow
 # RateLimitWindow — core behaviour
 # ---------------------------------------------------------------------------
 
+
 def test_allows_requests_under_limit():
     limiter = RateLimitWindow(max_attempts=3, window_seconds=60)
     for _ in range(3):
@@ -63,6 +64,7 @@ def test_reset_nonexistent_key_is_noop():
 # Window expiry
 # ---------------------------------------------------------------------------
 
+
 def test_unblocks_after_window_expiry():
     """Simulate time passing so that old attempts fall outside the window."""
     limiter = RateLimitWindow(max_attempts=2, window_seconds=10)
@@ -86,7 +88,7 @@ def test_unblocks_after_window_expiry():
 def test_retry_after_is_positive_and_decreases():
     limiter = RateLimitWindow(max_attempts=1, window_seconds=30)
 
-    base_time = time.monotonic()
+    base_time = 1_000_000.0
 
     with patch("utils.core.rate_limit.time.monotonic", return_value=base_time):
         limiter.record("key")
@@ -105,6 +107,7 @@ def test_retry_after_is_positive_and_decreases():
 # ---------------------------------------------------------------------------
 # Prune
 # ---------------------------------------------------------------------------
+
 
 def test_prune_removes_stale_keys():
     limiter = RateLimitWindow(max_attempts=2, window_seconds=10)

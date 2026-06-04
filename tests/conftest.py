@@ -1,18 +1,37 @@
 import pytest
 import os
-from typing import Generator
+from typing import Generator, cast
 from sqlmodel import create_engine, Session, select
 from fastapi.testclient import TestClient
 from dotenv import load_dotenv
-from utils.core.db import get_connection_url, tear_down_db, set_up_db, create_default_roles, ensure_database_exists
-from utils.core.models import User, Organization, Role, Account, AccountEmail, Invitation
-from utils.core.auth import get_password_hash, create_access_token, create_tracked_refresh_token
+from utils.core.db import (
+    get_connection_url,
+    tear_down_db,
+    set_up_db,
+    create_default_roles,
+    ensure_database_exists,
+)
+from utils.core.models import (
+    User,
+    Organization,
+    Role,
+    Account,
+    AccountEmail,
+    Invitation,
+)
+from utils.core.auth import (
+    get_password_hash,
+    create_access_token,
+    create_tracked_refresh_token,
+)
 from main import app
 from datetime import datetime, UTC, timedelta
+
 
 # Define a custom exception for test setup errors
 class SetupError(Exception):
     """Exception raised for errors in the test setup process."""
+
     def __init__(self, message="An error occurred during test setup"):
         self.message = message
         super().__init__(self.message)
@@ -70,8 +89,7 @@ def test_account(session: Session) -> Account:
     Creates a test account in the database.
     """
     account = Account(
-        email="test@example.com",
-        hashed_password=get_password_hash("Test123!@#")
+        email="test@example.com", hashed_password=get_password_hash("Test123!@#")
     )
     session.add(account)
     session.commit()
@@ -84,14 +102,11 @@ def test_user(session: Session, test_account: Account) -> User:
     """
     Creates a test user in the database linked to the test account.
     """
-    user = User(
-        name="Test User",
-        account_id=test_account.id
-    )
+    user = User(name="Test User", account_id=test_account.id)
     session.add(user)
     session.commit()
     session.refresh(user)
-    
+
     # Also refresh the account to ensure the relationship is loaded
     session.refresh(test_account)
     return user
@@ -125,7 +140,9 @@ def unauth_client(session: Session) -> Generator[TestClient, None, None]:
 
 
 @pytest.fixture
-def auth_client(session: Session, test_account: Account, test_user: User) -> Generator[TestClient, None, None]:
+def auth_client(
+    session: Session, test_account: Account, test_user: User
+) -> Generator[TestClient, None, None]:
     """
     Provides a TestClient instance with valid authentication tokens.
     """
@@ -133,7 +150,9 @@ def auth_client(session: Session, test_account: Account, test_user: User) -> Gen
 
     # Create and set valid tokens
     access_token = create_access_token({"sub": test_account.email})
-    refresh_token = create_tracked_refresh_token(test_account.id, test_account.email, session)
+    refresh_token = create_tracked_refresh_token(
+        test_account.id, test_account.email, session
+    )
     session.commit()
 
     client.cookies.set("access_token", access_token)
@@ -164,18 +183,14 @@ def org_owner(session: Session, test_organization: Organization) -> User:
     """Create a user who is the owner of the test organization"""
     # Create account
     account = Account(
-        email="owner@example.com",
-        hashed_password=get_password_hash("Owner123!@#")
+        email="owner@example.com", hashed_password=get_password_hash("Owner123!@#")
     )
     session.add(account)
     session.commit()
     session.refresh(account)
-    
+
     # Create user
-    user = User(
-        name="Org Owner",
-        account_id=account.id
-    )
+    user = User(name="Org Owner", account_id=account.id)
     session.add(user)
     # Find the Owner role for the test organization
     owner_role = session.exec(
@@ -189,7 +204,7 @@ def org_owner(session: Session, test_organization: Organization) -> User:
 
     # Assign user to owner role
     user.roles.append(owner_role)
-    
+
     session.commit()
     session.refresh(user)
     return user
@@ -200,20 +215,16 @@ def org_admin_user(session: Session, test_organization: Organization) -> User:
     """Create a user with Administrator role in the test organization"""
     # Create account
     account = Account(
-        email="admin@example.com",
-        hashed_password=get_password_hash("Admin123!@#")
+        email="admin@example.com", hashed_password=get_password_hash("Admin123!@#")
     )
     session.add(account)
     session.commit()
     session.refresh(account)
-    
+
     # Create user
-    user = User(
-        name="Admin User",
-        account_id=account.id
-    )
+    user = User(name="Admin User", account_id=account.id)
     session.add(user)
-    
+
     # Find the Admin role for the test organization (already created with permissions)
     admin_role = session.exec(
         select(Role)
@@ -226,7 +237,7 @@ def org_admin_user(session: Session, test_organization: Organization) -> User:
 
     # Assign role to user
     user.roles.append(admin_role)
-    
+
     session.commit()
     session.refresh(user)
     return user
@@ -237,20 +248,16 @@ def org_member_user(session: Session, test_organization: Organization) -> User:
     """Create a user with basic Member role in the test organization"""
     # Create account
     account = Account(
-        email="member@example.com",
-        hashed_password=get_password_hash("Member123!@#")
+        email="member@example.com", hashed_password=get_password_hash("Member123!@#")
     )
     session.add(account)
     session.commit()
     session.refresh(account)
-    
+
     # Create user
-    user = User(
-        name="Member User",
-        account_id=account.id
-    )
+    user = User(name="Member User", account_id=account.id)
     session.add(user)
-    
+
     # Find the Member role for the test organization (already created)
     member_role = session.exec(
         select(Role)
@@ -263,7 +270,7 @@ def org_member_user(session: Session, test_organization: Organization) -> User:
 
     # Assign role to user
     user.roles.append(member_role)
-    
+
     session.commit()
     session.refresh(user)
     return user
@@ -275,16 +282,13 @@ def non_member_user(session: Session) -> User:
     # Create account
     account = Account(
         email="nonmember@example.com",
-        hashed_password=get_password_hash("NonMember123!@#")
+        hashed_password=get_password_hash("NonMember123!@#"),
     )
     session.add(account)
     session.commit()
-    
+
     # Create user
-    user = User(
-        name="Non-Member User",
-        account_id=account.id
-    )
+    user = User(name="Non-Member User", account_id=account.id)
     session.add(user)
     session.commit()
     session.refresh(user)
@@ -292,18 +296,22 @@ def non_member_user(session: Session) -> User:
 
 
 @pytest.fixture
-def auth_client_owner(session: Session, org_owner: User) -> Generator[TestClient, None, None]:
+def auth_client_owner(
+    session: Session, org_owner: User
+) -> Generator[TestClient, None, None]:
     """Provides a TestClient authenticated as the organization owner"""
     client = TestClient(app, follow_redirects=False)
 
     # Initialize tokens
     access_token = ""
     refresh_token = ""
-    
+
     # Create and set valid tokens
     if org_owner.account:
         access_token = create_access_token({"sub": org_owner.account.email})
-        refresh_token = create_tracked_refresh_token(org_owner.account.id, org_owner.account.email, session)
+        refresh_token = create_tracked_refresh_token(
+            org_owner.account.id, org_owner.account.email, session
+        )
         session.commit()
 
     client.cookies.set("access_token", access_token)
@@ -313,18 +321,22 @@ def auth_client_owner(session: Session, org_owner: User) -> Generator[TestClient
 
 
 @pytest.fixture
-def auth_client_admin(session: Session, org_admin_user: User) -> Generator[TestClient, None, None]:
+def auth_client_admin(
+    session: Session, org_admin_user: User
+) -> Generator[TestClient, None, None]:
     """Provides a TestClient authenticated as an organization administrator"""
     client = TestClient(app, follow_redirects=False)
 
     # Initialize tokens
     access_token = ""
     refresh_token = ""
-    
+
     # Create and set valid tokens
     if org_admin_user.account:
         access_token = create_access_token({"sub": org_admin_user.account.email})
-        refresh_token = create_tracked_refresh_token(org_admin_user.account.id, org_admin_user.account.email, session)
+        refresh_token = create_tracked_refresh_token(
+            org_admin_user.account.id, org_admin_user.account.email, session
+        )
         session.commit()
 
     client.cookies.set("access_token", access_token)
@@ -334,18 +346,22 @@ def auth_client_admin(session: Session, org_admin_user: User) -> Generator[TestC
 
 
 @pytest.fixture
-def auth_client_member(session: Session, org_member_user: User) -> Generator[TestClient, None, None]:
+def auth_client_member(
+    session: Session, org_member_user: User
+) -> Generator[TestClient, None, None]:
     """Provides a TestClient authenticated as the organization member"""
     client = TestClient(app, follow_redirects=False)
 
     # Initialize tokens
     access_token = ""
     refresh_token = ""
-    
+
     # Create and set valid tokens
     if org_member_user.account:
         access_token = create_access_token({"sub": org_member_user.account.email})
-        refresh_token = create_tracked_refresh_token(org_member_user.account.id, org_member_user.account.email, session)
+        refresh_token = create_tracked_refresh_token(
+            org_member_user.account.id, org_member_user.account.email, session
+        )
         session.commit()
 
     client.cookies.set("access_token", access_token)
@@ -355,18 +371,22 @@ def auth_client_member(session: Session, org_member_user: User) -> Generator[Tes
 
 
 @pytest.fixture
-def auth_client_non_member(session: Session, non_member_user: User) -> Generator[TestClient, None, None]:
+def auth_client_non_member(
+    session: Session, non_member_user: User
+) -> Generator[TestClient, None, None]:
     """Provides a TestClient authenticated as a non-member"""
     client = TestClient(app, follow_redirects=False)
 
     # Initialize tokens
     access_token = ""
     refresh_token = ""
-    
+
     # Create and set valid tokens
     if non_member_user.account:
         access_token = create_access_token({"sub": non_member_user.account.email})
-        refresh_token = create_tracked_refresh_token(non_member_user.account.id, non_member_user.account.email, session)
+        refresh_token = create_tracked_refresh_token(
+            non_member_user.account.id, non_member_user.account.email, session
+        )
         session.commit()
 
     client.cookies.set("access_token", access_token)
@@ -386,6 +406,7 @@ def second_test_organization(session: Session) -> Organization:
 
 # --- Invitation Fixtures ---
 
+
 @pytest.fixture
 def member_role(session: Session, test_organization: Organization) -> Role:
     """Returns the 'Member' role for the test_organization."""
@@ -401,7 +422,9 @@ def member_role(session: Session, test_organization: Organization) -> Role:
 
 
 @pytest.fixture
-def test_invitation(session: Session, test_organization: Organization, member_role: Role) -> Invitation:
+def test_invitation(
+    session: Session, test_organization: Organization, member_role: Role
+) -> Invitation:
     """Creates a valid, active Invitation for invitee@example.com."""
     # Assert IDs are not None to satisfy type checker
     assert test_organization.id is not None
@@ -411,7 +434,7 @@ def test_invitation(session: Session, test_organization: Organization, member_ro
         role_id=member_role.id,
         invitee_email="invitee@example.com",
         token="valid-test-token",
-        expires_at=datetime.now(UTC) + timedelta(days=7)
+        expires_at=datetime.now(UTC) + timedelta(days=7),
     )
     session.add(invitation)
     session.commit()
@@ -420,7 +443,9 @@ def test_invitation(session: Session, test_organization: Organization, member_ro
 
 
 @pytest.fixture
-def expired_invitation(session: Session, test_organization: Organization, member_role: Role) -> Invitation:
+def expired_invitation(
+    session: Session, test_organization: Organization, member_role: Role
+) -> Invitation:
     """Creates an Invitation with an expiration date in the past."""
     # Assert IDs are not None to satisfy type checker
     assert test_organization.id is not None
@@ -430,7 +455,7 @@ def expired_invitation(session: Session, test_organization: Organization, member
         role_id=member_role.id,
         invitee_email="expired-invitee@example.com",
         token="expired-test-token",
-        expires_at=datetime.now(UTC) - timedelta(days=1)
+        expires_at=datetime.now(UTC) - timedelta(days=1),
     )
     session.add(invitation)
     session.commit()
@@ -439,7 +464,12 @@ def expired_invitation(session: Session, test_organization: Organization, member
 
 
 @pytest.fixture
-def used_invitation(session: Session, test_organization: Organization, member_role: Role, non_member_user: User) -> Invitation:
+def used_invitation(
+    session: Session,
+    test_organization: Organization,
+    member_role: Role,
+    non_member_user: User,
+) -> Invitation:
     """Creates an Invitation that has already been used."""
     # Assert IDs are not None to satisfy type checker
     assert test_organization.id is not None
@@ -453,7 +483,7 @@ def used_invitation(session: Session, test_organization: Organization, member_ro
         expires_at=datetime.now(UTC) + timedelta(days=7),
         used=True,
         accepted_at=datetime.now(UTC),
-        accepted_by_user_id=non_member_user.id
+        accepted_by_user_id=non_member_user.id,
     )
     session.add(invitation)
     session.commit()
@@ -465,8 +495,7 @@ def used_invitation(session: Session, test_organization: Organization, member_ro
 def existing_invitee_account(session: Session) -> Account:
     """Creates an Account for invitee@example.com with a primary AccountEmail."""
     account = Account(
-        email="invitee@example.com",
-        hashed_password=get_password_hash("Invitee123!@#")
+        email="invitee@example.com", hashed_password=get_password_hash("Invitee123!@#")
     )
     session.add(account)
     session.flush()
@@ -486,10 +515,7 @@ def existing_invitee_account(session: Session) -> Account:
 @pytest.fixture
 def existing_invitee_user(session: Session, existing_invitee_account: Account) -> User:
     """Creates a User linked to existing_invitee_account."""
-    user = User(
-        name="Invitee User",
-        account_id=existing_invitee_account.id
-    )
+    user = User(name="Invitee User", account_id=existing_invitee_account.id)
     session.add(user)
     session.commit()
     session.refresh(user)
@@ -499,18 +525,24 @@ def existing_invitee_user(session: Session, existing_invitee_account: Account) -
 
 
 @pytest.fixture
-def auth_client_invitee(session: Session, existing_invitee_user: User) -> Generator[TestClient, None, None]:
+def auth_client_invitee(
+    session: Session, existing_invitee_user: User
+) -> Generator[TestClient, None, None]:
     """Provides a TestClient authenticated as the existing_invitee_user."""
     client = TestClient(app, follow_redirects=False)
 
     # Initialize tokens
     access_token = ""
     refresh_token = ""
-    
+
     # Create and set valid tokens
     if existing_invitee_user.account:
         access_token = create_access_token({"sub": existing_invitee_user.account.email})
-        refresh_token = create_tracked_refresh_token(existing_invitee_user.account.id, existing_invitee_user.account.email, session)
+        refresh_token = create_tracked_refresh_token(
+            existing_invitee_user.account.id,
+            existing_invitee_user.account.email,
+            session,
+        )
         session.commit()
 
     client.cookies.set("access_token", access_token)
@@ -518,7 +550,9 @@ def auth_client_invitee(session: Session, existing_invitee_user: User) -> Genera
 
     yield client
 
+
 # --- Email Mocking Fixtures ---
+
 
 @pytest.fixture
 def mock_email_response():
@@ -537,11 +571,12 @@ def mock_email_response():
         "bcc": [],
         "cc": [],
         "reply_to": [],
-        "last_event": "delivered"
+        "last_event": "delivered",
     }
     # Ensure resend is imported
     import resend
-    return resend.Email(**email_data)
+
+    return cast(resend.Email, email_data)
 
 
 @pytest.fixture
@@ -551,10 +586,13 @@ def mock_resend_send(mock_email_response):
     """
     # Ensure patch and resend are imported
     from unittest.mock import patch
-    with patch('resend.Emails.send', return_value=mock_email_response) as mock:
+
+    with patch("resend.Emails.send", return_value=mock_email_response) as mock:
         yield mock
 
+
 # --- HTMX Test Helpers ---
+
 
 def htmx_headers() -> dict:
     """Headers that simulate an HTMX request."""
@@ -563,7 +601,4 @@ def htmx_headers() -> dict:
 
 def is_html_partial(response) -> bool:
     """True if response is a 200 HTML fragment (not a full page)."""
-    return (
-        response.status_code == 200
-        and "<!DOCTYPE html>" not in response.text
-    )
+    return response.status_code == 200 and "<!DOCTYPE html>" not in response.text

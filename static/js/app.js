@@ -20,7 +20,21 @@ document.body.addEventListener('htmx:configRequest', function() {
 // Global handler: when a server response includes HX-Trigger: modalDismiss,
 // clean up any Bootstrap modal backdrop left behind by OOB swaps that
 // replaced the modal element before afterRequest could call .hide().
+document.body.addEventListener('hidden.bs.modal', function(event) {
+    var modal = event.target;
+    if (modal.id && modal.id.startsWith('create')) {
+        var form = modal.querySelector('form');
+        if (form) { form.reset(); }
+    }
+});
+
 document.body.addEventListener('modalDismiss', function() {
+    document.querySelectorAll('.modal.show').forEach(function(el) {
+        var modal = bootstrap.Modal.getInstance(el);
+        if (modal) {
+            modal.hide();
+        }
+    });
     document.querySelectorAll('.modal-backdrop').forEach(function(el) { el.remove(); });
     document.body.classList.remove('modal-open');
     document.body.style.removeProperty('overflow');
