@@ -2,30 +2,30 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/index.html</loc>
-    <lastmod>2026-05-20T16:45:30.523Z</lastmod>
-  </url>
-  <url>
-    <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/customization.html</loc>
-    <lastmod>2026-05-20T16:45:30.518Z</lastmod>
+    <lastmod>2026-06-04T19:58:39.274Z</lastmod>
   </url>
   <url>
     <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/installation.html</loc>
-    <lastmod>2026-05-20T16:45:30.518Z</lastmod>
-  </url>
-  <url>
-    <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/authentication.html</loc>
-    <lastmod>2026-05-20T16:45:30.518Z</lastmod>
-  </url>
-  <url>
-    <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/deployment.html</loc>
-    <lastmod>2026-05-20T16:45:30.518Z</lastmod>
-  </url>
-  <url>
-    <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/contributing.html</loc>
-    <lastmod>2026-05-20T16:45:30.518Z</lastmod>
+    <lastmod>2026-06-04T19:58:39.270Z</lastmod>
   </url>
   <url>
     <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html</loc>
-    <lastmod>2026-05-20T16:45:30.518Z</lastmod>
+    <lastmod>2026-06-04T19:58:39.270Z</lastmod>
+  </url>
+  <url>
+    <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/authentication.html</loc>
+    <lastmod>2026-06-04T19:58:39.270Z</lastmod>
+  </url>
+  <url>
+    <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/customization.html</loc>
+    <lastmod>2026-06-04T19:58:39.270Z</lastmod>
+  </url>
+  <url>
+    <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/deployment.html</loc>
+    <lastmod>2026-06-04T19:58:39.270Z</lastmod>
+  </url>
+  <url>
+    <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/contributing.html</loc>
+    <lastmod>2026-06-04T19:58:39.270Z</lastmod>
   </url>
 </urlset>
