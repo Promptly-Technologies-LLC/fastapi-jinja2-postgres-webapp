@@ -11,6 +11,7 @@ permissions:
 jobs:
   propagate:
     strategy:
+      fail-fast: false
       matrix:
         branch: [modal, hetzner]
     runs-on: ubuntu-latest
