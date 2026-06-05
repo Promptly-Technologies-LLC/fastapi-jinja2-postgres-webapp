@@ -83,7 +83,41 @@ def test_validate_token_and_get_account() -> None:
                 assert refresh_token == "new_refresh_token"
                 assert mock_db_token.revoked is True
                 mock_tracked_refresh.assert_called_once_with(
-                    1, "test@example.com", session
+                    1, "test@example.com", session, persistent=False
+                )
+
+    # Test refresh rotation preserves persistent=True from the old token
+    with patch("utils.core.dependencies.validate_token") as mock_validate:
+        with patch("utils.core.dependencies.create_access_token") as mock_access_token:
+            with patch(
+                "utils.core.dependencies.create_tracked_refresh_token"
+            ) as mock_tracked_refresh:
+                mock_validate.return_value = {
+                    "sub": "test@example.com",
+                    "type": "refresh",
+                    "jti": "test-jti",
+                    "persistent": True,
+                }
+                mock_access_token.return_value = "new_access_token"
+                mock_tracked_refresh.return_value = "new_refresh_token"
+
+                mock_db_token = MagicMock()
+                mock_db_token.account_id = 1
+                mock_db_token.revoked = False
+
+                session.exec.return_value.first.side_effect = [
+                    mock_account,
+                    mock_db_token,
+                ]
+
+                account, access_token, refresh_token = validate_token_and_get_account(
+                    "valid_token", "refresh", session
+                )
+                assert account == mock_account
+                assert access_token == "new_access_token"
+                assert refresh_token == "new_refresh_token"
+                mock_tracked_refresh.assert_called_once_with(
+                    1, "test@example.com", session, persistent=True
                 )
 
     # Test with refresh token missing JTI (legacy token)

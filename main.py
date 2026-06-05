@@ -20,7 +20,7 @@ from utils.core.dependencies import (
     get_user_from_request,
     require_unauthenticated_client,
 )
-from utils.core.auth import COOKIE_SECURE
+from utils.core.auth import refresh_token_is_persistent, set_auth_cookies
 from utils.core.htmx import (
     is_htmx_request,
     toast_response,
@@ -170,19 +170,11 @@ async def needs_new_tokens_handler(request: Request, exc: NeedsNewTokens):
     response = RedirectResponse(
         url=redirect_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT
     )
-    response.set_cookie(
-        key="access_token",
-        value=exc.access_token,
-        httponly=True,
-        secure=COOKIE_SECURE,
-        samesite="strict",
-    )
-    response.set_cookie(
-        key="refresh_token",
-        value=exc.refresh_token,
-        httponly=True,
-        secure=COOKIE_SECURE,
-        samesite="strict",
+    set_auth_cookies(
+        response,
+        exc.access_token,
+        exc.refresh_token,
+        persistent=refresh_token_is_persistent(exc.refresh_token),
     )
     return response
 
