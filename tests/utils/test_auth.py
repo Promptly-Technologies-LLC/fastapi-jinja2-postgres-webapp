@@ -4,6 +4,7 @@ import random
 from datetime import timedelta
 from urllib.parse import urlparse, parse_qs
 from starlette.datastructures import URLPath
+from starlette.responses import Response
 import uuid
 from main import app
 from utils.core.auth import (
@@ -15,6 +16,9 @@ from utils.core.auth import (
     generate_password_reset_url,
     COMPILED_PASSWORD_PATTERN,
     convert_python_regex_to_html,
+    auth_cookie_max_ages,
+    set_auth_cookies,
+    refresh_token_is_persistent,
 )
 
 
@@ -153,3 +157,45 @@ def test_password_pattern() -> None:
     # No special character
     password = "aA1" * 3
     assert re.match(COMPILED_PASSWORD_PATTERN, password) is None
+
+
+def test_auth_cookie_max_ages(env_vars) -> None:
+    session_access, session_refresh = auth_cookie_max_ages(persistent=False)
+    assert session_access is None
+    assert session_refresh is None
+
+    persistent_access, persistent_refresh = auth_cookie_max_ages(persistent=True)
+    assert persistent_access == 30 * 60
+    assert persistent_refresh == 30 * 24 * 60 * 60
+
+
+def test_set_auth_cookies_persistent(env_vars) -> None:
+    response = Response()
+    set_auth_cookies(response, "access", "refresh", persistent=True)
+    headers = response.headers.getlist("set-cookie")
+    assert len(headers) == 2
+    assert all("Max-Age=" in header for header in headers)
+
+
+def test_set_auth_cookies_session(env_vars) -> None:
+    response = Response()
+    set_auth_cookies(response, "access", "refresh", persistent=False)
+    headers = response.headers.getlist("set-cookie")
+    assert len(headers) == 2
+    assert all("Max-Age=" not in header for header in headers)
+
+
+def test_refresh_token_is_persistent(env_vars) -> None:
+    jti = str(uuid.uuid4())
+    persistent_token = create_refresh_token(
+        {"sub": "test@example.com", "persistent": True},
+        jti=jti,
+        expires_delta=timedelta(days=30),
+    )
+    assert refresh_token_is_persistent(persistent_token) is True
+
+    session_token = create_refresh_token(
+        {"sub": "test@example.com", "persistent": False},
+        jti=str(uuid.uuid4()),
+    )
+    assert refresh_token_is_persistent(session_token) is False
