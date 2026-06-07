@@ -8,10 +8,11 @@ import resend
 from sqlmodel import Session, select
 from bcrypt import gensalt, hashpw, checkpw
 from datetime import UTC, datetime, timedelta
-from typing import Optional
+from typing import Literal, Optional
 from jinja2.environment import Template
 from fastapi.templating import Jinja2Templates
 from fastapi import Cookie
+from starlette.responses import Response
 from utils.core.db import create_engine, get_connection_url
 from utils.core.models import (
     AccountRecoveryToken,
@@ -34,6 +35,10 @@ COOKIE_SECURE = os.getenv("BASE_URL", "http://localhost:8000").startswith("https
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 30
+SESSION_REFRESH_TOKEN_EXPIRE_HOURS = 12
+
+ACCESS_TOKEN_COOKIE_NAME = "access_token"
+REFRESH_TOKEN_COOKIE_NAME = "refresh_token"
 PASSWORD_PATTERN_COMPONENTS = [
     r"(?=.*\d)",  # At least one digit
     r"(?=.*[a-z])",  # At least one lowercase letter
@@ -89,10 +94,60 @@ HTML_PASSWORD_PATTERN = "".join(
 
 # Define the oauth2 scheme to get the token from the cookie
 def oauth2_scheme_cookie(
-    access_token: Optional[str] = Cookie(None, alias="access_token"),
-    refresh_token: Optional[str] = Cookie(None, alias="refresh_token"),
+    access_token: Optional[str] = Cookie(None, alias=ACCESS_TOKEN_COOKIE_NAME),
+    refresh_token: Optional[str] = Cookie(None, alias=REFRESH_TOKEN_COOKIE_NAME),
 ) -> tuple[Optional[str], Optional[str]]:
     return access_token, refresh_token
+
+
+def auth_cookie_max_ages(*, persistent: bool) -> tuple[Optional[int], Optional[int]]:
+    """Return (access_max_age, refresh_max_age) in seconds; None means session cookie."""
+    if not persistent:
+        return None, None
+    return (
+        ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+    )
+
+
+def set_auth_cookies(
+    response: Response,
+    access_token: str,
+    refresh_token: str,
+    *,
+    persistent: bool,
+    samesite: Literal["lax", "strict", "none"] = "strict",
+) -> None:
+    """Set httponly auth cookies with session or persistent lifetime."""
+    access_max_age, refresh_max_age = auth_cookie_max_ages(persistent=persistent)
+    response.set_cookie(
+        key=ACCESS_TOKEN_COOKIE_NAME,
+        value=access_token,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite=samesite,
+        max_age=access_max_age,
+    )
+    response.set_cookie(
+        key=REFRESH_TOKEN_COOKIE_NAME,
+        value=refresh_token,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite=samesite,
+        max_age=refresh_max_age,
+    )
+
+
+def clear_auth_cookies(response: Response) -> None:
+    response.delete_cookie(ACCESS_TOKEN_COOKIE_NAME)
+    response.delete_cookie(REFRESH_TOKEN_COOKIE_NAME)
+
+
+def refresh_token_is_persistent(refresh_token: str) -> bool:
+    decoded = validate_token(refresh_token, token_type="refresh")
+    if decoded is None:
+        return False
+    return bool(decoded.get("persistent", False))
 
 
 def get_password_hash(password: str) -> str:
@@ -140,16 +195,30 @@ def create_refresh_token(
     return encoded_jwt
 
 
-def create_tracked_refresh_token(account_id: int, email: str, session: Session) -> str:
+def create_tracked_refresh_token(
+    account_id: int,
+    email: str,
+    session: Session,
+    *,
+    persistent: bool = False,
+) -> str:
     jti = str(uuid.uuid4())
-    expires_at = datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    if persistent:
+        expires_delta = timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    else:
+        expires_delta = timedelta(hours=SESSION_REFRESH_TOKEN_EXPIRE_HOURS)
+    expires_at = datetime.now(UTC) + expires_delta
     db_token = RefreshToken(
         account_id=account_id,
         jti=jti,
         expires_at=expires_at,
     )
     session.add(db_token)
-    token = create_refresh_token(data={"sub": email}, jti=jti)
+    token = create_refresh_token(
+        data={"sub": email, "persistent": persistent},
+        jti=jti,
+        expires_delta=expires_delta,
+    )
     return token
 
 

@@ -97,9 +97,10 @@ def validate_token_and_get_account(
 
                 # Revoke the current token and issue new ones
                 db_token.revoked = True
+                persistent = bool(decoded_token.get("persistent", False))
                 new_access_token = create_access_token(data={"sub": account.email})
                 new_refresh_token = create_tracked_refresh_token(
-                    account.id, account.email, session
+                    account.id, account.email, session, persistent=persistent
                 )
                 session.commit()
                 return account, new_access_token, new_refresh_token
