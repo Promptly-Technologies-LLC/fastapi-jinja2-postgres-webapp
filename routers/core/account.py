@@ -20,7 +20,6 @@ from utils.core.models import RefreshToken
 from utils.core.auth import (
     HTML_PASSWORD_PATTERN,
     COMPILED_PASSWORD_PATTERN,
-    COOKIE_SECURE,
     MAX_EMAILS_PER_ACCOUNT,
     oauth2_scheme_cookie,
     get_password_hash,
@@ -28,6 +27,8 @@ from utils.core.auth import (
     create_tracked_refresh_token,
     revoke_all_refresh_tokens,
     validate_token,
+    set_auth_cookies,
+    clear_auth_cookies,
     send_reset_email_task,
     send_email_verification,
     send_email_verified_notification,
@@ -127,8 +128,7 @@ def logout(
     Log out a user by revoking their refresh token and clearing cookies.
     """
     response = RedirectResponse(url="/", status_code=303)
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
+    clear_auth_cookies(response)
 
     _, refresh_token_value = tokens
     if refresh_token_value:
@@ -382,7 +382,9 @@ async def register(
 
     # Create access token using the committed account's email
     access_token = create_access_token(data={"sub": account.email, "fresh": True})
-    refresh_token = create_tracked_refresh_token(account.id, account.email, session)
+    refresh_token = create_tracked_refresh_token(
+        account.id, account.email, session, persistent=False
+    )
     session.commit()
 
     # Set cookie — use HX-Redirect for HTMX, 303 for regular form submissions
@@ -391,19 +393,11 @@ async def register(
         response.headers["HX-Redirect"] = str(redirect_url)
     else:
         response = RedirectResponse(url=str(redirect_url), status_code=303)
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        secure=COOKIE_SECURE,
-        samesite="strict",
-    )
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=COOKIE_SECURE,
-        samesite="strict",
+    set_auth_cookies(
+        response,
+        access_token,
+        refresh_token,
+        persistent=False,
     )
 
     return response
@@ -417,6 +411,7 @@ async def login(
     account_and_session: Tuple[Account, Session] = Depends(
         get_account_from_credentials
     ),
+    remember: Optional[str] = Form(None),
     invitation_token: Optional[str] = Form(
         None,
         title="Invitation token",
@@ -507,8 +502,11 @@ async def login(
 
     # Create access token
     assert account.id is not None
+    persistent = remember == "on"
     access_token = create_access_token(data={"sub": account.email, "fresh": True})
-    refresh_token = create_tracked_refresh_token(account.id, account.email, session)
+    refresh_token = create_tracked_refresh_token(
+        account.id, account.email, session, persistent=persistent
+    )
     session.commit()
 
     # Set cookie — use HX-Redirect for HTMX, 303 for regular form submissions
@@ -517,19 +515,11 @@ async def login(
         response.headers["HX-Redirect"] = str(redirect_url)
     else:
         response = RedirectResponse(url=str(redirect_url), status_code=303)
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        secure=COOKIE_SECURE,
-        samesite="strict",
-    )
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=COOKIE_SECURE,
-        samesite="strict",
+    set_auth_cookies(
+        response,
+        access_token,
+        refresh_token,
+        persistent=persistent,
     )
 
     return response
@@ -553,8 +543,7 @@ async def refresh_token(
         response = RedirectResponse(
             url=router.url_path_for("read_login"), status_code=303
         )
-        response.delete_cookie("access_token")
-        response.delete_cookie("refresh_token")
+        clear_auth_cookies(response)
         return response
 
     # Validate JTI server-side
@@ -563,8 +552,7 @@ async def refresh_token(
         response = RedirectResponse(
             url=router.url_path_for("read_login"), status_code=303
         )
-        response.delete_cookie("access_token")
-        response.delete_cookie("refresh_token")
+        clear_auth_cookies(response)
         return response
 
     user_email = decoded_token.get("sub")
@@ -591,32 +579,26 @@ async def refresh_token(
         response = RedirectResponse(
             url=router.url_path_for("read_login"), status_code=303
         )
-        response.delete_cookie("access_token")
-        response.delete_cookie("refresh_token")
+        clear_auth_cookies(response)
         return response
 
     # Revoke current token and issue new ones
     db_token.revoked = True
+    persistent = bool(decoded_token.get("persistent", False))
     new_access_token = create_access_token(data={"sub": account.email, "fresh": False})
-    new_refresh_token = create_tracked_refresh_token(account.id, account.email, session)
+    new_refresh_token = create_tracked_refresh_token(
+        account.id, account.email, session, persistent=persistent
+    )
     session.commit()
 
     response = RedirectResponse(
         url=dashboard_router.url_path_for("read_dashboard"), status_code=303
     )
-    response.set_cookie(
-        key="access_token",
-        value=new_access_token,
-        httponly=True,
-        secure=COOKIE_SECURE,
-        samesite="strict",
-    )
-    response.set_cookie(
-        key="refresh_token",
-        value=new_refresh_token,
-        httponly=True,
-        secure=COOKIE_SECURE,
-        samesite="strict",
+    set_auth_cookies(
+        response,
+        new_access_token,
+        new_refresh_token,
+        persistent=persistent,
     )
 
     return response
@@ -696,7 +678,7 @@ async def reset_password(
         data={"sub": authorized_account.email, "fresh": True}
     )
     refresh_token = create_tracked_refresh_token(
-        authorized_account.id, authorized_account.email, session
+        authorized_account.id, authorized_account.email, session, persistent=False
     )
     session.commit()
 
@@ -709,19 +691,11 @@ async def reset_password(
     else:
         response = RedirectResponse(url=redirect_url, status_code=303)
 
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        secure=COOKIE_SECURE,
-        samesite="strict",
-    )
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=COOKIE_SECURE,
-        samesite="strict",
+    set_auth_cookies(
+        response,
+        access_token,
+        refresh_token,
+        persistent=False,
     )
     set_flash_cookie(response, message)
     return response
@@ -961,7 +935,9 @@ async def promote_email(
 
     # Issue new tokens with the new primary email
     access_token = create_access_token(data={"sub": account.email, "fresh": True})
-    refresh_token = create_tracked_refresh_token(account.id, account.email, session)
+    refresh_token = create_tracked_refresh_token(
+        account.id, account.email, session, persistent=False
+    )
     session.commit()
 
     # Create recovery token and send notification to the old primary
@@ -979,18 +955,11 @@ async def promote_email(
     else:
         response = RedirectResponse(url=str(profile_path), status_code=303)
     set_flash_cookie(response, "Primary email address updated.")
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        secure=COOKIE_SECURE,
-        samesite="lax",
-    )
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=COOKIE_SECURE,
+    set_auth_cookies(
+        response,
+        access_token,
+        refresh_token,
+        persistent=False,
         samesite="lax",
     )
     return response
