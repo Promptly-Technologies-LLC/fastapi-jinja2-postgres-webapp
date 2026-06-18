@@ -177,6 +177,13 @@ class InvitationEmailSendError(HTTPException):
         )
 
 
+class InvitationNotFoundError(HTTPException):
+    """Raised when an invitation ID does not exist."""
+
+    def __init__(self):
+        super().__init__(status_code=404, detail="Invitation not found")
+
+
 class InvalidInvitationTokenError(HTTPException):
     """Raised when an invitation token is invalid, expired, or not found."""
 

@@ -1,8 +1,21 @@
 {# Partial: <li> items for pending invitations. Swapped into <ul id="invitations-list">. #}
+{# Set show_invitation_cancel=true via {% with %} to render Cancel controls (members card only). #}
 {% for inv in active_invitations %}
-<li class="list-group-item d-flex justify-content-between align-items-center">
-    <span>{{ inv.invitee_email }} (Role: {{ inv.role.name }})</span>
-    <small class="text-muted">Expires: {{ inv.expires_at.strftime('%Y-%m-%d') }}</small>
+<li class="list-group-item invitation-list-item">
+    <div class="d-flex align-items-center">
+        <span class="me-auto">{{ inv.invitee_email }} (Role: {{ inv.role.name }})</span>
+        <small class="text-muted invitation-list-expiry me-3">Expires: {{ inv.expires_at.strftime('%Y-%m-%d') }}</small>
+        {% if show_invitation_cancel is defined and show_invitation_cancel and ValidPermissions is defined and user_permissions is defined and ValidPermissions.INVITE_USER in user_permissions %}
+        <form method="POST" action="{{ url_for('delete_invitation') }}" class="invitation-cancel-form mb-0"
+              hx-post="{{ url_for('delete_invitation') }}"
+              hx-target="#members-card-content"
+              hx-swap="innerHTML">
+            <input type="hidden" name="invitation_id" value="{{ inv.id }}">
+            <input type="hidden" name="organization_id" value="{{ organization.id }}">
+            <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+        </form>
+        {% endif %}
+    </div>
 </li>
 {% else %}
 <li class="list-group-item text-muted">No pending invitations.</li>
