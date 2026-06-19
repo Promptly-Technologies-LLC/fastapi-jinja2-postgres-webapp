@@ -12,6 +12,20 @@
         {% include 'users/partials/profile_display.html' %}
     </div>
 
+    <!-- Communication Preferences -->
+    <div class="card mb-4" id="communication-preferences-card">
+        <div class="card-header">
+            Communication Preferences
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('update_communication_preferences') }}" method="post"
+                  hx-post="{{ url_for('update_communication_preferences') }}" hx-swap="none">
+                {% include 'partials/communication_preferences_fields.html' with context %}
+                <button type="submit" class="btn btn-primary mt-3">Save Preferences</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Email Addresses -->
     <div class="card mb-4">
         <div class="card-header">

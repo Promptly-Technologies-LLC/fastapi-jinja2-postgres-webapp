@@ -1,0 +1,78 @@
+{# Communication preference checkboxes. Pass user (optional) and host_name. #}
+{% set id_prefix = id_prefix | default('') %}
+<div class="communication-preferences" data-comm-prefs-root>
+    <div class="form-check mb-2">
+        <input type="checkbox" class="form-check-input" id="{{ id_prefix }}comm_opt_in" name="comm_opt_in"
+               {% if user and user.comm_opt_in %}checked{% endif %}>
+        <label class="form-check-label" for="{{ id_prefix }}comm_opt_in">
+            Send me optional emails from {{ host_name }}
+        </label>
+    </div>
+    <p class="form-text ms-1 mb-2">
+        Account related emails (verification, security, invitations) are always sent.
+        You can update these preferences anytime in your profile.
+        See our <a href="{{ url_for('read_static_page', page_name='privacy-policy') }}">Privacy Policy</a>.
+    </p>
+
+    <div id="{{ id_prefix }}comm_sub_prefs" class="ms-4 mb-2"
+         {% if not (user and user.comm_opt_in) %}style="display: none;"{% endif %}>
+        <div class="form-check mb-2">
+            <input type="checkbox" class="form-check-input" id="{{ id_prefix }}comm_updates" name="comm_updates"
+                   {% if user and user.comm_updates %}checked{% endif %}>
+            <label class="form-check-label" for="{{ id_prefix }}comm_updates">
+                Product updates and new features
+            </label>
+        </div>
+        <p class="form-text mb-2">Announcements when we ship new capabilities.</p>
+
+        <div class="form-check mb-2">
+            <input type="checkbox" class="form-check-input" id="{{ id_prefix }}comm_marketing" name="comm_marketing"
+                   {% if user and user.comm_marketing %}checked{% endif %}>
+            <label class="form-check-label" for="{{ id_prefix }}comm_marketing">
+                Tips, offers, and promotional content
+            </label>
+        </div>
+        <p class="form-text mb-0">Occasional marketing about our products and services.</p>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const roots = document.querySelectorAll('[data-comm-prefs-root]');
+        roots.forEach(function (root) {
+            if (root.dataset.commPrefsInit) {
+                return;
+            }
+            root.dataset.commPrefsInit = 'true';
+
+            const master = root.querySelector('input[name="comm_opt_in"]');
+            const updates = root.querySelector('input[name="comm_updates"]');
+            const marketing = root.querySelector('input[name="comm_marketing"]');
+            const subPrefs = root.querySelector('[id$="comm_sub_prefs"]');
+
+            if (!master || !updates || !marketing || !subPrefs) {
+                return;
+            }
+
+            function syncSubPreferences() {
+                if (master.checked) {
+                    subPrefs.style.display = '';
+                } else {
+                    subPrefs.style.display = 'none';
+                    updates.checked = false;
+                    marketing.checked = false;
+                }
+            }
+
+            master.addEventListener('change', function () {
+                if (master.checked) {
+                    subPrefs.style.display = '';
+                    updates.checked = true;
+                    marketing.checked = true;
+                } else {
+                    syncSubPreferences();
+                }
+            });
+        });
+    })();
+</script>

@@ -1,4 +1,5 @@
 # auth.py
+import os
 from logging import getLogger
 from typing import Optional, Tuple
 from urllib.parse import urlparse
@@ -71,6 +72,10 @@ from utils.core.rate_limit import (
     login_email_limiter,
 )
 from utils.core.htmx import is_htmx_request, toast_response, set_flash_cookie
+from utils.core.communication_preferences import (
+    parse_communication_preferences,
+    apply_communication_preferences,
+)
 
 logger = getLogger("uvicorn.error")
 
@@ -178,6 +183,7 @@ async def read_register(
             "password_pattern": HTML_PASSWORD_PATTERN,
             "email": email,
             "invitation_token": invitation_token,
+            "host_name": os.getenv("HOST_NAME", "our platform"),
         },
     )
 
@@ -266,6 +272,9 @@ async def register(
         title="Invitation token",
         description="Optional invitation token to join an organization",
     ),
+    comm_opt_in: Optional[str] = Form(None),
+    comm_updates: Optional[str] = Form(None),
+    comm_marketing: Optional[str] = Form(None),
 ) -> Response:
     """
     Register a new user account, optionally processing an invitation.
@@ -295,6 +304,10 @@ async def register(
         raise DataIntegrityError(resource="Account ID generation")
 
     new_user = User(name=name, account_id=account.id)  # Use account.id
+    apply_communication_preferences(
+        new_user,
+        parse_communication_preferences(comm_opt_in, comm_updates, comm_marketing),
+    )
     session.add(new_user)
 
     # Create the primary AccountEmail entry
