@@ -207,6 +207,7 @@ async def read_register(
             "invitation_token": invitation_token,
             "host_name": os.getenv("HOST_NAME", "our platform"),
             "invitation_token_warning": invitation_token_warning,
+            "host_name": os.getenv("HOST_NAME", "our platform"),
         },
     )
 
