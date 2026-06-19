@@ -13,7 +13,6 @@ from utils.core.models import (
     DataIntegrityError,
     Account,
     AccountEmail,
-    Invitation,
 )
 from utils.core.dependencies import get_session
 from utils.core.models import RefreshToken
@@ -54,14 +53,17 @@ from exceptions.http_exceptions import (
     EmailNotVerifiedError,
     MaxEmailsReachedError,
     PasswordValidationError,
-    InvalidInvitationTokenError,
     InvitationEmailMismatchError,
     InvitationProcessingError,
 )
 from routers.core.dashboard import router as dashboard_router
 from routers.core.user import router as user_router
 from routers.core.organization import router as org_router
-from utils.core.invitations import process_invitation
+from utils.core.invitations import (
+    process_invitation,
+    require_active_invitation_by_token,
+    get_invitation_token_warning,
+)
 from utils.core.rate_limit import (
     check_login_ip_rate_limit,
     check_login_email_rate_limit,
@@ -149,14 +151,24 @@ async def read_login(
     request: Request,
     _: None = Depends(require_unauthenticated_client),
     invitation_token: Optional[str] = Query(None),
+    session: Session = Depends(get_session),
 ):
     """
     Render login page or redirect to dashboard if already logged in.
     """
+    invitation_token_warning = (
+        get_invitation_token_warning(session, invitation_token)
+        if invitation_token
+        else None
+    )
     return templates.TemplateResponse(
         request,
         "account/login.html",
-        {"user": None, "invitation_token": invitation_token},
+        {
+            "user": None,
+            "invitation_token": invitation_token,
+            "invitation_token_warning": invitation_token_warning,
+        },
     )
 
 
@@ -166,10 +178,16 @@ async def read_register(
     _: None = Depends(require_unauthenticated_client),
     email: Optional[EmailStr] = Query(None),
     invitation_token: Optional[str] = Query(None),
+    session: Session = Depends(get_session),
 ):
     """
     Render registration page or redirect to dashboard if already logged in.
     """
+    invitation_token_warning = (
+        get_invitation_token_warning(session, invitation_token)
+        if invitation_token
+        else None
+    )
     return templates.TemplateResponse(
         request,
         "account/register.html",
@@ -178,6 +196,7 @@ async def read_register(
             "password_pattern": HTML_PASSWORD_PATTERN,
             "email": email,
             "invitation_token": invitation_token,
+            "invitation_token_warning": invitation_token_warning,
         },
     )
 
@@ -317,16 +336,7 @@ async def register(
         logger.info(
             f"Registration attempt with invitation token: {invitation_token} for email {email}"
         )
-        # Fetch the invitation
-        statement = select(Invitation).where(Invitation.token == invitation_token)
-        invitation = session.exec(statement).first()
-
-        if not invitation or not invitation.is_active():
-            logger.warning(
-                f"Invalid or inactive invitation token provided during registration: {invitation_token}"
-            )
-            # Consider raising a more generic error to avoid exposing token validity
-            raise InvalidInvitationTokenError()
+        invitation = require_active_invitation_by_token(session, invitation_token)
 
         # Verify email matches
         if email != invitation.invitee_email:
@@ -434,15 +444,7 @@ async def login(
         logger.info(
             f"Login attempt with invitation token: {invitation_token} for account {account.email}"
         )
-        # Fetch the invitation
-        statement = select(Invitation).where(Invitation.token == invitation_token)
-        invitation = session.exec(statement).first()
-
-        if not invitation or not invitation.is_active():
-            logger.warning(
-                f"Invalid or inactive invitation token provided during login: {invitation_token}"
-            )
-            raise InvalidInvitationTokenError()
+        invitation = require_active_invitation_by_token(session, invitation_token)
 
         # Verify email matches (check primary and any verified secondary emails)
         account_emails = session.exec(

@@ -215,7 +215,11 @@ def test_accept_invitation_get_invalid_token_fails(
         app.url_path_for("accept_invitation"),
         params={"token": token_value},
     )
-    assert response.status_code == 404  # InvalidInvitationTokenError maps to 404
+    assert response.status_code == 404
+    if token_type == "expired":
+        assert "expired" in response.text.lower()
+    else:
+        assert "no longer valid" in response.text.lower()
 
 
 @pytest.mark.parametrize(
@@ -254,7 +258,11 @@ def test_accept_invitation_register_post_invalid_token_fails(
         app.url_path_for("register"),
         data=register_data,
     )
-    assert response.status_code == 404  # InvalidInvitationTokenError
+    assert response.status_code == 404
+    if token_type == "expired":
+        assert "expired" in response.text.lower()
+    else:
+        assert "no longer valid" in response.text.lower()
 
 
 @pytest.mark.parametrize(
@@ -289,7 +297,11 @@ def test_accept_invitation_login_post_invalid_token_fails(
         app.url_path_for("login"),
         data=login_data,
     )
-    assert response.status_code == 404  # InvalidInvitationTokenError
+    assert response.status_code == 404
+    if token_type == "expired":
+        assert "expired" in response.text.lower()
+    else:
+        assert "no longer valid" in response.text.lower()
 
 
 # 5. Failure: Email Mismatch (Registration)
@@ -355,3 +367,28 @@ def test_accept_invitation_logged_in_wrong_user_get_redirects_to_login(
     session.refresh(test_invitation)
     assert test_invitation.used is False
     assert test_invitation.accepted_by_user_id is None
+
+
+def test_register_page_shows_expired_invitation_warning(
+    unauth_client: TestClient, expired_invitation: Invitation
+):
+    response = unauth_client.get(
+        app.url_path_for("read_register"),
+        params={
+            "email": expired_invitation.invitee_email,
+            "invitation_token": expired_invitation.token,
+        },
+    )
+    assert response.status_code == 200
+    assert "invitation link has expired" in response.text.lower()
+
+
+def test_register_page_shows_invalid_invitation_warning(
+    unauth_client: TestClient,
+):
+    response = unauth_client.get(
+        app.url_path_for("read_register"),
+        params={"invitation_token": "not-a-real-token"},
+    )
+    assert response.status_code == 200
+    assert "no longer valid" in response.text.lower()

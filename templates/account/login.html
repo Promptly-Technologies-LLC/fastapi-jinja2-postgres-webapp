@@ -6,6 +6,15 @@
 
 {% block auth_content %}
 <div class="login-form">
+    {% if invitation_token_warning == 'expired' %}
+    <div class="alert alert-warning" role="alert">
+        This invitation link has expired. Ask your organization administrator to send a new invitation, then use the link in the latest email.
+    </div>
+    {% elif invitation_token_warning == 'invalid' %}
+    <div class="alert alert-warning" role="alert">
+        This invitation link is no longer valid. If you were invited again recently, use the link from the most recent invitation email.
+    </div>
+    {% endif %}
     <form method="POST" action="{{ url_for('login') }}"
           hx-post="{{ url_for('login') }}" hx-swap="none"
           class="needs-validation" novalidate>

@@ -375,3 +375,21 @@ class Invitation(SQLModel, table=True):
         )
         results = session.exec(statement).all()
         return [inv for inv in results if not inv.is_expired()]
+
+    @classmethod
+    def invalidate_pending_for_email(
+        cls,
+        session: Session,
+        organization_id: int,
+        invitee_email: str,
+    ) -> list["Invitation"]:
+        """Delete unused invitations for an org+email. Caller must commit or rollback."""
+        statement = select(cls).where(
+            cls.organization_id == organization_id,
+            cls.invitee_email == invitee_email,
+            col(cls.used).is_(False),
+        )
+        pending: list[Invitation] = list(session.exec(statement).all())
+        for invitation in pending:
+            session.delete(invitation)
+        return pending

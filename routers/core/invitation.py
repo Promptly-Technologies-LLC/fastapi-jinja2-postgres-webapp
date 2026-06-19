@@ -16,14 +16,16 @@ from utils.core.dependencies import (
 from utils.core.models import User, Role, Account, Invitation, Organization
 from utils.core.enums import ValidPermissions
 from utils.app.enums import AppPermissions
-from utils.core.invitations import send_invitation_email, process_invitation
+from utils.core.invitations import (
+    send_invitation_email,
+    process_invitation,
+    require_active_invitation_by_token,
+)
 from exceptions.http_exceptions import (
     UserIsAlreadyMemberError,
-    ActiveInvitationExistsError,
     InvalidRoleForOrganizationError,
     OrganizationNotFoundError,
     InvitationEmailSendError,
-    InvalidInvitationTokenError,
     InvitationNotFoundError,
     InsufficientPermissionsError,
     RoleNotFoundError,
@@ -50,11 +52,7 @@ def get_valid_invitation(
     token: str = Query(...), session: Session = Depends(get_session)
 ) -> Invitation:
     """Dependency to retrieve a valid, active invitation based on the token."""
-    statement = select(Invitation).where(Invitation.token == token)
-    invitation = session.exec(statement).first()
-    if not invitation or not invitation.is_active():
-        raise InvalidInvitationTokenError()
-    return invitation
+    return require_active_invitation_by_token(session, token)
 
 
 @router.post("/", name="create_invitation")
@@ -108,12 +106,9 @@ async def create_invitation(
             ):
                 raise UserIsAlreadyMemberError()
 
-    # Check for active invitations with the same email
-    active_invitations = Invitation.get_active_for_org(session, organization_id)
-    if any(
-        invitation.invitee_email == invitee_email for invitation in active_invitations
-    ):
-        raise ActiveInvitationExistsError()
+    # Replace any pending invite for this email (active or expired) before creating a new one.
+    Invitation.invalidate_pending_for_email(session, organization_id, invitee_email)
+    session.flush()
 
     # Create the invitation
     token = str(uuid4())
@@ -147,7 +142,7 @@ async def create_invitation(
         logger.error(
             f"Invitation email failed for {invitee_email} in org {organization_id}: {e}"
         )
-        session.rollback()  # Rollback the invitation creation
+        session.rollback()  # Rollback invalidation and invitation creation
         raise InvitationEmailSendError()  # Raise HTTP 500
     except Exception as e:
         # Catch any other unexpected errors during flush/refresh/email/commit

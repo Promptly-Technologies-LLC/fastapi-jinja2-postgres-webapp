@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime, timedelta, UTC
 from unittest.mock import MagicMock
-from sqlmodel import Session, select
+from sqlmodel import Session, select, col
 from tests.conftest import SetupError
 from utils.core.models import Role, Permission, User, Invitation, Organization, Account
 from utils.core.enums import ValidPermissions
@@ -498,24 +498,124 @@ def test_create_invitation_for_existing_member(
     )  # Conflict - UserIsAlreadyMemberError
 
 
-def test_create_invitation_duplicate_active(
-    auth_client, inviter_user: User, existing_invitation: Invitation
+def test_create_invitation_resend_replaces_active_invitation(
+    auth_client,
+    inviter_user: User,
+    existing_invitation: Invitation,
+    session: Session,
+    mock_resend_send,
 ):
-    """Test that creating a duplicate active invitation fails."""
+    """Re-inviting the same email replaces the pending invite and invalidates the old token."""
     assert existing_invitation.organization_id is not None
     assert existing_invitation.role_id is not None
+    old_token = existing_invitation.token
+    old_id = existing_invitation.id
+    invitee_email = existing_invitation.invitee_email
+    organization_id = existing_invitation.organization_id
+
     response = auth_client.post(
         app.url_path_for("create_invitation"),
         data={
-            "invitee_email": existing_invitation.invitee_email,  # Same email
+            "invitee_email": invitee_email,
+            "role_id": str(existing_invitation.role_id),
+            "organization_id": str(organization_id),
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303, response.text
+
+    session.expire_all()
+    assert session.get(Invitation, old_id) is None
+
+    new_invitation = session.exec(
+        select(Invitation).where(
+            Invitation.invitee_email == invitee_email,
+            Invitation.organization_id == organization_id,
+            col(Invitation.used).is_(False),
+        )
+    ).first()
+    assert new_invitation is not None
+    assert new_invitation.token != old_token
+
+    accept_response = auth_client.get(
+        app.url_path_for("accept_invitation"),
+        params={"token": old_token},
+        follow_redirects=False,
+    )
+    assert accept_response.status_code == 404
+    assert "no longer valid" in accept_response.text.lower()
+
+
+def test_create_invitation_resend_after_expired_pending_invite(
+    auth_client,
+    inviter_user: User,
+    expired_invitation: Invitation,
+    session: Session,
+    mock_resend_send,
+):
+    """Re-inviting after expiry succeeds even though the old row remains used=False in DB."""
+    assert expired_invitation.organization_id is not None
+    assert expired_invitation.role_id is not None
+    expired_id = expired_invitation.id
+    invitee_email = expired_invitation.invitee_email
+    organization_id = expired_invitation.organization_id
+    old_token = expired_invitation.token
+
+    response = auth_client.post(
+        app.url_path_for("create_invitation"),
+        data={
+            "invitee_email": invitee_email,
+            "role_id": str(expired_invitation.role_id),
+            "organization_id": str(organization_id),
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303, response.text
+    session.expire_all()
+    assert session.get(Invitation, expired_id) is None
+
+    replacement = session.exec(
+        select(Invitation).where(
+            Invitation.invitee_email == invitee_email,
+            Invitation.organization_id == organization_id,
+            col(Invitation.used).is_(False),
+        )
+    ).first()
+    assert replacement is not None
+    assert replacement.token != old_token
+
+
+def test_create_invitation_resend_email_failure_restores_old_invite(
+    auth_client,
+    inviter_user: User,
+    existing_invitation: Invitation,
+    session: Session,
+    mock_resend_send,
+):
+    """Failed resend rolls back both delete and new invite creation."""
+    assert existing_invitation.id is not None
+    old_token = existing_invitation.token
+    mock_resend_send.side_effect = Exception("Simulated email send failure")
+
+    response = auth_client.post(
+        app.url_path_for("create_invitation"),
+        data={
+            "invitee_email": existing_invitation.invitee_email,
             "role_id": str(existing_invitation.role_id),
             "organization_id": str(existing_invitation.organization_id),
         },
+        follow_redirects=False,
     )
 
-    assert response.status_code == 409, (
-        f"Expected 409 Conflict, got {response.status_code}. Response: {response.text}"
-    )  # Conflict - ActiveInvitationExistsError
+    assert response.status_code == 500
+    session.expire_all()
+    restored = session.exec(
+        select(Invitation).where(Invitation.token == old_token)
+    ).first()
+    assert restored is not None
+    assert restored.id == existing_invitation.id
 
 
 def test_create_invitation_role_not_found(
