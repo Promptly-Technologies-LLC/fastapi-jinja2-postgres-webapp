@@ -25,6 +25,8 @@ from exceptions.http_exceptions import (
     InvitationEmailSendError,
     InvalidInvitationTokenError,
     InvitationNotFoundError,
+    InsufficientPermissionsError,
+    RoleNotFoundError,
 )
 from exceptions.exceptions import EmailSendFailedError
 from utils.core.htmx import is_htmx_request, append_toast
@@ -83,15 +85,12 @@ async def create_invitation(
 
     # Check if the current user has permission to invite users to this organization
     if not current_user.has_permission(ValidPermissions.INVITE_USER, organization):
-        raise HTTPException(
-            status_code=403,
-            detail="You don't have permission to invite users to this organization",
-        )
+        raise InsufficientPermissionsError()
 
     # Verify the role exists and belongs to this organization
     role = session.get(Role, role_id)
     if not role:
-        raise HTTPException(status_code=404, detail="Role not found")
+        raise RoleNotFoundError()
     if role.organization_id != organization_id:
         raise InvalidRoleForOrganizationError()
 
@@ -205,10 +204,7 @@ async def delete_invitation(
         raise OrganizationNotFoundError()
 
     if not current_user.has_permission(ValidPermissions.INVITE_USER, organization):
-        raise HTTPException(
-            status_code=403,
-            detail="You don't have permission to manage invitations for this organization",
-        )
+        raise InsufficientPermissionsError()
 
     invitation = session.get(Invitation, invitation_id)
     if not invitation or invitation.organization_id != organization_id:

@@ -9,7 +9,8 @@
         <form method="POST" action="{{ url_for('delete_invitation') }}" class="invitation-cancel-form mb-0"
               hx-post="{{ url_for('delete_invitation') }}"
               hx-target="#members-card-content"
-              hx-swap="innerHTML">
+              hx-swap="innerHTML"
+              hx-confirm="Cancel invitation for {{ inv.invitee_email }}?">
             <input type="hidden" name="invitation_id" value="{{ inv.id }}">
             <input type="hidden" name="organization_id" value="{{ organization.id }}">
             <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
