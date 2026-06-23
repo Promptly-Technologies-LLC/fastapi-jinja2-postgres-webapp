@@ -8,33 +8,14 @@ Convention: HTMX requests send the HX-Request: true header.
 - Non-HTMX paths remain unchanged (303 RedirectResponse or full-page error).
 """
 
-import pytest
 from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
 from tests.conftest import htmx_headers
 from utils.core.htmx import is_htmx_request, toast_response, append_toast
 from utils.core.rate_limit import (
-    login_ip_limiter,
-    login_email_limiter,
-    register_ip_limiter,
     forgot_password_ip_limiter,
-    forgot_password_email_limiter,
+    login_ip_limiter,
 )
-
-
-@pytest.fixture(autouse=True)
-def _reset_rate_limiters():
-    """Reset all rate limiter state between tests."""
-    yield
-    for limiter in (
-        login_ip_limiter,
-        login_email_limiter,
-        register_ip_limiter,
-        forgot_password_ip_limiter,
-        forgot_password_email_limiter,
-    ):
-        limiter._attempts.clear()
-
 
 # ---------------------------------------------------------------------------
 # 1.3 — is_htmx_request helper
