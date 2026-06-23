@@ -1,8 +1,10 @@
 """
 Add communication preference columns to the user table.
 
-SQLModel create_all() does not alter existing tables. Run this after pulling
-#189 changes if your local or deployed database predates comm_opt_in columns.
+Required when upgrading from <=0.1.27 to >0.1.27. The comm_opt_in,
+comm_updates, and comm_marketing columns were introduced in 0.1.28, and
+SQLModel create_all() does not alter existing tables. Run this against any
+local or deployed database that predates the columns.
 
 Usage:
     uv run python -m migrations.add_communication_preferences .env
@@ -93,9 +95,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    stats = add_communication_preference_columns(
-        env_file=args.env, apply=args.apply
-    )
+    stats = add_communication_preference_columns(env_file=args.env, apply=args.apply)
     mode = "APPLY" if args.apply else "DRY-RUN"
     if stats.all_present:
         print(f"[{mode}] All communication preference columns already exist.")
