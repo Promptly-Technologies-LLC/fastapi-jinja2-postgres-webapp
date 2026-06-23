@@ -450,6 +450,9 @@ def test_register_page_shows_password_requirements(unauth_client: TestClient):
     assert 'name="comm_opt_in"' in html
     assert 'name="comm_updates"' in html
     assert 'name="comm_marketing"' in html
+
+
+def test_register_page_confirm_password_has_autocomplete(unauth_client: TestClient):
     """Issue #156: Both password fields must have autocomplete='new-password' for Chrome autofill."""
     response = unauth_client.get(app.url_path_for("read_register"))
     assert response.status_code == 200
