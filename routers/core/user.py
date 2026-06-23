@@ -10,9 +10,8 @@ from utils.core.models import (
     AccountEmail,
     DataIntegrityError,
     Organization,
-    Role,
-    Invitation,
 )
+from utils.core.organizations import load_org_for_members_partial
 from utils.core.auth import MAX_EMAILS_PER_ACCOUNT
 from utils.core.dependencies import (
     get_authenticated_user,
@@ -38,32 +37,6 @@ from utils.core.htmx import is_htmx_request, append_toast
 
 router = APIRouter(prefix="/user", tags=["user"])
 templates = Jinja2Templates(directory="templates")
-
-
-def _load_org_for_members_partial(
-    session: Session, organization_id: int, user: User
-) -> tuple:
-    """Re-query org with members fully loaded and compute user_permissions."""
-    organization = session.exec(
-        select(Organization)
-        .where(Organization.id == organization_id)
-        .options(
-            selectinload(Organization.roles)
-            .selectinload(Role.users)
-            .selectinload(User.account),
-            selectinload(Organization.roles)
-            .selectinload(Role.users)
-            .selectinload(User.roles),
-            selectinload(Organization.roles).selectinload(Role.permissions),
-        )
-    ).first()
-    user_permissions = set()
-    for role in user.roles:
-        if role.organization_id == organization_id:
-            for permission in role.permissions:
-                user_permissions.add(permission.name)
-    active_invitations = Invitation.get_active_for_org(session, organization_id)
-    return organization, user_permissions, active_invitations
 
 
 # --- Routes ---
@@ -267,7 +240,7 @@ def update_user_role(
 
     if is_htmx_request(request):
         organization, user_permissions, active_invitations = (
-            _load_org_for_members_partial(session, organization_id, user)
+            load_org_for_members_partial(session, organization_id, user)
         )
         response = templates.TemplateResponse(
             request,
@@ -341,7 +314,7 @@ def remove_user_from_organization(
 
     if is_htmx_request(request):
         organization, user_permissions, active_invitations = (
-            _load_org_for_members_partial(session, organization_id, user)
+            load_org_for_members_partial(session, organization_id, user)
         )
         response = templates.TemplateResponse(
             request,

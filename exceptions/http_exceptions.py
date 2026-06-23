@@ -43,10 +43,11 @@ class PasswordValidationError(HTTPException):
 
 
 class InsufficientPermissionsError(HTTPException):
-    def __init__(self):
-        super().__init__(
-            status_code=403, detail="You don't have permission to perform this action"
-        )
+    def __init__(
+        self,
+        message: str = "You don't have permission to perform this action",
+    ):
+        super().__init__(status_code=403, detail=message)
 
 
 class OrganizationSetupError(HTTPException):
@@ -175,6 +176,13 @@ class InvitationEmailSendError(HTTPException):
             status_code=500,  # Internal Server Error seems appropriate
             detail="Failed to send invitation email. Please try again later or contact support.",
         )
+
+
+class InvitationNotFoundError(HTTPException):
+    """Raised when an invitation ID does not exist."""
+
+    def __init__(self):
+        super().__init__(status_code=404, detail="Invitation not found")
 
 
 class InvalidInvitationTokenError(HTTPException):
