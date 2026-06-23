@@ -174,6 +174,9 @@ class RolePermissionLink(SQLModel, table=True):
 
 class UserBase(SQLModel):
     name: Optional[str] = None
+    comm_opt_in: bool = Field(default=False)
+    comm_updates: bool = Field(default=False)
+    comm_marketing: bool = Field(default=False)
 
 
 class UserAvatar(SQLModel, table=True):

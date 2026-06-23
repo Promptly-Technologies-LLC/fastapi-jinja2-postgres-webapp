@@ -278,3 +278,86 @@ def test_profile_no_organizations(
 
     # Should show "no organizations" message
     assert "You are not a member of any organizations" in response.text
+
+
+def test_read_profile_shows_communication_preferences(
+    auth_client: TestClient, test_user: User
+):
+    response = auth_client.get(app.url_path_for("read_profile"))
+    assert response.status_code == 200
+    html = response.text
+    assert "Communication Preferences" in html
+    assert 'name="comm_opt_in"' in html
+    assert 'name="comm_updates"' in html
+    assert 'name="comm_marketing"' in html
+    assert "Save Preferences" in html
+
+
+def test_update_communication_preferences_unauthorized(unauth_client: TestClient):
+    response = unauth_client.post(
+        app.url_path_for("update_communication_preferences"),
+        data={"comm_opt_in": "on"},
+    )
+    assert response.status_code == 303
+    assert response.headers["location"] == app.url_path_for("read_login")
+
+
+def test_update_communication_preferences(
+    auth_client: TestClient, test_user: User, session: Session
+):
+    response = auth_client.post(
+        app.url_path_for("update_communication_preferences"),
+        data={
+            "comm_opt_in": "on",
+            "comm_updates": "on",
+            "comm_marketing": "on",
+        },
+    )
+    assert response.status_code == 303
+    assert response.headers["location"] == app.url_path_for("read_profile")
+
+    session.refresh(test_user)
+    assert test_user.comm_opt_in is True
+    assert test_user.comm_updates is True
+    assert test_user.comm_marketing is True
+
+
+def test_update_communication_preferences_master_off_clears_subs(
+    auth_client: TestClient, test_user: User, session: Session
+):
+    test_user.comm_opt_in = True
+    test_user.comm_updates = True
+    test_user.comm_marketing = True
+    session.add(test_user)
+    session.commit()
+
+    response = auth_client.post(
+        app.url_path_for("update_communication_preferences"),
+        data={},
+    )
+    assert response.status_code == 303
+
+    session.refresh(test_user)
+    assert test_user.comm_opt_in is False
+    assert test_user.comm_updates is False
+    assert test_user.comm_marketing is False
+
+
+def test_update_communication_preferences_htmx(
+    auth_client: TestClient, test_user: User, session: Session
+):
+    response = auth_client.post(
+        app.url_path_for("update_communication_preferences"),
+        data={
+            "comm_opt_in": "on",
+            "comm_updates": "on",
+        },
+        headers={"HX-Request": "true"},
+    )
+    assert response.status_code == 200
+    assert "Communication preferences updated." in response.text
+
+    session.refresh(test_user)
+    assert test_user.comm_opt_in is True
+    assert test_user.comm_updates is True
+    assert test_user.comm_marketing is False
