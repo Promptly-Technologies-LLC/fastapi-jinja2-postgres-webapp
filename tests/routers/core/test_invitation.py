@@ -737,3 +737,180 @@ def test_organization_page_invite_form_visibility(
     # Example check if invitations are shown (if any exist)
     if "Pending Invitations" in member_response.text:
         assert 'action="/invitations"' not in member_response.text
+
+
+# --- Delete Invitation Tests ---
+
+
+def test_delete_invitation_success(
+    auth_client_owner,
+    test_organization: Organization,
+    session: Session,
+    existing_invitation: Invitation,
+):
+    """Test that an authorized user can delete a pending invitation."""
+    assert test_organization.id is not None
+    assert existing_invitation.id is not None
+    invitation_id = existing_invitation.id
+
+    response = auth_client_owner.post(
+        app.url_path_for("delete_invitation"),
+        data={
+            "invitation_id": str(invitation_id),
+            "organization_id": str(test_organization.id),
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/organizations/{test_organization.id}"
+
+    session.expire_all()
+    assert session.get(Invitation, invitation_id) is None
+
+
+def test_delete_invitation_unauthorized(
+    auth_client_member,
+    test_organization: Organization,
+    existing_invitation: Invitation,
+):
+    """Test that users without INVITE_USER cannot delete invitations."""
+    assert test_organization.id is not None
+    assert existing_invitation.id is not None
+
+    response = auth_client_member.post(
+        app.url_path_for("delete_invitation"),
+        data={
+            "invitation_id": str(existing_invitation.id),
+            "organization_id": str(test_organization.id),
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 403
+
+
+def test_delete_invitation_not_found(
+    auth_client_owner,
+    test_organization: Organization,
+):
+    """Test deleting a non-existent invitation returns 404."""
+    assert test_organization.id is not None
+
+    response = auth_client_owner.post(
+        app.url_path_for("delete_invitation"),
+        data={
+            "invitation_id": "99999",
+            "organization_id": str(test_organization.id),
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 404
+
+
+def test_delete_invitation_wrong_organization(
+    auth_client_owner,
+    test_organization: Organization,
+    session: Session,
+    member_role: Role,
+):
+    """Test deleting an invitation with mismatched organization_id returns 404."""
+    assert test_organization.id is not None
+    assert member_role.id is not None
+
+    other_org = Organization(name="Other Org For Delete Test")
+    session.add(other_org)
+    session.commit()
+    session.refresh(other_org)
+    assert other_org.id is not None
+
+    other_invitation = Invitation(
+        organization_id=other_org.id,
+        role_id=member_role.id,
+        invitee_email="otherorg@example.com",
+        token="other-org-token",
+    )
+    session.add(other_invitation)
+    session.commit()
+    session.refresh(other_invitation)
+
+    response = auth_client_owner.post(
+        app.url_path_for("delete_invitation"),
+        data={
+            "invitation_id": str(other_invitation.id),
+            "organization_id": str(test_organization.id),
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 404
+    session.expire_all()
+    assert session.get(Invitation, other_invitation.id) is not None
+
+
+def test_delete_invitation_invalidates_token(
+    auth_client_owner,
+    test_organization: Organization,
+    session: Session,
+    existing_invitation: Invitation,
+):
+    """Test that a deleted invitation's accept link no longer works."""
+    assert test_organization.id is not None
+    assert existing_invitation.id is not None
+    token = existing_invitation.token
+
+    auth_client_owner.post(
+        app.url_path_for("delete_invitation"),
+        data={
+            "invitation_id": str(existing_invitation.id),
+            "organization_id": str(test_organization.id),
+        },
+        follow_redirects=False,
+    )
+
+    accept_response = auth_client_owner.get(
+        app.url_path_for("accept_invitation"),
+        params={"token": token},
+        follow_redirects=False,
+    )
+    assert accept_response.status_code == 404
+
+
+def test_organization_page_shows_cancel_invitation_button(
+    auth_client_owner,
+    test_organization: Organization,
+    existing_invitation: Invitation,
+):
+    """Test that users with INVITE_USER see a Cancel button on pending invitations."""
+    assert test_organization.id is not None
+
+    response = auth_client_owner.get(
+        app.url_path_for("read_organization", org_id=test_organization.id),
+    )
+
+    assert response.status_code == 200
+    assert (
+        f'action="http://testserver{app.url_path_for("delete_invitation")}"'
+        in response.text.replace("&amp;", "&")
+    )
+    assert "Cancel" in response.text
+
+
+def test_organization_page_hides_cancel_invitation_button_for_members(
+    auth_client_member,
+    test_organization: Organization,
+    existing_invitation: Invitation,
+):
+    """Test that regular members do not see invitation cancel controls."""
+    assert test_organization.id is not None
+
+    response = auth_client_member.get(
+        app.url_path_for("read_organization", org_id=test_organization.id),
+    )
+
+    assert response.status_code == 200
+    assert (
+        f'action="http://testserver{app.url_path_for("delete_invitation")}"'
+        not in response.text.replace("&amp;", "&")
+    )

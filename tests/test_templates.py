@@ -99,6 +99,23 @@ def test_invite_member_form_has_hx_post():
     assert "hx-post" in content
 
 
+def test_pending_invitations_include_cancel_confirm():
+    content = Path("templates/organization/partials/invitations_list.html").read_text()
+    assert "url_for('delete_invitation')" in content
+    assert "hx-confirm" in content
+
+
+def test_remove_member_forms_include_confirm():
+    for path in (
+        "templates/organization/modals/members_card.html",
+        "templates/organization/partials/members_table.html",
+        "templates/organization/partials/member_row.html",
+    ):
+        content = Path(path).read_text()
+        assert "url_for('remove_user_from_organization')" in content
+        assert "hx-confirm" in content
+
+
 def test_edit_organization_form_has_hx_post():
     content = Path(
         "templates/organization/modals/edit_organization_modal.html"

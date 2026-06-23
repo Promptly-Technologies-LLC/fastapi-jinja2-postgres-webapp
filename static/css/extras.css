@@ -6,3 +6,18 @@
 input:invalid:not(:placeholder-shown) + .invalid-feedback {
     display: block;
 }
+
+/* Align pending-invitation Cancel buttons with card-header actions (e.g. Invite Member). */
+.card-body .invitation-list.list-group-flush {
+    margin-left: calc(-1 * var(--bs-card-spacer-x));
+    margin-right: calc(-1 * var(--bs-card-spacer-x));
+}
+
+.card-body .invitation-list .invitation-list-item {
+    padding-left: var(--bs-card-spacer-x);
+    padding-right: var(--bs-card-spacer-x);
+}
+
+.invitation-cancel-form .btn {
+    min-width: 6.75rem;
+}

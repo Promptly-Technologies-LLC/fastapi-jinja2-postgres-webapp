@@ -968,6 +968,68 @@ def test_create_invitation_htmx_includes_success_toast(
     assert "Invitation sent successfully" in response.text
 
 
+def test_delete_invitation_htmx_returns_members_partial(
+    auth_client_owner,
+    test_organization,
+    member_role,
+    session,
+):
+    from utils.core.models import Invitation
+
+    invitation = Invitation(
+        organization_id=test_organization.id,
+        role_id=member_role.id,
+        invitee_email="cancelme@example.com",
+        token="htmx-delete-token",
+    )
+    session.add(invitation)
+    session.commit()
+    session.refresh(invitation)
+
+    response = auth_client_owner.post(
+        "/invitations/delete",
+        data={
+            "invitation_id": str(invitation.id),
+            "organization_id": str(test_organization.id),
+        },
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 200
+    assert "<!DOCTYPE html>" not in response.text
+    assert 'id="invitations-list"' in response.text
+    assert "cancelme@example.com" not in response.text
+
+
+def test_delete_invitation_htmx_includes_success_toast(
+    auth_client_owner,
+    test_organization,
+    member_role,
+    session,
+):
+    from utils.core.models import Invitation
+
+    invitation = Invitation(
+        organization_id=test_organization.id,
+        role_id=member_role.id,
+        invitee_email="toastcancel@example.com",
+        token="htmx-delete-toast-token",
+    )
+    session.add(invitation)
+    session.commit()
+    session.refresh(invitation)
+
+    response = auth_client_owner.post(
+        "/invitations/delete",
+        data={
+            "invitation_id": str(invitation.id),
+            "organization_id": str(test_organization.id),
+        },
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 200
+    assert "Invitation cancelled successfully" in response.text
+
+
 def test_update_user_role_htmx_includes_success_toast(
     auth_client_owner, org_member_user, test_organization, member_role
 ):
