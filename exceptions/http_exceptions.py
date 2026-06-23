@@ -146,16 +146,6 @@ class UserIsAlreadyMemberError(HTTPException):
         )
 
 
-class ActiveInvitationExistsError(HTTPException):
-    """Raised when trying to invite a user for whom an active invitation already exists."""
-
-    def __init__(self):
-        super().__init__(
-            status_code=409,
-            detail="An active invitation already exists for this email address in this organization.",
-        )
-
-
 class InvalidRoleForOrganizationError(HTTPException):
     """Raised when a role provided does not belong to the target organization.
     Note: If the role ID simply doesn't exist, a standard 404 RoleNotFoundError should be raised.
