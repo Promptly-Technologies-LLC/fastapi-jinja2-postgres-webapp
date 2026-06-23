@@ -85,6 +85,91 @@ def test_register_endpoint(unauth_client: TestClient, session: Session):
     user = session.exec(select(User).where(User.account_id == account.id)).first()
     assert user is not None
     assert user.name == "New User"
+    assert user.comm_opt_in is False
+    assert user.comm_updates is False
+    assert user.comm_marketing is False
+
+
+def test_register_with_communication_preferences(
+    unauth_client: TestClient, session: Session
+):
+    response = unauth_client.post(
+        app.url_path_for("register"),
+        data={
+            "name": "Comm Prefs User",
+            "email": "commprefs@example.com",
+            "password": "NewPass123!@#",
+            "confirm_password": "NewPass123!@#",
+            "comm_opt_in": "on",
+            "comm_updates": "on",
+            "comm_marketing": "on",
+        },
+    )
+    assert response.status_code == 303
+
+    account = session.exec(
+        select(Account).where(Account.email == "commprefs@example.com")
+    ).first()
+    assert account is not None
+    user = session.exec(select(User).where(User.account_id == account.id)).first()
+    assert user is not None
+    assert user.comm_opt_in is True
+    assert user.comm_updates is True
+    assert user.comm_marketing is True
+
+
+def test_register_communication_preferences_master_off_ignores_subs(
+    unauth_client: TestClient, session: Session
+):
+    response = unauth_client.post(
+        app.url_path_for("register"),
+        data={
+            "name": "Tampered Subs User",
+            "email": "tamperedsubs@example.com",
+            "password": "NewPass123!@#",
+            "confirm_password": "NewPass123!@#",
+            "comm_updates": "on",
+            "comm_marketing": "on",
+        },
+    )
+    assert response.status_code == 303
+
+    account = session.exec(
+        select(Account).where(Account.email == "tamperedsubs@example.com")
+    ).first()
+    assert account is not None
+    user = session.exec(select(User).where(User.account_id == account.id)).first()
+    assert user is not None
+    assert user.comm_opt_in is False
+    assert user.comm_updates is False
+    assert user.comm_marketing is False
+
+
+def test_register_with_communication_preferences_updates_only(
+    unauth_client: TestClient, session: Session
+):
+    response = unauth_client.post(
+        app.url_path_for("register"),
+        data={
+            "name": "Updates Only User",
+            "email": "updatesonly@example.com",
+            "password": "NewPass123!@#",
+            "confirm_password": "NewPass123!@#",
+            "comm_opt_in": "on",
+            "comm_updates": "on",
+        },
+    )
+    assert response.status_code == 303
+
+    account = session.exec(
+        select(Account).where(Account.email == "updatesonly@example.com")
+    ).first()
+    assert account is not None
+    user = session.exec(select(User).where(User.account_id == account.id)).first()
+    assert user is not None
+    assert user.comm_opt_in is True
+    assert user.comm_updates is True
+    assert user.comm_marketing is False
 
 
 def test_register_creates_account_email_row(
@@ -362,6 +447,9 @@ def test_register_page_shows_password_requirements(unauth_client: TestClient):
     assert "special" in html.lower(), (
         "Page should mention special character requirement"
     )
+    assert 'name="comm_opt_in"' in html
+    assert 'name="comm_updates"' in html
+    assert 'name="comm_marketing"' in html
 
 
 def test_register_page_confirm_password_has_autocomplete(unauth_client: TestClient):

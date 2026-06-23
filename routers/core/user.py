@@ -4,6 +4,7 @@ from sqlmodel import Session, select, col
 from typing import Optional, List
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import selectinload
+import os
 from utils.core.models import (
     User,
     UserAvatar,
@@ -33,7 +34,11 @@ from exceptions.http_exceptions import (
     OrganizationNotFoundError,
 )
 from routers.core.organization import router as organization_router
-from utils.core.htmx import is_htmx_request, append_toast
+from utils.core.htmx import is_htmx_request, append_toast, toast_response
+from utils.core.communication_preferences import (
+    parse_communication_preferences,
+    apply_communication_preferences,
+)
 
 router = APIRouter(prefix="/user", tags=["user"])
 templates = Jinja2Templates(directory="templates")
@@ -68,6 +73,7 @@ async def read_profile(
             "user": user,
             "account_emails": account_emails,
             "max_emails": MAX_EMAILS_PER_ACCOUNT,
+            "host_name": os.getenv("HOST_NAME", "our platform"),
         },
     )
 
@@ -168,6 +174,31 @@ async def update_profile(
             response.headers["content-length"] = str(len(response.body))
         return append_toast(
             response, request, templates, "Profile updated successfully."
+        )
+    return RedirectResponse(url=router.url_path_for("read_profile"), status_code=303)
+
+
+@router.post("/communication-preferences", response_class=RedirectResponse)
+async def update_communication_preferences(
+    request: Request,
+    comm_opt_in: Optional[str] = Form(None),
+    comm_updates: Optional[str] = Form(None),
+    comm_marketing: Optional[str] = Form(None),
+    user: User = Depends(get_authenticated_user),
+    session: Session = Depends(get_session),
+) -> Response:
+    apply_communication_preferences(
+        user,
+        parse_communication_preferences(comm_opt_in, comm_updates, comm_marketing),
+    )
+    session.commit()
+    session.refresh(user)
+
+    if is_htmx_request(request):
+        return toast_response(
+            request,
+            templates,
+            "Communication preferences updated.",
         )
     return RedirectResponse(url=router.url_path_for("read_profile"), status_code=303)
 
