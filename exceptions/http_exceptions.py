@@ -146,16 +146,6 @@ class UserIsAlreadyMemberError(HTTPException):
         )
 
 
-class ActiveInvitationExistsError(HTTPException):
-    """Raised when trying to invite a user for whom an active invitation already exists."""
-
-    def __init__(self):
-        super().__init__(
-            status_code=409,
-            detail="An active invitation already exists for this email address in this organization.",
-        )
-
-
 class InvalidRoleForOrganizationError(HTTPException):
     """Raised when a role provided does not belong to the target organization.
     Note: If the role ID simply doesn't exist, a standard 404 RoleNotFoundError should be raised.
@@ -186,10 +176,31 @@ class InvitationNotFoundError(HTTPException):
 
 
 class InvalidInvitationTokenError(HTTPException):
-    """Raised when an invitation token is invalid, expired, or not found."""
+    """Raised when an invitation token is missing, superseded, or already used."""
 
     def __init__(self):
-        super().__init__(status_code=404, detail="Invitation not found or expired")
+        super().__init__(
+            status_code=404,
+            detail=(
+                "This invitation link is no longer valid. "
+                "If you were invited again recently, use the link from the "
+                "most recent invitation email."
+            ),
+        )
+
+
+class ExpiredInvitationTokenError(HTTPException):
+    """Raised when an invitation token exists but has passed its expiry date."""
+
+    def __init__(self):
+        super().__init__(
+            status_code=404,
+            detail=(
+                "This invitation link has expired. Ask your organization "
+                "administrator to send a new invitation, then use the link in "
+                "the latest email."
+            ),
+        )
 
 
 class InvitationEmailMismatchError(HTTPException):

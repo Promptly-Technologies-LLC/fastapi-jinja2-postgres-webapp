@@ -21,3 +21,8 @@ input:invalid:not(:placeholder-shown) + .invalid-feedback {
 .invitation-cancel-form .btn {
     min-width: 6.75rem;
 }
+
+.invitation-resend-form .btn-invitation-resend,
+.invitation-cancel-form .btn {
+    min-width: 6.75rem;
+}

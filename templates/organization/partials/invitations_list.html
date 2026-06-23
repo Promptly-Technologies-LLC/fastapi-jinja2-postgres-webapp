@@ -1,20 +1,41 @@
 {# Partial: <li> items for pending invitations. Swapped into <ul id="invitations-list">. #}
-{# Set show_invitation_cancel=true via {% with %} to render Cancel controls (members card only). #}
-{% for inv in active_invitations %}
+{# Set show_invitation_cancel=true via {% with %} to render Resend/Cancel controls (members card only). #}
+{% for inv in pending_invitations %}
 <li class="list-group-item invitation-list-item">
-    <div class="d-flex align-items-center">
-        <span class="me-auto">{{ inv.invitee_email }} (Role: {{ inv.role.name }})</span>
-        <small class="text-muted invitation-list-expiry me-3">Expires: {{ inv.expires_at.strftime('%Y-%m-%d') }}</small>
+    <div class="d-flex align-items-center flex-wrap gap-2">
+        <span class="me-auto">
+            {{ inv.invitee_email }} (Role: {{ inv.role.name }})
+            {% if inv.is_expired() %}
+            <span class="badge bg-warning text-dark ms-1">Expired</span>
+            {% else %}
+            <span class="badge bg-success ms-1">Active</span>
+            {% endif %}
+        </span>
+        <small class="text-muted invitation-list-expiry">Expires: {{ inv.expires_at.strftime('%Y-%m-%d') }}</small>
         {% if show_invitation_cancel is defined and show_invitation_cancel and ValidPermissions is defined and user_permissions is defined and ValidPermissions.INVITE_USER in user_permissions %}
-        <form method="POST" action="{{ url_for('delete_invitation') }}" class="invitation-cancel-form mb-0"
-              hx-post="{{ url_for('delete_invitation') }}"
-              hx-target="#members-card-content"
-              hx-swap="innerHTML"
-              hx-confirm="Cancel invitation for {{ inv.invitee_email }}?">
-            <input type="hidden" name="invitation_id" value="{{ inv.id }}">
-            <input type="hidden" name="organization_id" value="{{ organization.id }}">
-            <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
-        </form>
+        <div class="d-flex flex-wrap gap-2 invitation-actions-cell">
+            <form method="POST" action="{{ url_for('resend_invitation') }}" class="invitation-resend-form mb-0"
+                  hx-post="{{ url_for('resend_invitation') }}"
+                  hx-target="#members-card-content"
+                  hx-swap="innerHTML">
+                <input type="hidden" name="invitation_id" value="{{ inv.id }}">
+                <input type="hidden" name="organization_id" value="{{ organization.id }}">
+                <button type="submit" class="btn btn-sm btn-outline-primary btn-invitation-resend">
+                    Resend
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('delete_invitation') }}" class="invitation-cancel-form mb-0"
+                  hx-post="{{ url_for('delete_invitation') }}"
+                  hx-target="#members-card-content"
+                  hx-swap="innerHTML"
+                  hx-confirm="Cancel invitation for {{ inv.invitee_email }}?">
+                <input type="hidden" name="invitation_id" value="{{ inv.id }}">
+                <input type="hidden" name="organization_id" value="{{ organization.id }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                    Cancel
+                </button>
+            </form>
+        </div>
         {% endif %}
     </div>
 </li>

@@ -31,8 +31,8 @@ def load_org_for_members_partial(
         )
     ).first()
     user_permissions = _user_permissions_for_org(user, organization_id)
-    active_invitations = Invitation.get_active_for_org(session, organization_id)
-    return organization, user_permissions, active_invitations
+    pending_invitations = Invitation.get_pending_for_org(session, organization_id)
+    return organization, user_permissions, pending_invitations
 
 
 def load_org_for_roles_partial(

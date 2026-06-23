@@ -102,6 +102,7 @@ def test_invite_member_form_has_hx_post():
 def test_pending_invitations_include_cancel_confirm():
     content = Path("templates/organization/partials/invitations_list.html").read_text()
     assert "url_for('delete_invitation')" in content
+    assert "url_for('resend_invitation')" in content
     assert "hx-confirm" in content
 
 
