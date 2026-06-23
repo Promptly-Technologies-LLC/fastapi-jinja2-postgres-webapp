@@ -1,4 +1,3 @@
-import pytest
 from fastapi.testclient import TestClient
 from starlette.datastructures import URLPath
 from sqlmodel import Session, select
@@ -28,27 +27,12 @@ from utils.core.auth import (
     get_password_hash,
 )
 from utils.core.rate_limit import (
-    login_ip_limiter,
-    login_email_limiter,
-    register_ip_limiter,
-    forgot_password_ip_limiter,
     forgot_password_email_limiter,
+    forgot_password_ip_limiter,
+    login_email_limiter,
+    login_ip_limiter,
+    register_ip_limiter,
 )
-
-
-@pytest.fixture(autouse=True)
-def _reset_rate_limiters():
-    """Reset all rate limiter state between tests to avoid cross-test pollution."""
-    yield
-    for limiter in (
-        login_ip_limiter,
-        login_email_limiter,
-        register_ip_limiter,
-        forgot_password_ip_limiter,
-        forgot_password_email_limiter,
-    ):
-        limiter._attempts.clear()
-
 
 # --- API Endpoint Tests ---
 
