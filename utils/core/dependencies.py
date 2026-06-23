@@ -1,5 +1,5 @@
 import logging
-from fastapi import Depends, Form, Request
+from fastapi import Depends, Form, Query, Request
 from pydantic import EmailStr
 from sqlmodel import Session, select
 from sqlalchemy.orm import selectinload
@@ -31,6 +31,7 @@ from exceptions.http_exceptions import (
     PasswordValidationError,
 )
 from exceptions.exceptions import NeedsNewTokens
+from utils.core.invitations import get_invitation_token_warning
 
 logger = logging.getLogger(__name__)
 
@@ -281,6 +282,24 @@ def require_unauthenticated_client(
     Raises AlreadyAuthenticatedError (caught by exception handler) if a user is found.
     """
     if user:
+        raise AlreadyAuthenticatedError()
+
+
+def require_unauthenticated_unless_invitation_warning(
+    invitation_token: Optional[str] = Query(None),
+    user: Optional[User] = Depends(get_optional_user),
+    session: Session = Depends(get_session),
+) -> None:
+    """
+    Allow authenticated users to view login/register when an invitation token
+    warning must be shown (expired or invalid invite links).
+    """
+    warning = (
+        get_invitation_token_warning(session, invitation_token)
+        if invitation_token
+        else None
+    )
+    if user and not warning:
         raise AlreadyAuthenticatedError()
 
 
