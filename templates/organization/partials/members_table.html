@@ -47,7 +47,8 @@
                     <form method="POST" action="{{ url_for('remove_user_from_organization') }}" class="d-inline"
                           hx-post="{{ url_for('remove_user_from_organization') }}"
                           hx-target="#members-card-content"
-                          hx-swap="innerHTML">
+                          hx-swap="innerHTML"
+                          hx-confirm="Remove {{ member.name }} from this organization?">
                         <input type="hidden" name="user_id" value="{{ member.id }}">
                         <input type="hidden" name="organization_id" value="{{ organization.id }}">
                         <button type="submit" class="btn btn-sm btn-outline-danger" {% if member.id == user.id %}disabled{% endif %}>
@@ -65,21 +66,12 @@
 {% endif %}
 
 <hr class="my-4">
-<h4>Pending Invitations</h4>
-{% if active_invitations %}
-    <ul class="list-group list-group-flush" id="invitations-list">
-    {% for inv in active_invitations %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-            <span>{{ inv.invitee_email }} (Role: {{ inv.role.name }})</span>
-            <small class="text-muted">Expires: {{ inv.expires_at.strftime('%Y-%m-%d') }}</small>
-        </li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <ul class="list-group list-group-flush" id="invitations-list">
-        <li class="list-group-item text-muted">No pending invitations.</li>
-    </ul>
-{% endif %}
+<h4 class="mb-3">Pending Invitations</h4>
+<ul class="list-group list-group-flush invitation-list" id="invitations-list">
+{% with show_invitation_cancel=true %}
+{% include 'organization/partials/invitations_list.html' %}
+{% endwith %}
+</ul>
 
 <div id="member-role-modals-container" hx-swap-oob="true">
 {% if ValidPermissions.EDIT_USER_ROLE in user_permissions %}
