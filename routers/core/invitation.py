@@ -1,7 +1,7 @@
 from uuid import uuid4
 from typing import Optional
 from fastapi import APIRouter, Depends, Form, Query, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import HTTPException
 from pydantic import EmailStr
@@ -15,6 +15,7 @@ from utils.core.dependencies import (
 )
 from utils.core.models import User, Role, Account, Invitation, Organization
 from utils.core.enums import ValidPermissions
+from utils.app.enums import AppPermissions
 from utils.core.invitations import send_invitation_email, process_invitation
 from exceptions.http_exceptions import (
     UserIsAlreadyMemberError,
@@ -23,15 +24,15 @@ from exceptions.http_exceptions import (
     OrganizationNotFoundError,
     InvitationEmailSendError,
     InvalidInvitationTokenError,
+    InvitationNotFoundError,
+    InsufficientPermissionsError,
+    RoleNotFoundError,
 )
 from exceptions.exceptions import EmailSendFailedError
 from utils.core.htmx import is_htmx_request, append_toast
-
-# Import the account router to generate URLs for login/register
+from utils.core.organizations import load_org_for_members_partial
 from routers.core.account import router as account_router
-from routers.core.organization import (
-    router as org_router,
-)  # Already imported, check usage
+from routers.core.organization import router as org_router
 
 # Setup logger
 logger = getLogger("uvicorn.error")
@@ -80,15 +81,14 @@ async def create_invitation(
 
     # Check if the current user has permission to invite users to this organization
     if not current_user.has_permission(ValidPermissions.INVITE_USER, organization):
-        raise HTTPException(
-            status_code=403,
-            detail="You don't have permission to invite users to this organization",
+        raise InsufficientPermissionsError(
+            "You don't have permission to invite users to this organization"
         )
 
     # Verify the role exists and belongs to this organization
     role = session.get(Role, role_id)
     if not role:
-        raise HTTPException(status_code=404, detail="Role not found")
+        raise RoleNotFoundError()
     if role.organization_id != organization_id:
         raise InvalidRoleForOrganizationError()
 
@@ -161,15 +161,76 @@ async def create_invitation(
 
     # HTMX: return partial; non-HTMX: PRG redirect
     if is_htmx_request(request):
-        active_invitations = Invitation.get_active_for_org(session, organization_id)
+        organization, user_permissions, active_invitations = (
+            load_org_for_members_partial(session, organization_id, current_user)
+        )
         response = templates.TemplateResponse(
             request,
-            "organization/partials/invitations_list.html",
-            {"active_invitations": active_invitations},
+            "organization/partials/members_table.html",
+            {
+                "organization": organization,
+                "active_invitations": active_invitations,
+                "user": current_user,
+                "user_permissions": user_permissions,
+                "ValidPermissions": ValidPermissions,
+                "all_permissions": list(ValidPermissions) + list(AppPermissions),
+            },
         )
         response.headers["HX-Trigger"] = "modalDismiss"
         return append_toast(
             response, request, templates, "Invitation sent successfully."
+        )
+    return RedirectResponse(url=f"/organizations/{organization_id}", status_code=303)
+
+
+@router.post("/delete", name="delete_invitation", response_class=RedirectResponse)
+async def delete_invitation(
+    request: Request,
+    current_user: User = Depends(get_authenticated_user),
+    session: Session = Depends(get_session),
+    invitation_id: int = Form(
+        ..., title="Invitation ID", description="ID of the invitation to delete"
+    ),
+    organization_id: int = Form(
+        ...,
+        title="Organization ID",
+        description="ID of the organization the invitation belongs to",
+    ),
+) -> Response:
+    organization = session.get(Organization, organization_id)
+    if not organization:
+        raise OrganizationNotFoundError()
+
+    if not current_user.has_permission(ValidPermissions.INVITE_USER, organization):
+        raise InsufficientPermissionsError(
+            "You don't have permission to cancel invitations for this organization"
+        )
+
+    invitation = session.get(Invitation, invitation_id)
+    if not invitation or invitation.organization_id != organization_id:
+        raise InvitationNotFoundError()
+
+    session.delete(invitation)
+    session.commit()
+
+    if is_htmx_request(request):
+        organization, user_permissions, active_invitations = (
+            load_org_for_members_partial(session, organization_id, current_user)
+        )
+        response = templates.TemplateResponse(
+            request,
+            "organization/partials/members_table.html",
+            {
+                "organization": organization,
+                "active_invitations": active_invitations,
+                "user": current_user,
+                "user_permissions": user_permissions,
+                "ValidPermissions": ValidPermissions,
+                "all_permissions": list(ValidPermissions) + list(AppPermissions),
+            },
+        )
+        return append_toast(
+            response, request, templates, "Invitation cancelled successfully."
         )
     return RedirectResponse(url=f"/organizations/{organization_id}", status_code=303)
 
