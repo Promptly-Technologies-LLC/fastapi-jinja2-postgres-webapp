@@ -1,5 +1,7 @@
+from typing import Any, cast
+
 from sqlmodel import Session, select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import InstrumentedAttribute, selectinload
 
 from utils.core.models import Organization, Role, User, Invitation
 
@@ -21,13 +23,15 @@ def load_org_for_members_partial(
         select(Organization)
         .where(Organization.id == organization_id)
         .options(
-            selectinload(Organization.roles)
-            .selectinload(Role.users)
-            .selectinload(User.account),
-            selectinload(Organization.roles)
-            .selectinload(Role.users)
-            .selectinload(User.roles),
-            selectinload(Organization.roles).selectinload(Role.permissions),
+            selectinload(cast(InstrumentedAttribute[Any], Organization.roles))
+            .selectinload(cast(InstrumentedAttribute[Any], Role.users))
+            .selectinload(cast(InstrumentedAttribute[Any], User.account)),
+            selectinload(cast(InstrumentedAttribute[Any], Organization.roles))
+            .selectinload(cast(InstrumentedAttribute[Any], Role.users))
+            .selectinload(cast(InstrumentedAttribute[Any], User.roles)),
+            selectinload(
+                cast(InstrumentedAttribute[Any], Organization.roles)
+            ).selectinload(cast(InstrumentedAttribute[Any], Role.permissions)),
         )
     ).first()
     user_permissions = _user_permissions_for_org(user, organization_id)
@@ -43,8 +47,12 @@ def load_org_for_roles_partial(
         select(Organization)
         .where(Organization.id == organization_id)
         .options(
-            selectinload(Organization.roles).selectinload(Role.users),
-            selectinload(Organization.roles).selectinload(Role.permissions),
+            selectinload(
+                cast(InstrumentedAttribute[Any], Organization.roles)
+            ).selectinload(cast(InstrumentedAttribute[Any], Role.users)),
+            selectinload(
+                cast(InstrumentedAttribute[Any], Organization.roles)
+            ).selectinload(cast(InstrumentedAttribute[Any], Role.permissions)),
         )
     ).first()
     user_permissions = _user_permissions_for_org(user, organization_id)

@@ -26,6 +26,14 @@ from utils.core.auth import (
 )
 from main import app
 from datetime import datetime, UTC, timedelta
+from utils.core.rate_limit import clear_all_rate_limiters
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limiters() -> Generator[None, None, None]:
+    clear_all_rate_limiters()
+    yield
+    clear_all_rate_limiters()
 
 
 # Define a custom exception for test setup errors
