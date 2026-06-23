@@ -1,6 +1,6 @@
 [project]
 name = "fastapi-jinja2-postgres-webapp"
-version = "0.1.27"
+version = "0.1.28"
 description = "A template webapp with a pure-Python FastAPI backend, frontend templating with Jinja2, and a Postgres database to power user auth"
 readme = "README.md"
 package-mode = false
@@ -30,11 +30,11 @@ dev = [
     "quarto<1.0.0,>=0.1.0",
     "jupyter<2.0.0,>=1.1.1",
     "notebook<8.0.0,>=7.2.2",
-    "pytest<9.0.0,>=8.3.3",
+    "pytest>=8.3.3",
     "sqlalchemy-schemadisplay<3.0,>=2.0",
     "ty>=0.0.21",
     "ruff>=0.15.5",
-    "pytest-jinja-check[fastapi]>=1.0.2",
+    "pytest-jinja-check[fastapi]>=1.0.3",
     "pytest-playwright>=0.7.2",
     "pre-commit>=4.6.0",
 ]
