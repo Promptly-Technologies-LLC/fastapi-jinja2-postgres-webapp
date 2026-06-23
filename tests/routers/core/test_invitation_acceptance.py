@@ -188,38 +188,109 @@ def test_accept_invitation_logged_in_correct_user_get_accepts_and_redirects(
     assert test_invitation.accepted_at is not None
 
 
-# 4. Failure: Invalid/Expired/Used Token
+# 4. Inactive token on GET /accept redirects to register/login (banners shown there)
 @pytest.mark.parametrize(
-    "token_type",
+    "token_type,expected_path_key",
     [
-        "invalid",
-        "expired",
-        "used",
+        ("invalid", "read_login"),
+        ("expired", "read_register"),
+        ("used", "read_register"),
     ],
 )
-def test_accept_invitation_get_invalid_token_fails(
+def test_accept_invitation_get_inactive_token_redirects_to_auth(
     unauth_client: TestClient,
     token_type: str,
-    request,  # Required by getfixturevalue
+    expected_path_key: str,
+    request,
 ):
-    """GET /accept with invalid, expired, or used token fails with 404."""
+    """GET /accept with invalid, expired, or used token redirects to auth pages."""
     token_value = "invalid-token-string"
+    invitee_email = None
     if token_type == "expired":
         expired_invite: Invitation = request.getfixturevalue("expired_invitation")
         token_value = expired_invite.token
+        invitee_email = expired_invite.invitee_email
     elif token_type == "used":
         used_invite: Invitation = request.getfixturevalue("used_invitation")
         token_value = used_invite.token
+        invitee_email = used_invite.invitee_email
 
     response = unauth_client.get(
         app.url_path_for("accept_invitation"),
         params={"token": token_value},
+        follow_redirects=False,
     )
-    assert response.status_code == 404
+    assert response.status_code == 303
+    parsed_url = urlparse(response.headers["location"])
+    query_params = parse_qs(parsed_url.query)
+
+    assert parsed_url.path == app.url_path_for(expected_path_key)
+    assert query_params.get("invitation_token") == [token_value]
+    if expected_path_key == "read_register":
+        assert query_params.get("email") == [invitee_email]
+
+    auth_response = unauth_client.get(response.headers["location"])
+    assert auth_response.status_code == 200
     if token_type == "expired":
-        assert "expired" in response.text.lower()
+        assert "invitation link has expired" in auth_response.text.lower()
     else:
-        assert "no longer valid" in response.text.lower()
+        assert "no longer valid" in auth_response.text.lower()
+
+
+def test_accept_invitation_get_expired_token_existing_user_redirects_to_login(
+    unauth_client: TestClient,
+    session: Session,
+    expired_invitation: Invitation,
+    existing_invitee_account: Account,
+):
+    """Expired token for an existing account redirects to login with the token."""
+    expired_invitation.invitee_email = existing_invitee_account.email
+    session.add(expired_invitation)
+    session.commit()
+
+    response = unauth_client.get(
+        app.url_path_for("accept_invitation"),
+        params={"token": expired_invitation.token},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    parsed_url = urlparse(response.headers["location"])
+    assert parsed_url.path == app.url_path_for("read_login")
+    assert parse_qs(parsed_url.query).get("invitation_token") == [
+        expired_invitation.token
+    ]
+
+    auth_response = unauth_client.get(response.headers["location"])
+    assert auth_response.status_code == 200
+    assert "invitation link has expired" in auth_response.text.lower()
+
+
+def test_accept_invitation_logged_in_user_sees_expired_warning(
+    auth_client_invitee: TestClient,
+    session: Session,
+    expired_invitation: Invitation,
+    existing_invitee_account: Account,
+):
+    """Logged-in users clicking an expired invite link should see an expiry warning."""
+    expired_invitation.invitee_email = existing_invitee_account.email
+    session.add(expired_invitation)
+    session.commit()
+
+    response = auth_client_invitee.get(
+        app.url_path_for("accept_invitation"),
+        params={"token": expired_invitation.token},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    parsed_url = urlparse(response.headers["location"])
+    assert parsed_url.path == app.url_path_for("read_login")
+    assert parse_qs(parsed_url.query).get("invitation_token") == [
+        expired_invitation.token
+    ]
+
+    auth_response = auth_client_invitee.get(response.headers["location"])
+    assert auth_response.status_code == 200
+    assert "invitation link has expired" in auth_response.text.lower()
 
 
 @pytest.mark.parametrize(
@@ -378,6 +449,17 @@ def test_register_page_shows_expired_invitation_warning(
             "email": expired_invitation.invitee_email,
             "invitation_token": expired_invitation.token,
         },
+    )
+    assert response.status_code == 200
+    assert "invitation link has expired" in response.text.lower()
+
+
+def test_login_page_shows_expired_invitation_warning(
+    unauth_client: TestClient, expired_invitation: Invitation
+):
+    response = unauth_client.get(
+        app.url_path_for("read_login"),
+        params={"invitation_token": expired_invitation.token},
     )
     assert response.status_code == 200
     assert "invitation link has expired" in response.text.lower()

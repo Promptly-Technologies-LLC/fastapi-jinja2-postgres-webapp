@@ -13,6 +13,7 @@ from utils.core.models import (
     DataIntegrityError,
     Account,
     AccountEmail,
+    Invitation,
 )
 from utils.core.dependencies import get_session
 from utils.core.models import RefreshToken
@@ -44,6 +45,7 @@ from utils.core.dependencies import (
     get_account_from_recovery_token,
     get_account_from_credentials,
     require_unauthenticated_client,
+    require_unauthenticated_unless_invitation_warning,
     get_verified_account,
 )
 from exceptions.http_exceptions import (
@@ -149,8 +151,9 @@ def logout(
 @router.get("/login")
 async def read_login(
     request: Request,
-    _: None = Depends(require_unauthenticated_client),
+    _: None = Depends(require_unauthenticated_unless_invitation_warning),
     invitation_token: Optional[str] = Query(None),
+    user: Optional[User] = Depends(get_optional_user),
     session: Session = Depends(get_session),
 ):
     """
@@ -165,7 +168,7 @@ async def read_login(
         request,
         "account/login.html",
         {
-            "user": None,
+            "user": user,
             "invitation_token": invitation_token,
             "invitation_token_warning": invitation_token_warning,
         },
@@ -175,9 +178,10 @@ async def read_login(
 @router.get("/register")
 async def read_register(
     request: Request,
-    _: None = Depends(require_unauthenticated_client),
+    _: None = Depends(require_unauthenticated_unless_invitation_warning),
     email: Optional[EmailStr] = Query(None),
     invitation_token: Optional[str] = Query(None),
+    user: Optional[User] = Depends(get_optional_user),
     session: Session = Depends(get_session),
 ):
     """
@@ -192,7 +196,7 @@ async def read_register(
         request,
         "account/register.html",
         {
-            "user": None,
+            "user": user,
             "password_pattern": HTML_PASSWORD_PATTERN,
             "email": email,
             "invitation_token": invitation_token,
@@ -289,6 +293,18 @@ async def register(
     """
     Register a new user account, optionally processing an invitation.
     """
+    pending_invitation: Optional[Invitation] = None
+    if invitation_token:
+        pending_invitation = require_active_invitation_by_token(
+            session, invitation_token
+        )
+        if email != pending_invitation.invitee_email:
+            logger.warning(
+                f"Invitation email mismatch for token {invitation_token} during registration. "
+                f"Account: {email}, Invitation: {pending_invitation.invitee_email}"
+            )
+            raise InvitationEmailMismatchError()
+
     # Check if the email is already registered
     existing_account: Optional[Account] = session.exec(
         select(Account).where(Account.email == email)
@@ -332,37 +348,27 @@ async def register(
     redirect_url = dashboard_router.url_path_for("read_dashboard")
 
     # Process invitation if token is provided (BEFORE final commit)
-    if invitation_token:
+    if pending_invitation:
         logger.info(
             f"Registration attempt with invitation token: {invitation_token} for email {email}"
         )
-        invitation = require_active_invitation_by_token(session, invitation_token)
-
-        # Verify email matches
-        if email != invitation.invitee_email:
-            logger.warning(
-                f"Invitation email mismatch for token {invitation_token} during registration. "
-                f"Account: {email}, Invitation: {invitation.invitee_email}"
-            )
-            # Consider raising a more generic error to avoid confirming email existence
-            raise InvitationEmailMismatchError()
 
         # Process the invitation (adds changes to the session)
         try:
             logger.info(
-                f"Processing invitation {invitation.id} for new user {new_user.name} ({email}) during registration."
+                f"Processing invitation {pending_invitation.id} for new user {new_user.name} ({email}) during registration."
             )
-            process_invitation(invitation, new_user, session)
+            process_invitation(pending_invitation, new_user, session)
             # Set redirect to the organization page
             redirect_url = org_router.url_path_for(
-                "read_organization", org_id=invitation.organization_id
+                "read_organization", org_id=pending_invitation.organization_id
             )
             logger.info(
-                f"Redirecting new user {new_user.name} to organization {invitation.organization_id} after accepting invitation {invitation.id}."
+                f"Redirecting new user {new_user.name} to organization {pending_invitation.organization_id} after accepting invitation {pending_invitation.id}."
             )
         except Exception as e:
             logger.error(
-                f"Error processing invitation {invitation.id} for new user {new_user.name} ({email}) during registration: {e}",
+                f"Error processing invitation {pending_invitation.id} for new user {new_user.name} ({email}) during registration: {e}",
                 exc_info=True,
             )
             session.rollback()

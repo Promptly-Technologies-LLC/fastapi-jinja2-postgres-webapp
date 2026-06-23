@@ -43,7 +43,10 @@
 
         <!-- Submit Button -->
         <div class="d-grid mb-3">
-            <button type="submit" class="btn btn-primary">Login</button>
+            <button type="submit" class="btn btn-primary"
+                    {% if invitation_token_warning %}disabled aria-disabled="true"{% endif %}>
+                Login
+            </button>
         </div>
     </form>
 

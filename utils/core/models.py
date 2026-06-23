@@ -377,6 +377,21 @@ class Invitation(SQLModel, table=True):
         return [inv for inv in results if not inv.is_expired()]
 
     @classmethod
+    def get_pending_for_org(
+        cls, session: Session, organization_id: int
+    ) -> list["Invitation"]:
+        """Return all unused invitations for an org, including expired rows."""
+        statement = (
+            select(cls)
+            .where(
+                cls.organization_id == organization_id,
+                col(cls.used).is_(False),
+            )
+            .order_by(col(cls.created_at).desc())
+        )
+        return list(session.exec(statement).all())
+
+    @classmethod
     def invalidate_pending_for_email(
         cls,
         session: Session,

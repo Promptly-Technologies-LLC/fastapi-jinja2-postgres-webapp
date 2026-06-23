@@ -1,3 +1,4 @@
+from datetime import timedelta
 from uuid import uuid4
 from typing import Optional
 from fastapi import APIRouter, Depends, Form, Query, Request, status
@@ -13,7 +14,7 @@ from utils.core.dependencies import (
     get_optional_user,
     get_session,
 )
-from utils.core.models import User, Role, Account, Invitation, Organization
+from utils.core.models import User, Role, Account, Invitation, Organization, utc_now
 from utils.core.enums import ValidPermissions
 from utils.app.enums import AppPermissions
 from utils.core.invitations import (
@@ -36,7 +37,6 @@ from utils.core.organizations import load_org_for_members_partial
 from routers.core.account import router as account_router
 from routers.core.organization import router as org_router
 
-# Setup logger
 logger = getLogger("uvicorn.error")
 
 templates = Jinja2Templates(directory="templates")
@@ -47,12 +47,64 @@ router = APIRouter(
 )
 
 
-# Dependency to get a valid invitation
 def get_valid_invitation(
     token: str = Query(...), session: Session = Depends(get_session)
 ) -> Invitation:
     """Dependency to retrieve a valid, active invitation based on the token."""
     return require_active_invitation_by_token(session, token)
+
+
+def _redirect_for_inactive_invitation(
+    invitation: Optional[Invitation],
+    token: str,
+    session: Session,
+) -> RedirectResponse:
+    """Send user to register/login so invitation_token_warning banners can display."""
+    if invitation:
+        existing_account = session.exec(
+            select(Account).where(Account.email == invitation.invitee_email)
+        ).first()
+        if existing_account:
+            login_url = account_router.url_path_for("read_login")
+            redirect_url = f"{login_url}?invitation_token={token}"
+        else:
+            register_url = account_router.url_path_for("read_register")
+            redirect_url = (
+                f"{register_url}?email={invitation.invitee_email}"
+                f"&invitation_token={token}"
+            )
+    else:
+        login_url = account_router.url_path_for("read_login")
+        redirect_url = f"{login_url}?invitation_token={token}"
+
+    return RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
+
+
+def _members_table_response(
+    request: Request,
+    session: Session,
+    organization_id: int,
+    current_user: User,
+    toast_message: str | None = None,
+) -> Response:
+    organization, user_permissions, pending_invitations = load_org_for_members_partial(
+        session, organization_id, current_user
+    )
+    response = templates.TemplateResponse(
+        request,
+        "organization/partials/members_table.html",
+        {
+            "organization": organization,
+            "pending_invitations": pending_invitations,
+            "user": current_user,
+            "user_permissions": user_permissions,
+            "ValidPermissions": ValidPermissions,
+            "all_permissions": list(ValidPermissions) + list(AppPermissions),
+        },
+    )
+    if toast_message:
+        response = append_toast(response, request, templates, toast_message)
+    return response
 
 
 @router.post("/", name="create_invitation")
@@ -72,45 +124,37 @@ async def create_invitation(
         description="ID of the organization to invite the user to",
     ),
 ):
-    # Fetch the organization
     organization = session.get(Organization, organization_id)
     if not organization:
         raise OrganizationNotFoundError()
 
-    # Check if the current user has permission to invite users to this organization
     if not current_user.has_permission(ValidPermissions.INVITE_USER, organization):
         raise InsufficientPermissionsError(
             "You don't have permission to invite users to this organization"
         )
 
-    # Verify the role exists and belongs to this organization
     role = session.get(Role, role_id)
     if not role:
         raise RoleNotFoundError()
     if role.organization_id != organization_id:
         raise InvalidRoleForOrganizationError()
 
-    # Check if invitee is already a member of the organization
     existing_account = session.exec(
         select(Account).where(Account.email == invitee_email)
     ).first()
     if existing_account:
-        # Check if any user with this account is already a member
         existing_user = session.exec(
             select(User).where(User.account_id == existing_account.id)
         ).first()
         if existing_user:
-            # Check if user has any role in this organization
             if any(
                 role.organization_id == organization_id for role in existing_user.roles
             ):
                 raise UserIsAlreadyMemberError()
 
-    # Replace any pending invite for this email (active or expired) before creating a new one.
     Invitation.invalidate_pending_for_email(session, organization_id, invitee_email)
     session.flush()
 
-    # Create the invitation
     token = str(uuid4())
     invitation = Invitation(
         organization_id=organization_id,
@@ -122,30 +166,23 @@ async def create_invitation(
     session.add(invitation)
 
     try:
-        # Refresh to ensure relationships are loaded *before* sending email
-        session.flush()  # Ensure invitation gets an ID if needed by email sender, flush changes
+        session.flush()
         session.refresh(invitation)
-        # Ensure organization is loaded before passing to email function
-        # (May already be loaded, but explicit refresh is safer)
         if not invitation.organization:
-            session.refresh(organization)  # Refresh the org object fetched earlier
-            invitation.organization = organization  # Assign if needed
+            session.refresh(organization)
+            invitation.organization = organization
 
-        # Send email synchronously BEFORE committing
         send_invitation_email(invitation, session)
-
-        # Commit *only* if email sending was successful
         session.commit()
-        session.refresh(invitation)  # Refresh again after commit if needed elsewhere
+        session.refresh(invitation)
 
     except EmailSendFailedError as e:
         logger.error(
             f"Invitation email failed for {invitee_email} in org {organization_id}: {e}"
         )
-        session.rollback()  # Rollback invalidation and invitation creation
-        raise InvitationEmailSendError()  # Raise HTTP 500
+        session.rollback()
+        raise InvitationEmailSendError()
     except Exception as e:
-        # Catch any other unexpected errors during flush/refresh/email/commit
         logger.error(
             f"Unexpected error during invitation creation/sending for {invitee_email} "
             f"in org {organization_id}: {e}",
@@ -154,26 +191,87 @@ async def create_invitation(
         session.rollback()
         raise HTTPException(status_code=500, detail="An unexpected error occurred.")
 
-    # HTMX: return partial; non-HTMX: PRG redirect
     if is_htmx_request(request):
-        organization, user_permissions, active_invitations = (
-            load_org_for_members_partial(session, organization_id, current_user)
-        )
-        response = templates.TemplateResponse(
+        response = _members_table_response(
             request,
-            "organization/partials/members_table.html",
-            {
-                "organization": organization,
-                "active_invitations": active_invitations,
-                "user": current_user,
-                "user_permissions": user_permissions,
-                "ValidPermissions": ValidPermissions,
-                "all_permissions": list(ValidPermissions) + list(AppPermissions),
-            },
+            session,
+            organization_id,
+            current_user,
+            "Invitation sent successfully.",
         )
         response.headers["HX-Trigger"] = "modalDismiss"
-        return append_toast(
-            response, request, templates, "Invitation sent successfully."
+        return response
+    return RedirectResponse(url=f"/organizations/{organization_id}", status_code=303)
+
+
+@router.post("/resend", name="resend_invitation", response_class=RedirectResponse)
+async def resend_invitation(
+    request: Request,
+    current_user: User = Depends(get_authenticated_user),
+    session: Session = Depends(get_session),
+    invitation_id: int = Form(
+        ..., title="Invitation ID", description="ID of the invitation to resend"
+    ),
+    organization_id: int = Form(
+        ...,
+        title="Organization ID",
+        description="ID of the organization the invitation belongs to",
+    ),
+) -> Response:
+    organization = session.get(Organization, organization_id)
+    if not organization:
+        raise OrganizationNotFoundError()
+
+    if not current_user.has_permission(ValidPermissions.INVITE_USER, organization):
+        raise InsufficientPermissionsError(
+            "You don't have permission to resend invitations for this organization"
+        )
+
+    invitation = session.get(Invitation, invitation_id)
+    if (
+        not invitation
+        or invitation.organization_id != organization_id
+        or invitation.used
+    ):
+        raise InvitationNotFoundError()
+
+    invitation.token = str(uuid4())
+    invitation.expires_at = utc_now() + timedelta(days=7)
+
+    try:
+        session.flush()
+        session.refresh(invitation)
+        if not invitation.organization:
+            session.refresh(organization)
+            invitation.organization = organization
+
+        send_invitation_email(invitation, session)
+        session.commit()
+        session.refresh(invitation)
+
+    except EmailSendFailedError as e:
+        logger.error(
+            f"Invitation resend failed for {invitation.invitee_email} "
+            f"in org {organization_id}: {e}"
+        )
+        session.rollback()
+        raise InvitationEmailSendError()
+    except Exception as e:
+        logger.error(
+            f"Unexpected error during invitation resend for {invitation.invitee_email} "
+            f"in org {organization_id}: {e}",
+            exc_info=True,
+        )
+        session.rollback()
+        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+
+    if is_htmx_request(request):
+        return _members_table_response(
+            request,
+            session,
+            organization_id,
+            current_user,
+            "Invitation resent.",
         )
     return RedirectResponse(url=f"/organizations/{organization_id}", status_code=303)
 
@@ -209,46 +307,38 @@ async def delete_invitation(
     session.commit()
 
     if is_htmx_request(request):
-        organization, user_permissions, active_invitations = (
-            load_org_for_members_partial(session, organization_id, current_user)
-        )
-        response = templates.TemplateResponse(
+        return _members_table_response(
             request,
-            "organization/partials/members_table.html",
-            {
-                "organization": organization,
-                "active_invitations": active_invitations,
-                "user": current_user,
-                "user_permissions": user_permissions,
-                "ValidPermissions": ValidPermissions,
-                "all_permissions": list(ValidPermissions) + list(AppPermissions),
-            },
-        )
-        return append_toast(
-            response, request, templates, "Invitation cancelled successfully."
+            session,
+            organization_id,
+            current_user,
+            "Invitation cancelled successfully.",
         )
     return RedirectResponse(url=f"/organizations/{organization_id}", status_code=303)
 
 
 @router.get("/accept", name="accept_invitation")
 async def accept_invitation(
-    invitation: Invitation = Depends(get_valid_invitation),
+    token: str = Query(...),
     current_user: Optional[User] = Depends(get_optional_user),
     session: Session = Depends(get_session),
 ):
     """Handles the acceptance of an invitation via the link in the email."""
-    # Check if an account exists for the invitee email
+    invitation = session.exec(
+        select(Invitation).where(Invitation.token == token)
+    ).first()
+
+    if not invitation or not invitation.is_active():
+        return _redirect_for_inactive_invitation(invitation, token, session)
+
     account_statement = select(Account).where(Account.email == invitation.invitee_email)
     existing_account = session.exec(account_statement).first()
 
     if existing_account:
-        # Account exists - check if user is logged in and matches the invitation
         if current_user and current_user.account_id == existing_account.id:
-            # Ensure the account relationship is loaded before accessing its email
             if not current_user.account:
                 session.refresh(current_user, attribute_names=["account"])
 
-            # Check if refreshed account has an email (should always exist, but good practice)
             if not current_user.account or not current_user.account.email:
                 logger.error(
                     f"User {current_user.id} is missing account details after refresh."
@@ -258,14 +348,12 @@ async def accept_invitation(
                     detail="Internal server error retrieving user account.",
                 )
 
-            # Logged in as the correct user, process the invitation directly
             logger.info(
                 f"User {current_user.id} ({current_user.account.email}) accepting invitation {invitation.id} directly."
             )
             try:
                 process_invitation(invitation, current_user, session)
                 session.commit()
-                # Redirect to the organization page
                 redirect_url = org_router.url_path_for(
                     "read_organization", org_id=invitation.organization_id
                 )
@@ -278,13 +366,10 @@ async def accept_invitation(
                     exc_info=True,
                 )
                 session.rollback()
-                # Re-raise or return a generic error response
                 raise HTTPException(
                     status_code=500, detail="Failed to process invitation."
                 )
         else:
-            # Account exists, but user is not logged in or is the wrong user
-            # Redirect to login, passing the token
             logger.info(
                 f"Invitation {invitation.id} requires login for {invitation.invitee_email}. Redirecting."
             )
@@ -294,7 +379,6 @@ async def accept_invitation(
                 url=redirect_url_with_token, status_code=status.HTTP_303_SEE_OTHER
             )
     else:
-        # Account does not exist - redirect to registration
         logger.info(
             f"Invitation {invitation.id} requires registration for {invitation.invitee_email}. Redirecting."
         )

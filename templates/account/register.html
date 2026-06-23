@@ -67,7 +67,10 @@
 
         <!-- Submit Button -->
         <div class="d-grid">
-            <button type="submit" class="btn btn-primary">Register</button>
+            <button type="submit" class="btn btn-primary"
+                    {% if invitation_token_warning %}disabled aria-disabled="true"{% endif %}>
+                Register
+            </button>
         </div>
     </form>
 

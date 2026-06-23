@@ -239,7 +239,7 @@ def update_user_role(
     session.commit()
 
     if is_htmx_request(request):
-        organization, user_permissions, active_invitations = (
+        organization, user_permissions, pending_invitations = (
             load_org_for_members_partial(session, organization_id, user)
         )
         response = templates.TemplateResponse(
@@ -247,7 +247,7 @@ def update_user_role(
             "organization/partials/members_table.html",
             {
                 "organization": organization,
-                "active_invitations": active_invitations,
+                "pending_invitations": pending_invitations,
                 "user": user,
                 "user_permissions": user_permissions,
                 "ValidPermissions": ValidPermissions,
@@ -313,7 +313,7 @@ def remove_user_from_organization(
     session.commit()
 
     if is_htmx_request(request):
-        organization, user_permissions, active_invitations = (
+        organization, user_permissions, pending_invitations = (
             load_org_for_members_partial(session, organization_id, user)
         )
         response = templates.TemplateResponse(
@@ -321,7 +321,7 @@ def remove_user_from_organization(
             "organization/partials/members_table.html",
             {
                 "organization": organization,
-                "active_invitations": active_invitations,
+                "pending_invitations": pending_invitations,
                 "user": user,
                 "user_permissions": user_permissions,
                 "ValidPermissions": ValidPermissions,
