@@ -20,6 +20,7 @@ from utils.core.dependencies import (
     get_account_from_recovery_token,
     get_user_with_relations,
     require_unauthenticated_client,
+    require_unauthenticated_unless_invitation_warning,
     get_verified_account,
 )
 from exceptions.http_exceptions import (
@@ -571,6 +572,33 @@ def test_require_unauthenticated_client() -> None:
     mock_user = User(id=1, name="Test User")
     with pytest.raises(AlreadyAuthenticatedError):
         require_unauthenticated_client(user=mock_user)
+
+
+def test_require_unauthenticated_unless_invitation_warning() -> None:
+    """Authenticated users may view auth pages when an invite token warning applies."""
+    mock_user = User(id=1, name="Test User")
+    mock_session = MagicMock()
+
+    with patch(
+        "utils.core.dependencies.get_invitation_token_warning",
+        return_value=None,
+    ):
+        with pytest.raises(AlreadyAuthenticatedError):
+            require_unauthenticated_unless_invitation_warning(
+                invitation_token="some-token",
+                user=mock_user,
+                session=mock_session,
+            )
+
+    with patch(
+        "utils.core.dependencies.get_invitation_token_warning",
+        return_value="expired",
+    ):
+        require_unauthenticated_unless_invitation_warning(
+            invitation_token="expired-token",
+            user=mock_user,
+            session=mock_session,
+        )
 
 
 def test_get_verified_account() -> None:
