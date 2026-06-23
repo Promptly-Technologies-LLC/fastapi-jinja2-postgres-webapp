@@ -594,7 +594,7 @@ wheels = [
 
 [[package]]
 name = "fastapi-jinja2-postgres-webapp"
-version = "0.1.25"
+version = "0.1.26"
 source = { virtual = "." }
 dependencies = [
     { name = "bcrypt" },

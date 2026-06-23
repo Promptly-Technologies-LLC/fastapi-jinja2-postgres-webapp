@@ -1,13 +1,18 @@
 import os
 from logging import getLogger, DEBUG
+from typing import Literal, Optional
 import resend
-from sqlmodel import Session
+from sqlmodel import Session, select
 from jinja2.environment import Template
 from fastapi.templating import Jinja2Templates
 
 from utils.core.models import utc_now, Invitation, Organization, User
 from exceptions.exceptions import EmailSendFailedError
-from exceptions.http_exceptions import DataIntegrityError
+from exceptions.http_exceptions import (
+    DataIntegrityError,
+    ExpiredInvitationTokenError,
+    InvalidInvitationTokenError,
+)
 
 
 # Setup logging
@@ -29,6 +34,35 @@ def generate_invitation_link(token: str) -> str:
         The complete URL for accepting the invitation.
     """
     return f"{os.getenv('BASE_URL')}/invitations/accept?token={token}"
+
+
+InvitationTokenWarning = Literal["expired", "invalid"]
+
+
+def get_invitation_token_warning(
+    session: Session, token: str
+) -> Optional[InvitationTokenWarning]:
+    """Return a warning key for register/login UI, or None if the token is active."""
+    invitation = session.exec(
+        select(Invitation).where(Invitation.token == token)
+    ).first()
+    if invitation is None or invitation.used:
+        return "invalid"
+    if invitation.is_expired():
+        return "expired"
+    return None
+
+
+def require_active_invitation_by_token(session: Session, token: str) -> Invitation:
+    """Load an invitation by token or raise an HTTP exception with a clear message."""
+    invitation = session.exec(
+        select(Invitation).where(Invitation.token == token)
+    ).first()
+    if invitation is None or invitation.used:
+        raise InvalidInvitationTokenError()
+    if invitation.is_expired():
+        raise ExpiredInvitationTokenError()
+    return invitation
 
 
 def send_invitation_email(invitation: Invitation, session: Session) -> None:

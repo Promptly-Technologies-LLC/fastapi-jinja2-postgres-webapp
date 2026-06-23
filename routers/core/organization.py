@@ -69,8 +69,8 @@ async def read_organization(
         )
     ).first()
 
-    # Fetch active invitations for the organization
-    active_invitations = Invitation.get_active_for_org(session, org_id)
+    # Fetch pending invitations for the organization
+    pending_invitations = Invitation.get_pending_for_org(session, org_id)
 
     # Pass all required context to the template
     return templates.TemplateResponse(
@@ -82,7 +82,7 @@ async def read_organization(
             "user_permissions": user_permissions,
             "ValidPermissions": ValidPermissions,
             "all_permissions": list(ValidPermissions) + list(AppPermissions),
-            "active_invitations": active_invitations,
+            "pending_invitations": pending_invitations,
         },
     )
 

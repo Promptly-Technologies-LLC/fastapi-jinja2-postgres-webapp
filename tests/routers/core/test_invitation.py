@@ -1,7 +1,8 @@
 import pytest
 from datetime import datetime, timedelta, UTC
 from unittest.mock import MagicMock
-from sqlmodel import Session, select
+from urllib.parse import urlparse, parse_qs
+from sqlmodel import Session, select, col
 from tests.conftest import SetupError
 from utils.core.models import Role, Permission, User, Invitation, Organization, Account
 from utils.core.enums import ValidPermissions
@@ -235,6 +236,68 @@ def test_invitation_is_active(
     assert existing_invitation.is_active()
     assert not expired_invitation.is_active()
     assert not used_invitation.is_active()
+
+
+def test_get_pending_for_org(
+    session: Session,
+    test_organization: Organization,
+    existing_invitation: Invitation,
+    expired_invitation: Invitation,
+    used_invitation: Invitation,
+):
+    """Test get_pending_for_org returns all unused invitations, including expired."""
+    assert test_organization.id is not None
+    member_role = session.exec(
+        select(Role).where(
+            Role.name == "Member", Role.organization_id == test_organization.id
+        )
+    ).first()
+    if not member_role:
+        pytest.fail("Member role not found in test_get_pending_for_org")
+    assert member_role.id is not None
+
+    second_active = Invitation(
+        organization_id=test_organization.id,
+        role_id=member_role.id,
+        invitee_email="another@example.com",
+        token="another-token-12345",
+        expires_at=datetime.now(UTC) + timedelta(days=7),
+    )
+    session.add(second_active)
+
+    other_org = Organization(name="Other Org Pending")
+    session.add(other_org)
+    session.commit()
+    assert other_org.id is not None
+
+    other_member_role = session.exec(
+        select(Role).where(Role.name == "Member", Role.organization_id == other_org.id)
+    ).first()
+    if not other_member_role:
+        other_member_role = Role(name="Member", organization_id=other_org.id)
+        session.add(other_member_role)
+        session.commit()
+        session.refresh(other_member_role)
+    assert other_member_role.id is not None
+
+    other_org_invitation = Invitation(
+        organization_id=other_org.id,
+        role_id=other_member_role.id,
+        invitee_email="other-org@example.com",
+        token="other-org-token-12345",
+        expires_at=datetime.now(UTC) + timedelta(days=7),
+    )
+    session.add(other_org_invitation)
+    session.commit()
+
+    pending_invitations = Invitation.get_pending_for_org(session, test_organization.id)
+
+    assert len(pending_invitations) == 3
+    assert existing_invitation in pending_invitations
+    assert second_active in pending_invitations
+    assert expired_invitation in pending_invitations
+    assert used_invitation not in pending_invitations
+    assert other_org_invitation not in pending_invitations
 
 
 def test_get_active_for_org(
@@ -498,24 +561,130 @@ def test_create_invitation_for_existing_member(
     )  # Conflict - UserIsAlreadyMemberError
 
 
-def test_create_invitation_duplicate_active(
-    auth_client, inviter_user: User, existing_invitation: Invitation
+def test_create_invitation_resend_replaces_active_invitation(
+    auth_client,
+    inviter_user: User,
+    existing_invitation: Invitation,
+    session: Session,
+    mock_resend_send,
 ):
-    """Test that creating a duplicate active invitation fails."""
+    """Re-inviting the same email replaces the pending invite and invalidates the old token."""
     assert existing_invitation.organization_id is not None
     assert existing_invitation.role_id is not None
+    old_token = existing_invitation.token
+    old_id = existing_invitation.id
+    invitee_email = existing_invitation.invitee_email
+    organization_id = existing_invitation.organization_id
+
     response = auth_client.post(
         app.url_path_for("create_invitation"),
         data={
-            "invitee_email": existing_invitation.invitee_email,  # Same email
+            "invitee_email": invitee_email,
+            "role_id": str(existing_invitation.role_id),
+            "organization_id": str(organization_id),
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303, response.text
+
+    session.expire_all()
+    assert session.get(Invitation, old_id) is None
+
+    new_invitation = session.exec(
+        select(Invitation).where(
+            Invitation.invitee_email == invitee_email,
+            Invitation.organization_id == organization_id,
+            col(Invitation.used).is_(False),
+        )
+    ).first()
+    assert new_invitation is not None
+    assert new_invitation.token != old_token
+
+    accept_response = auth_client.get(
+        app.url_path_for("accept_invitation"),
+        params={"token": old_token},
+        follow_redirects=False,
+    )
+    assert accept_response.status_code == 303
+    parsed_url = urlparse(accept_response.headers["location"])
+    assert parsed_url.path == app.url_path_for("read_login")
+    assert parse_qs(parsed_url.query).get("invitation_token") == [old_token]
+
+    auth_response = auth_client.get(accept_response.headers["location"])
+    assert auth_response.status_code == 200
+    assert "no longer valid" in auth_response.text.lower()
+
+
+def test_create_invitation_resend_after_expired_pending_invite(
+    auth_client,
+    inviter_user: User,
+    expired_invitation: Invitation,
+    session: Session,
+    mock_resend_send,
+):
+    """Re-inviting after expiry succeeds even though the old row remains used=False in DB."""
+    assert expired_invitation.organization_id is not None
+    assert expired_invitation.role_id is not None
+    expired_id = expired_invitation.id
+    invitee_email = expired_invitation.invitee_email
+    organization_id = expired_invitation.organization_id
+    old_token = expired_invitation.token
+
+    response = auth_client.post(
+        app.url_path_for("create_invitation"),
+        data={
+            "invitee_email": invitee_email,
+            "role_id": str(expired_invitation.role_id),
+            "organization_id": str(organization_id),
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303, response.text
+    session.expire_all()
+    assert session.get(Invitation, expired_id) is None
+
+    replacement = session.exec(
+        select(Invitation).where(
+            Invitation.invitee_email == invitee_email,
+            Invitation.organization_id == organization_id,
+            col(Invitation.used).is_(False),
+        )
+    ).first()
+    assert replacement is not None
+    assert replacement.token != old_token
+
+
+def test_create_invitation_resend_email_failure_restores_old_invite(
+    auth_client,
+    inviter_user: User,
+    existing_invitation: Invitation,
+    session: Session,
+    mock_resend_send,
+):
+    """Failed resend rolls back both delete and new invite creation."""
+    assert existing_invitation.id is not None
+    old_token = existing_invitation.token
+    mock_resend_send.side_effect = Exception("Simulated email send failure")
+
+    response = auth_client.post(
+        app.url_path_for("create_invitation"),
+        data={
+            "invitee_email": existing_invitation.invitee_email,
             "role_id": str(existing_invitation.role_id),
             "organization_id": str(existing_invitation.organization_id),
         },
+        follow_redirects=False,
     )
 
-    assert response.status_code == 409, (
-        f"Expected 409 Conflict, got {response.status_code}. Response: {response.text}"
-    )  # Conflict - ActiveInvitationExistsError
+    assert response.status_code == 500
+    session.expire_all()
+    restored = session.exec(
+        select(Invitation).where(Invitation.token == old_token)
+    ).first()
+    assert restored is not None
+    assert restored.id == existing_invitation.id
 
 
 def test_create_invitation_role_not_found(
@@ -657,7 +826,7 @@ def test_create_invitation_email_send_failure(
 
 
 # --- Organization Page Tests ---
-def test_organization_page_shows_active_invitations(
+def test_organization_page_shows_pending_invitations(
     auth_client_owner,
     test_organization: Organization,
     session: Session,
@@ -665,7 +834,7 @@ def test_organization_page_shows_active_invitations(
     expired_invitation: Invitation,
     used_invitation: Invitation,
 ):
-    """Test that the organization page shows active invitations."""
+    """Test that the organization page shows pending invitations, including expired."""
     assert test_organization.id is not None
     response = auth_client_owner.get(
         app.url_path_for("read_organization", org_id=test_organization.id),
@@ -674,18 +843,10 @@ def test_organization_page_shows_active_invitations(
     assert response.status_code == 200
     response_text = response.text
 
-    # Active invitation email should be in response (Depends on Invitation model)
-    assert (
-        existing_invitation.invitee_email in response_text
-    )  # Ignored Error: Invitation model not defined yet
-
-    # Expired and used invitation emails should not be in response (Depends on Invitation model)
-    assert (
-        expired_invitation.invitee_email not in response_text
-    )  # Ignored Error: Invitation model not defined yet
-    assert (
-        used_invitation.invitee_email not in response_text
-    )  # Ignored Error: Invitation model not defined yet
+    assert existing_invitation.invitee_email in response_text
+    assert expired_invitation.invitee_email in response_text
+    assert "Expired" in response_text
+    assert used_invitation.invitee_email not in response_text
 
 
 def test_organization_page_invite_form_visibility(
@@ -874,7 +1035,133 @@ def test_delete_invitation_invalidates_token(
         params={"token": token},
         follow_redirects=False,
     )
-    assert accept_response.status_code == 404
+    assert accept_response.status_code == 303
+    parsed_url = urlparse(accept_response.headers["location"])
+    assert parsed_url.path == app.url_path_for("read_login")
+    assert parse_qs(parsed_url.query).get("invitation_token") == [token]
+
+
+def test_resend_invitation_active_refreshes_token(
+    auth_client_owner,
+    test_organization: Organization,
+    existing_invitation: Invitation,
+    session: Session,
+    mock_resend_send: MagicMock,
+):
+    assert test_organization.id is not None
+    assert existing_invitation.id is not None
+    old_token = existing_invitation.token
+
+    response = auth_client_owner.post(
+        app.url_path_for("resend_invitation"),
+        data={
+            "invitation_id": str(existing_invitation.id),
+            "organization_id": str(test_organization.id),
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+
+    session.refresh(existing_invitation)
+    assert existing_invitation.token != old_token
+    assert not existing_invitation.is_expired()
+    assert existing_invitation.used is False
+    mock_resend_send.assert_called_once()
+
+
+def test_resend_invitation_expired_reactivates(
+    auth_client_owner,
+    test_organization: Organization,
+    expired_invitation: Invitation,
+    session: Session,
+    mock_resend_send: MagicMock,
+):
+    assert test_organization.id is not None
+    assert expired_invitation.id is not None
+    assert expired_invitation.is_expired()
+
+    response = auth_client_owner.post(
+        app.url_path_for("resend_invitation"),
+        data={
+            "invitation_id": str(expired_invitation.id),
+            "organization_id": str(test_organization.id),
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+
+    session.refresh(expired_invitation)
+    assert not expired_invitation.is_expired()
+    mock_resend_send.assert_called_once()
+
+
+def test_resend_invitation_unauthorized(
+    auth_client_member,
+    test_organization: Organization,
+    existing_invitation: Invitation,
+):
+    assert test_organization.id is not None
+    assert existing_invitation.id is not None
+
+    response = auth_client_member.post(
+        app.url_path_for("resend_invitation"),
+        data={
+            "invitation_id": str(existing_invitation.id),
+            "organization_id": str(test_organization.id),
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 403
+
+
+def test_resend_invitation_email_failure_restores_token(
+    auth_client_owner,
+    test_organization: Organization,
+    existing_invitation: Invitation,
+    session: Session,
+    mock_resend_send: MagicMock,
+):
+    """Resend email failure rolls back the token and expiry changes."""
+    assert test_organization.id is not None
+    assert existing_invitation.id is not None
+    old_token = existing_invitation.token
+    old_expires = existing_invitation.expires_at
+
+    mock_resend_send.side_effect = Exception("Simulated email send failure")
+
+    response = auth_client_owner.post(
+        app.url_path_for("resend_invitation"),
+        data={
+            "invitation_id": str(existing_invitation.id),
+            "organization_id": str(test_organization.id),
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 500
+
+    session.refresh(existing_invitation)
+    assert existing_invitation.token == old_token
+    assert existing_invitation.expires_at == old_expires
+
+
+def test_organization_page_shows_resend_invitation_button(
+    auth_client_owner,
+    test_organization: Organization,
+    existing_invitation: Invitation,
+):
+    """Test that users with INVITE_USER see a Resend button on pending invitations."""
+    assert test_organization.id is not None
+
+    response = auth_client_owner.get(
+        app.url_path_for("read_organization", org_id=test_organization.id),
+    )
+
+    assert response.status_code == 200
+    assert (
+        f'action="http://testserver{app.url_path_for("resend_invitation")}"'
+        in response.text.replace("&amp;", "&")
+    )
+    assert "Resend" in response.text
 
 
 def test_organization_page_shows_cancel_invitation_button(
