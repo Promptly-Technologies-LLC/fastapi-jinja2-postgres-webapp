@@ -30,13 +30,9 @@ from exceptions.http_exceptions import (
 )
 from exceptions.exceptions import EmailSendFailedError
 from utils.core.htmx import is_htmx_request, append_toast
-
-# Import the account router to generate URLs for login/register
+from utils.core.organizations import load_org_for_members_partial
 from routers.core.account import router as account_router
-from routers.core.organization import (
-    router as org_router,
-)  # Already imported, check usage
-from routers.core.user import _load_org_for_members_partial
+from routers.core.organization import router as org_router
 
 # Setup logger
 logger = getLogger("uvicorn.error")
@@ -85,7 +81,9 @@ async def create_invitation(
 
     # Check if the current user has permission to invite users to this organization
     if not current_user.has_permission(ValidPermissions.INVITE_USER, organization):
-        raise InsufficientPermissionsError()
+        raise InsufficientPermissionsError(
+            "You don't have permission to invite users to this organization"
+        )
 
     # Verify the role exists and belongs to this organization
     role = session.get(Role, role_id)
@@ -164,7 +162,7 @@ async def create_invitation(
     # HTMX: return partial; non-HTMX: PRG redirect
     if is_htmx_request(request):
         organization, user_permissions, active_invitations = (
-            _load_org_for_members_partial(session, organization_id, current_user)
+            load_org_for_members_partial(session, organization_id, current_user)
         )
         response = templates.TemplateResponse(
             request,
@@ -204,7 +202,9 @@ async def delete_invitation(
         raise OrganizationNotFoundError()
 
     if not current_user.has_permission(ValidPermissions.INVITE_USER, organization):
-        raise InsufficientPermissionsError()
+        raise InsufficientPermissionsError(
+            "You don't have permission to cancel invitations for this organization"
+        )
 
     invitation = session.get(Invitation, invitation_id)
     if not invitation or invitation.organization_id != organization_id:
@@ -215,7 +215,7 @@ async def delete_invitation(
 
     if is_htmx_request(request):
         organization, user_permissions, active_invitations = (
-            _load_org_for_members_partial(session, organization_id, current_user)
+            load_org_for_members_partial(session, organization_id, current_user)
         )
         response = templates.TemplateResponse(
             request,

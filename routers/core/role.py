@@ -15,8 +15,8 @@ from utils.core.models import (
     utc_now,
     User,
     DataIntegrityError,
-    Organization,
 )
+from utils.core.organizations import load_org_for_roles_partial
 from utils.core.enums import ValidPermissions
 from utils.app.enums import AppPermissions
 from exceptions.http_exceptions import (
@@ -34,26 +34,6 @@ logger = getLogger("uvicorn.error")
 
 router = APIRouter(prefix="/roles", tags=["roles"])
 templates = Jinja2Templates(directory="templates")
-
-
-def _load_org_for_roles_partial(
-    session: Session, organization_id: int, user: User
-) -> tuple:
-    """Re-query org with roles/users/permissions and compute user_permissions."""
-    organization = session.exec(
-        select(Organization)
-        .where(Organization.id == organization_id)
-        .options(
-            selectinload(Organization.roles).selectinload(Role.users),
-            selectinload(Organization.roles).selectinload(Role.permissions),
-        )
-    ).first()
-    user_permissions = set()
-    for role in user.roles:
-        if role.organization_id == organization_id:
-            for permission in role.permissions:
-                user_permissions.add(permission.name)
-    return organization, user_permissions
 
 
 # --- Routes ---
@@ -114,7 +94,7 @@ def create_role(
         raise RoleAlreadyExistsError()
 
     if is_htmx_request(request):
-        organization, user_permissions = _load_org_for_roles_partial(
+        organization, user_permissions = load_org_for_roles_partial(
             session, organization_id, user
         )
         response = templates.TemplateResponse(
@@ -221,7 +201,7 @@ def update_role(
     session.refresh(db_role)
 
     if is_htmx_request(request):
-        organization, user_permissions = _load_org_for_roles_partial(
+        organization, user_permissions = load_org_for_roles_partial(
             session, organization_id, user
         )
         response = templates.TemplateResponse(
@@ -282,7 +262,7 @@ def delete_role(
     session.commit()
 
     if is_htmx_request(request):
-        organization, user_permissions = _load_org_for_roles_partial(
+        organization, user_permissions = load_org_for_roles_partial(
             session, organization_id, user
         )
         response = templates.TemplateResponse(

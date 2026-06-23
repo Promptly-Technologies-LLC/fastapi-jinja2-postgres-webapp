@@ -43,10 +43,11 @@ class PasswordValidationError(HTTPException):
 
 
 class InsufficientPermissionsError(HTTPException):
-    def __init__(self):
-        super().__init__(
-            status_code=403, detail="You don't have permission to perform this action"
-        )
+    def __init__(
+        self,
+        message: str = "You don't have permission to perform this action",
+    ):
+        super().__init__(status_code=403, detail=message)
 
 
 class OrganizationSetupError(HTTPException):
