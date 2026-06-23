@@ -2,30 +2,30 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/index.html</loc>
-    <lastmod>2026-06-07T01:51:18.699Z</lastmod>
-  </url>
-  <url>
-    <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/installation.html</loc>
-    <lastmod>2026-06-07T01:51:18.695Z</lastmod>
+    <lastmod>2026-06-23T01:08:23.148Z</lastmod>
   </url>
   <url>
     <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html</loc>
-    <lastmod>2026-06-07T01:51:18.695Z</lastmod>
-  </url>
-  <url>
-    <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/authentication.html</loc>
-    <lastmod>2026-06-07T01:51:18.695Z</lastmod>
-  </url>
-  <url>
-    <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/customization.html</loc>
-    <lastmod>2026-06-07T01:51:18.695Z</lastmod>
+    <lastmod>2026-06-23T01:08:23.144Z</lastmod>
   </url>
   <url>
     <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/deployment.html</loc>
-    <lastmod>2026-06-07T01:51:18.695Z</lastmod>
+    <lastmod>2026-06-23T01:08:23.144Z</lastmod>
   </url>
   <url>
     <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/contributing.html</loc>
-    <lastmod>2026-06-07T01:51:18.695Z</lastmod>
+    <lastmod>2026-06-23T01:08:23.144Z</lastmod>
+  </url>
+  <url>
+    <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/customization.html</loc>
+    <lastmod>2026-06-23T01:08:23.144Z</lastmod>
+  </url>
+  <url>
+    <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/authentication.html</loc>
+    <lastmod>2026-06-23T01:08:23.144Z</lastmod>
+  </url>
+  <url>
+    <loc>https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/installation.html</loc>
+    <lastmod>2026-06-23T01:08:23.144Z</lastmod>
   </url>
 </urlset>
