@@ -154,6 +154,20 @@ forgot_password_email_limiter = RateLimitWindow(
     window_seconds=_int_env("FORGOT_PASSWORD_EMAIL_WINDOW_SECONDS", 60),
 )
 
+_ALL_LIMITERS = (
+    login_ip_limiter,
+    login_email_limiter,
+    register_ip_limiter,
+    forgot_password_ip_limiter,
+    forgot_password_email_limiter,
+)
+
+
+def clear_all_rate_limiters() -> None:
+    """Clear all in-memory rate limiter state."""
+    for limiter in _ALL_LIMITERS:
+        limiter._attempts.clear()
+
 
 # --- Dependency helpers ---
 
