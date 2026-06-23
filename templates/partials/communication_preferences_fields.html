@@ -54,22 +54,14 @@
                 return;
             }
 
-            function syncSubPreferences() {
-                if (master.checked) {
-                    subPrefs.style.display = '';
-                } else {
-                    subPrefs.style.display = 'none';
-                    updates.checked = false;
-                    marketing.checked = false;
-                }
-            }
-
             master.addEventListener('change', function () {
                 if (master.checked) {
                     subPrefs.style.display = '';
                     updates.checked = true;
                 } else {
-                    syncSubPreferences();
+                    subPrefs.style.display = 'none';
+                    updates.checked = false;
+                    marketing.checked = false;
                 }
             });
         });
