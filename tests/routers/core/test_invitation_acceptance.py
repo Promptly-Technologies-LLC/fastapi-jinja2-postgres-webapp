@@ -21,7 +21,7 @@ def _assert_authenticated_invitation_warning_page(
     assert 'name="password"' not in response.text
     assert "return to dashboard" in response.text.lower()
     assert app.url_path_for("read_dashboard") in response.text
-    assert "invitation link problem" in response.text.lower()
+    assert "invitation link invalid" in response.text.lower()
 
 
 # 1. Success: New User Registration Flow
