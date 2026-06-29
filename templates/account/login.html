@@ -1,8 +1,8 @@
 {% extends "account/auth_base.html" %}
 
-{% block title %}{% if user and invitation_token_warning %}Invitation link problem{% else %}Login{% endif %}{% endblock %}
+{% block title %}{% if user and invitation_token_warning %}Invitation link invalid{% else %}Login{% endif %}{% endblock %}
 
-{% block auth_header %}{% if user and invitation_token_warning %}Invitation link problem{% else %}Login{% endif %}{% endblock %}
+{% block auth_header %}{% if user and invitation_token_warning %}Invitation link invalid{% else %}Login{% endif %}{% endblock %}
 
 {% block auth_content %}
 <div class="login-form">
