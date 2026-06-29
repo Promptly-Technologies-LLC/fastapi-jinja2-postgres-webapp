@@ -1,8 +1,8 @@
 {% extends "account/auth_base.html" %}
 
-{% block title %}Login{% endblock %}
+{% block title %}{% if user and invitation_token_warning %}Invitation link problem{% else %}Login{% endif %}{% endblock %}
 
-{% block auth_header %}Login{% endblock %}
+{% block auth_header %}{% if user and invitation_token_warning %}Invitation link problem{% else %}Login{% endif %}{% endblock %}
 
 {% block auth_content %}
 <div class="login-form">
@@ -15,6 +15,12 @@
         This invitation link is no longer valid. If you were invited again recently, use the link from the most recent invitation email.
     </div>
     {% endif %}
+
+    {% if user and invitation_token_warning %}
+    <div class="d-grid">
+        <a href="{{ url_for('read_dashboard') }}" class="btn btn-primary">Return to dashboard</a>
+    </div>
+    {% else %}
     <form method="POST" action="{{ url_for('login') }}"
           hx-post="{{ url_for('login') }}" hx-swap="none"
           class="needs-validation" novalidate>
@@ -55,5 +61,6 @@
 
     <!-- Register Link -->
     <p class="text-center">Don't have an account? <a href="{{ url_for('read_register') }}">Register here</a></p>
+    {% endif %}
 </div>
 {% endblock %}

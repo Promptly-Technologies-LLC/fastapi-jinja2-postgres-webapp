@@ -10,6 +10,20 @@ from utils.core.models import User, Account, Invitation
 # --- Test Scenarios ---
 
 
+def _assert_authenticated_invitation_warning_page(
+    response,
+    *,
+    warning_substring: str,
+) -> None:
+    """Logged-in users with a bad invite token see a warning and dashboard CTA only."""
+    assert response.status_code == 200
+    assert warning_substring in response.text.lower()
+    assert 'name="password"' not in response.text
+    assert "return to dashboard" in response.text.lower()
+    assert app.url_path_for("read_dashboard") in response.text
+    assert "invitation link problem" in response.text.lower()
+
+
 # 1. Success: New User Registration Flow
 def test_accept_invitation_new_user_get_redirects_to_register(
     unauth_client: TestClient, test_invitation: Invitation
@@ -289,8 +303,45 @@ def test_accept_invitation_logged_in_user_sees_expired_warning(
     ]
 
     auth_response = auth_client_invitee.get(response.headers["location"])
-    assert auth_response.status_code == 200
-    assert "invitation link has expired" in auth_response.text.lower()
+    _assert_authenticated_invitation_warning_page(
+        auth_response,
+        warning_substring="invitation link has expired",
+    )
+
+
+def test_accept_invitation_logged_in_user_sees_invalid_warning_on_login(
+    auth_client_owner: TestClient,
+):
+    """Logged-in users with an unknown invite token get a warning, not a login form."""
+    response = auth_client_owner.get(
+        app.url_path_for("read_login"),
+        params={"invitation_token": "invalid-token-string"},
+    )
+    _assert_authenticated_invitation_warning_page(
+        response,
+        warning_substring="no longer valid",
+    )
+
+
+def test_accept_invitation_logged_in_user_sees_expired_warning_on_register(
+    auth_client_owner: TestClient,
+    expired_invitation: Invitation,
+):
+    """Logged-in users redirected to register for a bad invite still get the dashboard CTA."""
+    response = auth_client_owner.get(
+        app.url_path_for("accept_invitation"),
+        params={"token": expired_invitation.token},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    parsed_url = urlparse(response.headers["location"])
+    assert parsed_url.path == app.url_path_for("read_register")
+
+    auth_response = auth_client_owner.get(response.headers["location"])
+    _assert_authenticated_invitation_warning_page(
+        auth_response,
+        warning_substring="invitation link has expired",
+    )
 
 
 @pytest.mark.parametrize(

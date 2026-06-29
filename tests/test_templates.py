@@ -59,6 +59,20 @@ def test_base_template_includes_viewport_meta():
     assert "width=device-width" in content
 
 
+def test_login_template_hides_form_for_authenticated_invitation_warning():
+    content = Path("templates/account/login.html").read_text()
+    assert "user and invitation_token_warning" in content
+    assert "Return to dashboard" in content
+    assert "read_dashboard" in content
+
+
+def test_register_template_hides_form_for_authenticated_invitation_warning():
+    content = Path("templates/account/register.html").read_text()
+    assert "user and invitation_token_warning" in content
+    assert "Return to dashboard" in content
+    assert "read_dashboard" in content
+
+
 def test_toast_partial_exists():
     assert Path("templates/base/partials/toast.html").is_file()
 

@@ -1,8 +1,8 @@
 {% extends "account/auth_base.html" %}
 
-{% block title %}Register{% endblock %}
+{% block title %}{% if user and invitation_token_warning %}Invitation link problem{% else %}Register{% endif %}{% endblock %}
 
-{% block auth_header %}Register{% endblock %}
+{% block auth_header %}{% if user and invitation_token_warning %}Invitation link problem{% else %}Register{% endif %}{% endblock %}
 
 {% block auth_content %}
 <div class="register-form">
@@ -15,6 +15,12 @@
         This invitation link is no longer valid. If you were invited again recently, use the link from the most recent invitation email.
     </div>
     {% endif %}
+
+    {% if user and invitation_token_warning %}
+    <div class="d-grid">
+        <a href="{{ url_for('read_dashboard') }}" class="btn btn-primary">Return to dashboard</a>
+    </div>
+    {% else %}
     <form method="POST" action="{{ url_for('register') }}"
           hx-post="{{ url_for('register') }}" hx-swap="none"
           class="needs-validation" novalidate>
@@ -78,8 +84,10 @@
 
     <!-- Login Link -->
     <p class="mt-3 text-center">Already have an account? <a href="{{ url_for('read_login') }}">Login here</a></p>
+    {% endif %}
 </div>
 
+{% if not (user and invitation_token_warning) %}
 <script>
     (function () {
         const password = document.getElementById('password');
@@ -97,4 +105,5 @@
         confirmPassword.addEventListener('input', syncConfirmPasswordValidity);
     })();
 </script>
+{% endif %}
 {% endblock %}
