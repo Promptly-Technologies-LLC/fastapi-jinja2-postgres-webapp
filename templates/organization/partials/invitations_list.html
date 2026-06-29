@@ -2,18 +2,19 @@
 {# Set show_invitation_cancel=true via {% with %} to render Resend/Cancel controls (members card only). #}
 {% for inv in pending_invitations %}
 <li class="list-group-item invitation-list-item">
-    <div class="d-flex align-items-center flex-wrap gap-2">
-        <span class="me-auto">
-            {{ inv.invitee_email }} (Role: {{ inv.role.name }})
+    <div class="invitation-list-item-body">
+        <div class="invitation-list-leading me-md-auto">
+            <span class="invitation-list-email">{{ inv.invitee_email }}</span>
+            <span class="invitation-list-role-text">(Role: {{ inv.role.name }})</span>
             {% if inv.is_expired() %}
-            <span class="badge bg-warning text-dark ms-1">Expired</span>
+            <span class="badge bg-warning text-dark">Expired</span>
             {% else %}
-            <span class="badge bg-success ms-1">Active</span>
+            <span class="badge bg-success">Active</span>
             {% endif %}
-        </span>
+        </div>
         <small class="text-muted invitation-list-expiry">Expires: {{ inv.expires_at.strftime('%Y-%m-%d') }}</small>
         {% if show_invitation_cancel is defined and show_invitation_cancel and ValidPermissions is defined and user_permissions is defined and ValidPermissions.INVITE_USER in user_permissions %}
-        <div class="d-flex flex-wrap gap-2 invitation-actions-cell">
+        <div class="invitation-actions-cell">
             <form method="POST" action="{{ url_for('resend_invitation') }}" class="invitation-resend-form mb-0"
                   hx-post="{{ url_for('resend_invitation') }}"
                   hx-target="#members-card-content"
