@@ -1,3 +1,21 @@
+/* Constrain top-level regions to the viewport and allow flex children to
+   shrink below their content size, so wide content wraps instead of widening
+   the document. */
+html,
+body {
+    width: 100%;
+    max-width: 100%;
+}
+
+body,
+body > header,
+body > main,
+body > footer,
+main {
+    min-width: 0;
+    max-width: 100%;
+}
+
 .invalid-feedback {
     display: none;
     color: red;
@@ -7,7 +25,290 @@ input:invalid:not(:placeholder-shown) + .invalid-feedback {
     display: block;
 }
 
-/* Align pending-invitation Cancel buttons with card-header actions (e.g. Invite Member). */
+/* Organization page header. */
+.organization-page-header {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.organization-page-header-title {
+    flex: 1 1 20rem;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.organization-page-header-actions {
+    flex: 0 0 auto;
+}
+
+@media (max-width: 767.98px) {
+    .organization-page-header-actions {
+        width: 100%;
+    }
+}
+
+/* Dashboard organization selector. */
+.dashboard-org-selector {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.dashboard-org-selector-label {
+    white-space: nowrap;
+}
+
+.dashboard-org-selector-name {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.dashboard-org-selector-control .dropdown-toggle {
+    max-width: 18rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dashboard-resources-card-title {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.dashboard-resource-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem 1rem;
+    min-width: 0;
+}
+
+.dashboard-resource-item-title {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.dashboard-resource-item-date {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.dashboard-resource-item-description {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+@media (max-width: 767.98px) {
+    /* Multi-org picker: stack label above full-width dropdown. */
+    .dashboard-org-selector:has(.dashboard-org-selector-control) {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .dashboard-org-selector-control {
+        width: 100%;
+    }
+
+    .dashboard-org-selector-control .dropdown-toggle {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .dashboard-resource-item-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* Profile page. */
+.profile-email-list-item-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 0.75rem;
+    min-width: 0;
+}
+
+.profile-email-leading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.5rem;
+    min-width: 0;
+}
+
+.profile-email-address {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.profile-email-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.profile-organizations-card-title {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.profile-organizations-create-btn {
+    flex-shrink: 0;
+}
+
+.profile-organization-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem 1rem;
+    min-width: 0;
+}
+
+.profile-organization-item-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.profile-organization-item-date {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.profile-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.profile-form-actions .profile-form-cancel-btn {
+    margin-left: 0;
+}
+
+@media (max-width: 767.98px) {
+    .profile-email-list-item-body {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .profile-email-leading {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .profile-email-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .profile-email-action-form {
+        width: 100%;
+    }
+
+    .profile-email-action-form .btn {
+        width: 100%;
+    }
+
+    .profile-organizations-card-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .profile-organizations-create-btn {
+        width: 100%;
+        align-self: stretch;
+    }
+
+    .profile-organization-item-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .profile-form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .profile-form-actions .btn {
+        width: 100%;
+    }
+
+    .profile-add-email-form .input-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .profile-add-email-form .input-group > .form-control,
+    .profile-add-email-form .input-group > .btn {
+        width: 100%;
+        border-radius: var(--bs-border-radius);
+    }
+
+    .profile-add-email-form .input-group > .form-control {
+        border-bottom-right-radius: var(--bs-border-radius);
+        border-bottom-left-radius: var(--bs-border-radius);
+    }
+
+    .profile-add-email-form .input-group > .btn {
+        margin-top: 0.5rem;
+    }
+}
+
+/* Site navbar: long brand text must not crowd the mobile toggler. */
+.site-navbar-brand {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+@media (max-width: 991.98px) {
+    .site-navbar-brand {
+        flex: 1 1 auto;
+        max-width: calc(100% - 3.5rem);
+        font-size: 1rem;
+        line-height: 1.25;
+    }
+}
+
+/* Pending invitations in organization members card. */
+.invitation-list-item-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+}
+
+.invitation-list-leading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.35rem;
+    min-width: 0;
+}
+
+.invitation-list-email {
+    word-break: break-word;
+}
+
+.invitation-actions-cell {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* Desktop: bleed list to card edges so actions align with Invite Member. */
 .card-body .invitation-list.list-group-flush {
     margin-left: calc(-1 * var(--bs-card-spacer-x));
     margin-right: calc(-1 * var(--bs-card-spacer-x));
@@ -18,11 +319,50 @@ input:invalid:not(:placeholder-shown) + .invalid-feedback {
     padding-right: var(--bs-card-spacer-x);
 }
 
+.invitation-resend-form .btn-invitation-resend,
 .invitation-cancel-form .btn {
     min-width: 6.75rem;
 }
 
-.invitation-resend-form .btn-invitation-resend,
-.invitation-cancel-form .btn {
-    min-width: 6.75rem;
+@media (max-width: 767.98px) {
+    .card-body .invitation-list.list-group-flush {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .card-body .invitation-list .invitation-list-item {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .invitation-list-item + .invitation-list-item {
+        margin-top: 0.25rem;
+        padding-top: 0.75rem;
+    }
+
+    .invitation-list-item-body {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .invitation-list-leading {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.35rem;
+    }
+
+    .invitation-actions-cell {
+        width: 100%;
+    }
+
+    .invitation-resend-form,
+    .invitation-cancel-form {
+        flex: 1 1 0;
+    }
+
+    .invitation-resend-form .btn-invitation-resend,
+    .invitation-cancel-form .btn {
+        min-width: 0;
+        width: 100%;
+    }
 }
