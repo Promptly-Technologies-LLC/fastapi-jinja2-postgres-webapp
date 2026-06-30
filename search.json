@@ -249,6 +249,13 @@
     "href": "CHANGELOG.html",
     "title": "Changelog",
     "section": "",
-    "text": "Changelog\nAll notable changes to this project will be documented in this file.\nThe format is based on Keep a Changelog, and this project adheres to Semantic Versioning."
+    "text": "All notable changes to this project will be documented in this file.\nThe format is based on Keep a Changelog, and this project adheres to Semantic Versioning.\n\n\n\n\n\n\nRelease v0.1.30 [skip ci] (8740166)\n\n\n\n\n\nAdd semantic-release workflow and conventional commit enforcement (#203, e9ab2ad)"
+  },
+  {
+    "objectID": "CHANGELOG.html#v1.0.0-2026-06-23",
+    "href": "CHANGELOG.html#v1.0.0-2026-06-23",
+    "title": "Changelog",
+    "section": "",
+    "text": "Release v0.1.30 [skip ci] (8740166)\n\n\n\n\n\nAdd semantic-release workflow and conventional commit enforcement (#203, e9ab2ad)"
   }
 ]
