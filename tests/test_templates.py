@@ -53,6 +53,12 @@ def test_base_template_has_extra_scripts_block():
     assert "extra_scripts" in content
 
 
+def test_base_template_includes_viewport_meta():
+    content = Path("templates/base.html").read_text()
+    assert 'name="viewport"' in content
+    assert "width=device-width" in content
+
+
 def test_toast_partial_exists():
     assert Path("templates/base/partials/toast.html").is_file()
 

@@ -412,6 +412,24 @@ def second_test_organization(session: Session) -> Organization:
     return organization
 
 
+def add_owner_to_organization(
+    session: Session, user: User, organization: Organization
+) -> None:
+    """Assign an Owner role on organization to user (for multi-org dashboard tests)."""
+    assert organization.id is not None
+    create_default_roles(session, organization.id, check_first=False)
+    owner_role = session.exec(
+        select(Role)
+        .where(Role.organization_id == organization.id)
+        .where(Role.name == "Owner")
+    ).first()
+    if owner_role is None:
+        raise AssertionError(f"Owner role not found for organization {organization.id}")
+    user.roles.append(owner_role)
+    session.add(user)
+    session.commit()
+
+
 # --- Invitation Fixtures ---
 
 

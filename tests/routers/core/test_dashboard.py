@@ -2,7 +2,7 @@ from main import app
 from sqlmodel import Session
 from utils.core.models import Organization, User
 from utils.app.models import OrganizationResource
-from tests.conftest import htmx_headers
+from tests.conftest import add_owner_to_organization, htmx_headers
 
 
 def test_dashboard_authenticated(auth_client_owner):
@@ -22,15 +22,40 @@ def test_dashboard_unauthenticated(unauth_client):
     assert "login" in response.headers["location"]
 
 
-def test_dashboard_shows_org_dropdown(auth_client_owner, test_organization):
-    """Test that dashboard shows organization dropdown for users with orgs."""
+def test_dashboard_single_org_shows_name_without_dropdown(
+    auth_client_owner, test_organization
+):
+    """Single-org users see the org name only, not a redundant picker."""
     response = auth_client_owner.get(
         app.url_path_for("read_dashboard"),
         follow_redirects=True,
     )
     assert response.status_code == 200
     assert test_organization.name in response.text
+    assert "dashboard-org-selector-name" in response.text
+    assert "orgSelect" not in response.text
+    assert "dashboard-org-selector-control" not in response.text
+
+
+def test_dashboard_multiple_orgs_shows_dropdown(
+    auth_client_owner,
+    org_owner,
+    session,
+    test_organization,
+    second_test_organization,
+):
+    """Users in multiple orgs get the organization picker."""
+    add_owner_to_organization(session, org_owner, second_test_organization)
+
+    response = auth_client_owner.get(
+        app.url_path_for("read_dashboard"),
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert test_organization.name in response.text
+    assert second_test_organization.name in response.text
     assert "orgSelect" in response.text
+    assert "dropdown-toggle" in response.text
 
 
 def test_dashboard_no_orgs(auth_client):
