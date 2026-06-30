@@ -1,28 +1,19 @@
-/* Flex column body + wide tables otherwise expand document scrollWidth. */
-html {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-}
-
+/* Constrain top-level regions to the viewport and allow flex children to
+   shrink below their content size, so wide content wraps instead of widening
+   the document. */
+html,
 body {
     width: 100%;
-    min-width: 0;
     max-width: 100%;
-    overflow-x: hidden;
 }
 
+body,
 body > header,
 body > main,
-body > footer {
-    width: 100%;
+body > footer,
+main {
     min-width: 0;
     max-width: 100%;
-}
-
-main {
-    overflow-x: hidden;
-    min-width: 0;
 }
 
 .invalid-feedback {

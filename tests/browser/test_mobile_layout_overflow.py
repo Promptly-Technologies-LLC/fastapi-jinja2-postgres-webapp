@@ -586,3 +586,81 @@ def test_navbar_brand_fits_mobile_viewport(
     result = _evaluate_at_viewport(browser, html, MOBILE_VIEWPORT, layout_check)
 
     assert result.get("ok"), result
+
+
+@pytest.mark.usefixtures("env_vars")
+def test_pending_invitation_row_stacks_on_mobile(
+    browser,
+    auth_client_owner,
+    test_organization,
+    test_invitation,
+):
+    assert test_organization.id is not None
+    html = _inject_static_css(
+        auth_client_owner.get(f"/organizations/{test_organization.id}").text
+    )
+
+    layout_check = """() => {
+        const body = document.querySelector('.invitation-list-item-body');
+        const leading = document.querySelector('.invitation-list-leading');
+        const actions = document.querySelector('.invitation-actions-cell');
+        if (!body || !leading || !actions) {
+            return { ok: false, reason: 'missing invitation row controls' };
+        }
+        const bodyStyle = getComputedStyle(body);
+        const leadingRect = leading.getBoundingClientRect();
+        const actionsRect = actions.getBoundingClientRect();
+        const ratio = document.documentElement.scrollWidth / window.innerWidth;
+        const stacked = bodyStyle.flexDirection === 'column'
+            && actionsRect.top >= leadingRect.bottom - 2;
+        const fullWidthActions = Math.abs(
+            actionsRect.width - body.getBoundingClientRect().width
+        ) < 4;
+        return {
+            ok: ratio <= 1.0 && stacked && fullWidthActions,
+            ratio,
+            stacked,
+            fullWidthActions,
+            flexDirection: bodyStyle.flexDirection,
+        };
+    }"""
+
+    result = _evaluate_at_viewport(browser, html, MOBILE_VIEWPORT, layout_check)
+
+    assert result.get("ok"), result
+
+
+@pytest.mark.usefixtures("env_vars")
+def test_pending_invitation_row_side_by_side_on_desktop(
+    browser,
+    auth_client_owner,
+    test_organization,
+    test_invitation,
+):
+    assert test_organization.id is not None
+    html = _inject_static_css(
+        auth_client_owner.get(f"/organizations/{test_organization.id}").text
+    )
+
+    layout_check = """() => {
+        const body = document.querySelector('.invitation-list-item-body');
+        const leading = document.querySelector('.invitation-list-leading');
+        const actions = document.querySelector('.invitation-actions-cell');
+        if (!body || !leading || !actions) {
+            return { ok: false, reason: 'missing invitation row controls' };
+        }
+        const bodyStyle = getComputedStyle(body);
+        const leadingRect = leading.getBoundingClientRect();
+        const actionsRect = actions.getBoundingClientRect();
+        return {
+            ok: bodyStyle.flexDirection === 'row'
+                && leadingRect.right <= actionsRect.left + 2,
+            flexDirection: bodyStyle.flexDirection,
+            leadingRight: leadingRect.right,
+            actionsLeft: actionsRect.left,
+        };
+    }"""
+
+    result = _evaluate_at_viewport(browser, html, DESKTOP_VIEWPORT, layout_check)
+
+    assert result.get("ok"), result
