@@ -5,9 +5,11 @@
 
     {% if organizations %}
     <!-- Organization Selector -->
-    <div class="d-flex align-items-center mb-4">
-        <label for="orgSelect" class="form-label me-2 mb-0 fw-bold">Organization:</label>
-        <div class="dropdown">
+    <div class="dashboard-org-selector mb-4">
+        {% if organizations | length > 1 %}
+        <label for="orgSelect" class="form-label mb-0 fw-bold dashboard-org-selector-label">Organization:</label>
+        <div class="dropdown dashboard-org-selector-control"
+             data-bs-popper-config='{"strategy":"fixed","placement":"bottom-start","modifiers":[{"name":"flip","enabled":true}]}'>
             <button class="btn btn-outline-primary dropdown-toggle" type="button" id="orgSelect" data-bs-toggle="dropdown" aria-expanded="false">
                 {{ selected_org.name if selected_org else "Select Organization" }}
             </button>
@@ -23,13 +25,17 @@
                 {% endfor %}
             </ul>
         </div>
+        {% else %}
+        <span class="form-label mb-0 fw-bold dashboard-org-selector-label">Organization:</span>
+        <span class="dashboard-org-selector-name fw-semibold">{{ selected_org.name }}</span>
+        {% endif %}
     </div>
     {% endif %}
 
     <!-- Organization Resources Section -->
-    <div class="card">
+    <div class="card dashboard-resources-card">
         <div class="card-header">
-            <h5 class="mb-0">Organization-specific assets will display here:</h5>
+            <h5 class="mb-0 dashboard-resources-card-title">Organization-specific assets will display here:</h5>
         </div>
         <div class="card-body">
             {% if not organizations %}
@@ -38,15 +44,15 @@
                 <p class="text-muted">You do not have permission to view resources for this organization.</p>
             {% elif resources %}
                 <!-- Replace this example resource list with your own application UI -->
-                <div class="list-group">
+                <div class="list-group dashboard-resource-list">
                     {% for resource in resources %}
-                    <div class="list-group-item">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1">{{ resource.title }}</h6>
-                            <small class="text-muted">{{ resource.created_at.strftime('%Y-%m-%d') }}</small>
+                    <div class="list-group-item dashboard-resource-item">
+                        <div class="dashboard-resource-item-header">
+                            <h6 class="mb-1 dashboard-resource-item-title">{{ resource.title }}</h6>
+                            <small class="text-muted dashboard-resource-item-date">{{ resource.created_at.strftime('%Y-%m-%d') }}</small>
                         </div>
                         {% if resource.description %}
-                        <p class="mb-1 text-muted">{{ resource.description }}</p>
+                        <p class="mb-1 text-muted dashboard-resource-item-description">{{ resource.description }}</p>
                         {% endif %}
                     </div>
                     {% endfor %}

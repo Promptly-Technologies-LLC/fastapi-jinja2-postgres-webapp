@@ -241,9 +241,9 @@ def test_profile_displays_organization_list(
     # This regex looks for the card div, the header with "Organizations" and the button,
     # and captures everything until the next card's div or the end of the container
     org_section_match = re.search(
-        r'(<div class="card mb-4">\s*<div class="card-header.*?">\s*Organizations\s*<button.*?</div>.*?<div class="card-body">.*?</div>\s*</div>)',
+        r'(<div class="card mb-4 profile-organizations-card">.*?profile-organizations-card-header.*?Organizations.*?</div>\s*</div>)',
         response.text,
-        re.DOTALL,  # Allow . to match newline characters
+        re.DOTALL,
     )
 
     # Check that the organizations section was found
