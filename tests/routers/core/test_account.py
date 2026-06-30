@@ -12,10 +12,15 @@ from utils.core.models import (
     AccountEmail,
     AccountRecoveryToken,
     EmailVerificationToken,
+    Invitation,
+    Organization,
     PasswordResetToken,
     RefreshToken,
     Account,
+    Role,
+    UserRoleLink,
 )
+from utils.app.models import OrganizationResource
 from utils.core.auth import (
     create_access_token,
     create_recovery_token,
@@ -411,6 +416,122 @@ def test_logout_endpoint(auth_client: TestClient):
         "refresh_token=" in cookie and "Max-Age=0" in cookie
         for cookie in cookie_headers
     )
+
+
+def test_delete_account_removes_sole_user_organization_and_owned_resources(
+    auth_client_owner: TestClient,
+    session: Session,
+    org_owner: User,
+    test_organization: Organization,
+    member_role: Role,
+):
+    assert org_owner.id is not None
+    assert org_owner.account is not None
+    assert org_owner.account.id is not None
+    assert test_organization.id is not None
+    assert member_role.id is not None
+
+    account_id = org_owner.account.id
+    user_id = org_owner.id
+    organization_id = test_organization.id
+
+    resource = OrganizationResource(
+        organization_id=organization_id,
+        title="Owned resource",
+    )
+    invitation = Invitation(
+        organization_id=organization_id,
+        role_id=member_role.id,
+        invitee_email="delete-org-invitee@example.com",
+        expires_at=datetime.now(UTC) + timedelta(days=7),
+    )
+    session.add(resource)
+    session.add(invitation)
+    session.commit()
+    session.refresh(resource)
+    session.refresh(invitation)
+    assert resource.id is not None
+    assert invitation.id is not None
+    resource_id = resource.id
+    invitation_id = invitation.id
+
+    response = auth_client_owner.post(
+        app.url_path_for("delete_account"),
+        data={"email": org_owner.account.email, "password": "Owner123!@#"},
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == app.url_path_for("logout")
+
+    session.expire_all()
+    assert session.get(Account, account_id) is None
+    assert session.get(User, user_id) is None
+    assert session.get(Organization, organization_id) is None
+    assert session.get(OrganizationResource, resource_id) is None
+    assert session.get(Invitation, invitation_id) is None
+    assert (
+        session.exec(select(Role).where(Role.organization_id == organization_id)).all()
+        == []
+    )
+
+
+def test_delete_account_preserves_shared_organization_and_owned_resources(
+    auth_client_owner: TestClient,
+    session: Session,
+    org_owner: User,
+    org_member_user: User,
+    test_organization: Organization,
+):
+    assert org_owner.id is not None
+    assert org_owner.account is not None
+    assert org_owner.account.id is not None
+    assert org_member_user.id is not None
+    assert org_member_user.account is not None
+    assert org_member_user.account.id is not None
+    assert test_organization.id is not None
+
+    deleted_account_id = org_owner.account.id
+    deleted_user_id = org_owner.id
+    remaining_user_id = org_member_user.id
+    remaining_account_id = org_member_user.account.id
+    organization_id = test_organization.id
+
+    resource = OrganizationResource(
+        organization_id=organization_id,
+        title="Shared organization resource",
+    )
+    session.add(resource)
+    session.commit()
+    session.refresh(resource)
+    assert resource.id is not None
+    resource_id = resource.id
+
+    response = auth_client_owner.post(
+        app.url_path_for("delete_account"),
+        data={"email": org_owner.account.email, "password": "Owner123!@#"},
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == app.url_path_for("logout")
+
+    session.expire_all()
+    assert session.get(Account, deleted_account_id) is None
+    assert session.get(User, deleted_user_id) is None
+    assert session.get(Account, remaining_account_id) is not None
+    assert session.get(User, remaining_user_id) is not None
+    assert session.get(Organization, organization_id) is not None
+    assert session.get(OrganizationResource, resource_id) is not None
+
+    organization_user_ids = {
+        user_id
+        for user_id in session.exec(
+            select(UserRoleLink.user_id)
+            .join(Role, Role.id == UserRoleLink.role_id)
+            .where(Role.organization_id == organization_id)
+        ).all()
+    }
+    assert deleted_user_id not in organization_user_ids
+    assert remaining_user_id in organization_user_ids
 
 
 # --- Error Case Tests ---

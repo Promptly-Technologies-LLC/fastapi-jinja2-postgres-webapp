@@ -88,7 +88,9 @@ class AccountEmail(SQLModel, table=True):
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    account_id: int = Field(foreign_key="private.account.id", index=True)
+    account_id: int = Field(
+        foreign_key="private.account.id", ondelete="CASCADE", index=True
+    )
     email: str = Field(index=True)
     is_primary: bool = Field(default=False)
     verified: bool = Field(default=False)
@@ -183,7 +185,9 @@ class UserAvatar(SQLModel, table=True):
     __tablename__ = "useravatar"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", unique=True, index=True)
+    user_id: int = Field(
+        foreign_key="user.id", ondelete="CASCADE", unique=True, index=True
+    )
     avatar_data: bytes = Field(sa_column=Column(LargeBinary, nullable=False))
     avatar_content_type: str
 
