@@ -8,13 +8,16 @@ from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from starlette.datastructures import URLPath
 from pydantic import EmailStr
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 from utils.core.models import (
     User,
     DataIntegrityError,
     Account,
     AccountEmail,
     Invitation,
+    Organization,
+    Role,
+    UserRoleLink,
 )
 from utils.core.dependencies import get_session
 from utils.core.models import RefreshToken
@@ -88,6 +91,37 @@ templates = Jinja2Templates(directory="templates")
 
 
 # --- Route-specific dependencies ---
+
+
+def _delete_organizations_where_user_is_only_member(
+    session: Session, user: User
+) -> None:
+    """Delete organizations that would have no remaining users after user deletion."""
+    if user.id is None:
+        return
+
+    organization_ids = session.exec(
+        select(Role.organization_id)
+        .join(UserRoleLink, col(UserRoleLink.role_id) == col(Role.id))
+        .where(UserRoleLink.user_id == user.id)
+        .distinct()
+    ).all()
+
+    for organization_id in organization_ids:
+        user_ids = {
+            user_id
+            for user_id in session.exec(
+                select(UserRoleLink.user_id)
+                .join(Role, col(Role.id) == col(UserRoleLink.role_id))
+                .where(Role.organization_id == organization_id)
+                .distinct()
+            ).all()
+            if user_id is not None
+        }
+        if user_ids == {user.id}:
+            organization = session.get(Organization, organization_id)
+            if organization is not None:
+                session.delete(organization)
 
 
 def validate_password_strength_and_match(
@@ -264,8 +298,14 @@ async def delete_account(
     """
     Delete a user account after verifying credentials.
     """
-    # Delete the account and associated user
-    # Note: The user will be deleted automatically by cascade relationship
+    user = account.user
+    if user is None:
+        session.refresh(account, attribute_names=["user"])
+        user = account.user
+
+    if user is not None:
+        _delete_organizations_where_user_is_only_member(session, user)
+
     session.delete(account)
     session.commit()
 
