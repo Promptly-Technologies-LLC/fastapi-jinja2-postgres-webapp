@@ -249,7 +249,14 @@
     "href": "CHANGELOG.html",
     "title": "Changelog",
     "section": "",
-    "text": "All notable changes to this project will be documented in this file.\nThe format is based on Keep a Changelog, and this project adheres to Semantic Versioning.\n\n\n\n\n\n\nRelease v0.1.30 [skip ci] (8740166)\n\n\n\n\n\nAdd semantic-release workflow and conventional commit enforcement (#203, e9ab2ad)"
+    "text": "All notable changes to this project will be documented in this file.\nThe format is based on Keep a Changelog, and this project adheres to Semantic Versioning.\n\n\n\n\n\n\nAddress review nits on invitation warning pages (03e08c9)\nHarden profile-form htmx swap tests against CI timing flakiness (03e08c9)\n\n\n\n\n\nDrop overflow-x clip in favor of geometry-based regression tests (350af44)\n\n\n\n\n\n\n\n\nRelease v0.1.30 [skip ci] (8740166)\n\n\n\n\n\nAdd semantic-release workflow and conventional commit enforcement (#203, e9ab2ad)"
+  },
+  {
+    "objectID": "CHANGELOG.html#v1.0.1-2026-06-30",
+    "href": "CHANGELOG.html#v1.0.1-2026-06-30",
+    "title": "Changelog",
+    "section": "",
+    "text": "Address review nits on invitation warning pages (03e08c9)\nHarden profile-form htmx swap tests against CI timing flakiness (03e08c9)\n\n\n\n\n\nDrop overflow-x clip in favor of geometry-based regression tests (350af44)"
   },
   {
     "objectID": "CHANGELOG.html#v1.0.0-2026-06-23",
