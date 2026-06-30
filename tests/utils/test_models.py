@@ -1,6 +1,7 @@
 from datetime import timedelta, datetime, UTC
 from typing import Optional
 from sqlmodel import select, Session
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 import pytest
 from utils.core.models import (
@@ -14,6 +15,7 @@ from utils.core.models import (
     Role,
     RolePermissionLink,
     User,
+    UserAvatar,
     UserRoleLink,
 )
 from utils.core.enums import ValidPermissions
@@ -472,6 +474,52 @@ def test_account_email_cascade_delete(session: Session, test_account: Account):
 
     remaining = session.exec(select(AccountEmail)).all()
     assert len(remaining) == 0
+
+
+def test_account_email_database_cascade_delete(session: Session, test_account: Account):
+    """Test that AccountEmail rows cascade when the parent account is deleted in SQL."""
+    email = AccountEmail(
+        account_id=test_account.id,
+        email="db-cascade@example.com",
+        is_primary=True,
+        verified=True,
+    )
+    session.add(email)
+    session.commit()
+    session.refresh(email)
+    assert email.id is not None
+    email_id = email.id
+
+    session.connection().execute(
+        text('DELETE FROM private."account" WHERE id = :account_id'),
+        {"account_id": test_account.id},
+    )
+    session.commit()
+
+    assert session.get(AccountEmail, email_id) is None
+
+
+def test_user_avatar_database_cascade_delete(session: Session, test_user: User):
+    """Test that UserAvatar rows cascade when the parent user is deleted in SQL."""
+    assert test_user.id is not None
+    avatar = UserAvatar(
+        user_id=test_user.id,
+        avatar_data=b"avatar-bytes",
+        avatar_content_type="image/png",
+    )
+    session.add(avatar)
+    session.commit()
+    session.refresh(avatar)
+    assert avatar.id is not None
+    avatar_id = avatar.id
+
+    session.connection().execute(
+        text('DELETE FROM "user" WHERE id = :user_id'),
+        {"user_id": test_user.id},
+    )
+    session.commit()
+
+    assert session.get(UserAvatar, avatar_id) is None
 
 
 # --- EmailVerificationToken model tests ---

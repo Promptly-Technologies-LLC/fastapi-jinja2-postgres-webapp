@@ -27,7 +27,9 @@ class OrganizationResource(SQLModel, table=True):
     """
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    organization_id: int = Field(foreign_key="organization.id", index=True)
+    organization_id: int = Field(
+        foreign_key="organization.id", ondelete="CASCADE", index=True
+    )
     title: str
     description: Optional[str] = None
     created_at: datetime = Field(default_factory=utc_now)
