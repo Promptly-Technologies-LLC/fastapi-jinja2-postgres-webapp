@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- version list -->
 
+## v1.0.1 (2026-06-30)
+
+### Bug Fixes
+
+- Address review nits on invitation warning pages
+  ([`03e08c9`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/03e08c9fdbf022ece4a82b53121a0734db601108))
+
+- Harden profile-form htmx swap tests against CI timing flakiness
+  ([`03e08c9`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/03e08c9fdbf022ece4a82b53121a0734db601108))
+
+### Refactoring
+
+- Drop overflow-x clip in favor of geometry-based regression tests
+  ([`350af44`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/350af447d7693d64d6e0ac95d0e15f9fa01e01d3))
+
+
 ## v1.0.0 (2026-06-23)
 
 ### Chores
