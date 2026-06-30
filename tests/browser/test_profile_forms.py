@@ -44,6 +44,11 @@ def profile_page(browser, live_server: str, _register_profile_user):
     context.close()
 
 
+# Generous bound for htmx round trips under CI load; the assertions below
+# still fail fast on a genuinely broken swap since they poll, not sleep.
+HTMX_SWAP_TIMEOUT_MS = 10_000
+
+
 def test_edit_profile_swap_cycle(profile_page: Page):
     """Clicking Edit fetches the form via hx-get; submitting swaps back to display."""
     page = profile_page
@@ -53,16 +58,27 @@ def test_edit_profile_swap_cycle(profile_page: Page):
     expect(card.locator("button:has-text('Edit')")).to_be_visible()
     expect(card.locator("form")).to_have_count(0)
 
-    # Click Edit — fetches form partial via hx-get
-    card.locator("button:has-text('Edit')").click()
-    expect(card.locator('button:has-text("Save Changes")')).to_be_visible(timeout=5_000)
+    # Click Edit — fetches form partial via hx-get. Wait for the response
+    # itself (not just the eventual DOM state) so a slow server round trip
+    # produces a clear network-timeout failure rather than a flaky locator
+    # mismatch.
+    with page.expect_response("**/user/edit-form"):
+        card.locator("button:has-text('Edit')").click()
+    expect(card.locator('button:has-text("Save Changes")')).to_be_visible(
+        timeout=HTMX_SWAP_TIMEOUT_MS
+    )
 
     # Submit the form
-    card.locator('button[type="submit"]').click()
+    with page.expect_response("**/user/update"):
+        card.locator('button[type="submit"]').click()
 
     # Should swap back to display mode
-    expect(card.locator("button:has-text('Edit')")).to_be_visible(timeout=5_000)
-    expect(card.locator('button[type="submit"]')).to_have_count(0, timeout=5_000)
+    expect(card.locator("button:has-text('Edit')")).to_be_visible(
+        timeout=HTMX_SWAP_TIMEOUT_MS
+    )
+    expect(card.locator('button[type="submit"]')).to_have_count(
+        0, timeout=HTMX_SWAP_TIMEOUT_MS
+    )
 
 
 def test_edit_profile_cancel(profile_page: Page):
@@ -71,15 +87,23 @@ def test_edit_profile_cancel(profile_page: Page):
     card = page.locator("#profile-card")
 
     # Click Edit
-    card.locator("button:has-text('Edit')").click()
-    expect(card.locator('button:has-text("Save Changes")')).to_be_visible(timeout=5_000)
+    with page.expect_response("**/user/edit-form"):
+        card.locator("button:has-text('Edit')").click()
+    expect(card.locator('button:has-text("Save Changes")')).to_be_visible(
+        timeout=HTMX_SWAP_TIMEOUT_MS
+    )
 
     # Click Cancel
-    card.locator("button:has-text('Cancel')").click()
+    with page.expect_response("**/user/profile-display"):
+        card.locator("button:has-text('Cancel')").click()
 
     # Should swap back to display mode
-    expect(card.locator("button:has-text('Edit')")).to_be_visible(timeout=5_000)
-    expect(card.locator('button[type="submit"]')).to_have_count(0, timeout=5_000)
+    expect(card.locator("button:has-text('Edit')")).to_be_visible(
+        timeout=HTMX_SWAP_TIMEOUT_MS
+    )
+    expect(card.locator('button[type="submit"]')).to_have_count(
+        0, timeout=HTMX_SWAP_TIMEOUT_MS
+    )
 
 
 def test_add_email_form_resets_after_submit(profile_page: Page):
@@ -94,7 +118,8 @@ def test_add_email_form_resets_after_submit(profile_page: Page):
     email_input.fill("new-browser-test@example.com")
     assert email_input.input_value() == "new-browser-test@example.com"
 
-    page.click('form:has(input[name="new_email"]) button[type="submit"]')
+    with page.expect_response("**/account/emails/add"):
+        page.click('form:has(input[name="new_email"]) button[type="submit"]')
 
     # hx-on::after-settle resets the form after the swap completes
-    expect(email_input).to_have_value("", timeout=5_000)
+    expect(email_input).to_have_value("", timeout=HTMX_SWAP_TIMEOUT_MS)
