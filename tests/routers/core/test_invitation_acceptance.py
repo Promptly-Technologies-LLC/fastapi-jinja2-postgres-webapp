@@ -1,3 +1,4 @@
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
@@ -11,9 +12,10 @@ from utils.core.models import User, Account, Invitation
 
 
 def _assert_authenticated_invitation_warning_page(
-    response,
+    response: httpx.Response,
     *,
     warning_substring: str,
+    heading_substring: str = "invitation link invalid",
 ) -> None:
     """Logged-in users with a bad invite token see a warning and dashboard CTA only."""
     assert response.status_code == 200
@@ -21,7 +23,7 @@ def _assert_authenticated_invitation_warning_page(
     assert 'name="password"' not in response.text
     assert "return to dashboard" in response.text.lower()
     assert app.url_path_for("read_dashboard") in response.text
-    assert "invitation link invalid" in response.text.lower()
+    assert heading_substring in response.text.lower()
 
 
 # 1. Success: New User Registration Flow
@@ -306,6 +308,7 @@ def test_accept_invitation_logged_in_user_sees_expired_warning(
     _assert_authenticated_invitation_warning_page(
         auth_response,
         warning_substring="invitation link has expired",
+        heading_substring="invitation link expired",
     )
 
 
@@ -341,6 +344,7 @@ def test_accept_invitation_logged_in_user_sees_expired_warning_on_register(
     _assert_authenticated_invitation_warning_page(
         auth_response,
         warning_substring="invitation link has expired",
+        heading_substring="invitation link expired",
     )
 
 
