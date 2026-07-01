@@ -2,7 +2,7 @@
 
 
 ![Screenshot of the FastAPI webapp template
-homepage](user_guide/static/screenshot.jpg)
+homepage](user_guide/static/screenshot.webp)
 
 ## Quickstart
 
