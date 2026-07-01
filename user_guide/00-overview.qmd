@@ -4,7 +4,7 @@ description: "A production-ready web application template combining FastAPI, Jin
 guide-section: "Getting Started"
 ---
 
-![Screenshot of the FastAPI webapp template homepage](user-guide/static/screenshot.jpg)
+![Screenshot of the FastAPI webapp template homepage](user-guide/static/screenshot.png)
 
 ## Quickstart
 
