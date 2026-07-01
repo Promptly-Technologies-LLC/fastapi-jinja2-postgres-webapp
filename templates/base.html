@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Home{% endblock %} | FastAPI-Jinja2-Postgres Webapp</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
     <link href="{{ url_for('static', path='css/styles.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', path='css/extras.css') }}" rel="stylesheet">
 
@@ -17,12 +21,12 @@
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="theme-color" content="#ffffff">
     <!-- Scripts in <head> with defer so they are NOT re-processed during
-         htmx hx-boost body swaps. This preserves Bootstrap's document-level
-         event delegation across AJAX navigations. defer maintains execution
-         order and waits for DOM parsing to complete. -->
-    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+         htmx hx-boost body swaps. This keeps our component JS (ui.js) and its
+         document-level event delegation working across AJAX navigations. defer
+         maintains execution order and waits for DOM parsing to complete. -->
     <script defer src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/htmx-ext-remove-me@2.0.0/remove-me.js"></script>
+    <script defer src="{{ url_for('static', path='js/ui.js') }}"></script>
     <script defer src="{{ url_for('static', path='js/app.js') }}"></script>
     {% block extra_head %}{% endblock %}
 </head>

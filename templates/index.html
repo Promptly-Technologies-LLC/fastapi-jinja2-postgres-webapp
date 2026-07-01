@@ -1,52 +1,44 @@
 <!-- landing page for unauthenticated users -->
-{% from 'base/macros/logo.html' import render_logo %}
-
 {% extends "base.html" %}
 
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-md-8 offset-md-2 text-center">
-            {{ render_logo(width=40, height=40, classes="d-inline-block align-middle mt-2 me-4") }}
-            <h1 class="display-4 mb-4 d-inline align-middle">FastAPI-Jinja2-Postgres Webapp</h1>
-            <p class="lead mb-5">A template webapp with a pure-Python FastAPI backend, Jinja2 templating and Bootstrap styling for the frontend, and a PostgreSQL database with SQLModel ORM to power user auth</p>
+<div class="container">
+    <section class="home-hero">
+        <div class="home-hero-copy">
+            <p class="home-hero-eyebrow">Production-ready starter</p>
+            <h1 class="home-hero-title">Ship the boring parts on day one.</h1>
+            <p class="home-hero-lead">
+                A typed, pure-Python web stack &mdash; FastAPI, Jinja2, and PostgreSQL &mdash;
+                with authentication, organizations, and role-based permissions already wired up.
+                Clone it and start building the part that matters.
+            </p>
+            <div class="home-hero-actions">
+                <a href="{{ url_for('read_register') }}" class="btn btn-primary btn-lg">Get started</a>
+                <a href="{{ url_for('read_login') }}" class="btn btn-outline-secondary btn-lg">Log in</a>
+            </div>
         </div>
-    </div>
 
-    <div class="row mb-5">
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">FastAPI</h5>
-                    <p class="card-text">A scalable, high-performance, type-annotated Python web framework</p>
-                </div>
+        <div class="stack-term" role="img"
+             aria-label="Terminal listing the stack: FastAPI, Jinja2, PostgreSQL, and htmx.">
+            <div class="stack-term-bar">
+                <span class="dot dot-r"></span>
+                <span class="dot dot-y"></span>
+                <span class="dot dot-g"></span>
+                <span class="stack-term-title">~/project — stack --list</span>
+            </div>
+            <div class="stack-term-body">
+                <div class="stack-term-cmd">$ <b>stack</b> --list</div>
+                <ul class="stack-term-list">
+                    <li><span class="stack-term-ok">✓</span><span class="stack-term-pkg">fastapi</span><span class="stack-term-desc">high-performance async Python API framework</span></li>
+                    <li><span class="stack-term-ok">✓</span><span class="stack-term-pkg">jinja2</span><span class="stack-term-desc">server-rendered HTML templating</span></li>
+                    <li><span class="stack-term-ok">✓</span><span class="stack-term-pkg">postgres</span><span class="stack-term-desc">relational database + SQLModel ORM</span></li>
+                    <li><span class="stack-term-ok">✓</span><span class="stack-term-pkg">htmx</span><span class="stack-term-desc">dynamic UI without a JS build step</span></li>
+                </ul>
+                <div class="stack-term-foot">4 packages, 0 build tools<span class="stack-term-cursor" aria-hidden="true"></span></div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Jinja2</h5>
-                    <p class="card-text">Composable HTML templating engine for Python web servers</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">PostgreSQL</h5>
-                    <p class="card-text">A fast, full-featured, open-source relational database engine</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-6 offset-md-3 text-center">
-            <a href="{{ url_for('read_register') }}" class="btn btn-primary btn-lg mx-3 mb-3">Sign Up</a>
-            <a href="{{ url_for('read_login') }}" class="btn btn-outline-secondary btn-lg mb-3">Log In</a>
-        </div>
-    </div>
+    </section>
 </div>
 {% endblock %}
