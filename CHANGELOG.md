@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- version list -->
 
+## v1.1.0 (2026-07-01)
+
+### Documentation
+
+- Migrate documentation from raw Quarto to Great Docs
+  ([#211](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/211),
+  [`8514c59`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/8514c5977b12754022f18f7e069a4fb3c05fa0f4))
+
+### Features
+
+- New frontend theme!
+  ([#212](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/212),
+  [`777fe83`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/777fe83b24b47504c0f801c41a12407f31895733))
+
+
 ## v1.0.2 (2026-06-30)
 
 ### Bug Fixes
