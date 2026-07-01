@@ -7,6 +7,158 @@ body {
     max-width: 100%;
 }
 
+/* ------------------------------------------------------------- Landing hero */
+
+.home-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 3rem;
+    align-items: center;
+    padding: 4.5rem 0 3.5rem;
+}
+
+.home-hero-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 1.1rem;
+}
+
+.home-hero-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.3rem, 4.5vw, 3.2rem);
+    line-height: 1.03;
+    letter-spacing: -0.03em;
+    color: var(--slate);
+    margin: 0 0 1rem;
+}
+
+.home-hero-lead {
+    font-size: 1.1rem;
+    color: var(--muted);
+    max-width: 44ch;
+    margin: 0 0 1.75rem;
+}
+
+.home-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+/* Terminal "stack manifest" — the page's signature element. */
+.stack-term {
+    background: var(--slate);
+    border: 1px solid #2c3b43;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    min-width: 0;
+}
+
+.stack-term-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 0.9rem;
+    border-bottom: 1px solid #2c3b43;
+}
+
+.stack-term-bar span.dot {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 50%;
+    display: inline-block;
+}
+.stack-term-bar .dot-r { background: #e05a4d; }
+.stack-term-bar .dot-y { background: var(--amber); }
+.stack-term-bar .dot-g { background: #57b894; }
+
+.stack-term-title {
+    margin-left: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: #8a9ba0;
+}
+
+.stack-term-body {
+    padding: 1.1rem 1.15rem 1.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #cdd8da;
+    overflow-x: auto;
+}
+
+.stack-term-cmd { color: #8fb7c0; }
+.stack-term-cmd b { color: var(--amber); font-weight: 600; }
+
+.stack-term-list {
+    list-style: none;
+    margin: 0.75rem 0 0;
+    padding: 0;
+}
+.stack-term-list li {
+    display: flex;
+    gap: 0.9rem;
+    padding: 0.2rem 0;
+}
+.stack-term-ok { color: #57b894; }
+.stack-term-pkg { color: #fff; font-weight: 600; min-width: 5.5rem; }
+.stack-term-desc { color: #93a4a8; overflow-wrap: anywhere; }
+
+.stack-term-foot { margin-top: 0.75rem; color: #8a9ba0; }
+
+.stack-term-cursor {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.95rem;
+    background: var(--amber);
+    vertical-align: -0.12rem;
+    margin-left: 0.25rem;
+    animation: fjp-blink 1.05s step-end infinite;
+}
+
+@keyframes fjp-blink { 50% { opacity: 0; } }
+
+/* Staggered reveal on load. */
+.stack-term-cmd,
+.stack-term-list li,
+.stack-term-foot {
+    animation: fjp-line-in 0.4s ease both;
+}
+.stack-term-list li:nth-child(1) { animation-delay: 0.12s; }
+.stack-term-list li:nth-child(2) { animation-delay: 0.22s; }
+.stack-term-list li:nth-child(3) { animation-delay: 0.32s; }
+.stack-term-list li:nth-child(4) { animation-delay: 0.42s; }
+.stack-term-foot { animation-delay: 0.55s; }
+
+@keyframes fjp-line-in {
+    from { opacity: 0; transform: translateX(-0.4rem); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@media (max-width: 767.98px) {
+    .home-hero {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        padding: 2.5rem 0;
+    }
+    .home-hero-actions .btn { flex: 1 1 auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .stack-term-cursor,
+    .stack-term-cmd,
+    .stack-term-list li,
+    .stack-term-foot {
+        animation: none;
+    }
+}
+
 body,
 body > header,
 body > main,
@@ -252,12 +404,12 @@ input:invalid:not(:placeholder-shown) + .invalid-feedback {
     .profile-add-email-form .input-group > .form-control,
     .profile-add-email-form .input-group > .btn {
         width: 100%;
-        border-radius: var(--bs-border-radius);
+        border-radius: var(--radius-sm);
     }
 
     .profile-add-email-form .input-group > .form-control {
-        border-bottom-right-radius: var(--bs-border-radius);
-        border-bottom-left-radius: var(--bs-border-radius);
+        border-bottom-right-radius: var(--radius-sm);
+        border-bottom-left-radius: var(--radius-sm);
     }
 
     .profile-add-email-form .input-group > .btn {
@@ -310,13 +462,13 @@ input:invalid:not(:placeholder-shown) + .invalid-feedback {
 
 /* Desktop: bleed list to card edges so actions align with Invite Member. */
 .card-body .invitation-list.list-group-flush {
-    margin-left: calc(-1 * var(--bs-card-spacer-x));
-    margin-right: calc(-1 * var(--bs-card-spacer-x));
+    margin-left: calc(-1 * var(--card-spacer-x));
+    margin-right: calc(-1 * var(--card-spacer-x));
 }
 
 .card-body .invitation-list .invitation-list-item {
-    padding-left: var(--bs-card-spacer-x);
-    padding-right: var(--bs-card-spacer-x);
+    padding-left: var(--card-spacer-x);
+    padding-right: var(--card-spacer-x);
 }
 
 .invitation-resend-form .btn-invitation-resend,
