@@ -1,6 +1,7 @@
 ---
 title: "Installation"
 description: "Step-by-step installation guide for the FastAPI webapp template including Dev Container setup, manual installation, and environment configuration."
+guide-section: "Getting Started"
 ---
 
 ## Install all development dependencies in a VSCode Dev Container
@@ -101,9 +102,15 @@ It is also recommended to install the [Python](https://marketplace.visualstudio.
 
 ## Install documentation dependencies manually
 
-### Quarto CLI
+### Great Docs
 
-To render the project documentation, you will need to download and install the [Quarto CLI](https://quarto.org/docs/get-started/) for your operating system.
+To build the project documentation, install Great Docs as a development dependency:
+
+``` bash
+uv sync
+```
+
+Great Docs uses the [Quarto CLI](https://quarto.org/docs/get-started/) under the hood. Install Quarto for your operating system if it is not already available.
 
 ### Graphviz
 

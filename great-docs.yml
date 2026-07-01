@@ -1,0 +1,30 @@
+# Great Docs Configuration
+# See https://posit-dev.github.io/great-docs/user-guide/configuration.html
+
+display_name: FastAPI Webapp Template
+
+homepage: user_guide
+
+site_url: "https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/"
+
+pypi: false
+
+repo: https://github.com/promptly-technologies-llc/fastapi-jinja2-postgres-webapp
+
+module: utils
+
+parser: numpy
+
+dynamic: false
+
+authors:
+  - name: Christopher Carroll Smith
+    role: Author
+    email: chriscarrollsmith@gmail.com
+
+funding:
+  name: Promptly Technologies, LLC
+  roles:
+    - Copyright holder
+
+jupyter: python3
