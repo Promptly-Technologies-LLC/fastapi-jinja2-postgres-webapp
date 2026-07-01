@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- version list -->
 
+## v1.0.2 (2026-06-30)
+
+### Bug Fixes
+
+- Align ownership cascades with account deletion
+  ([#210](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/210),
+  [`7c79c5b`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/7c79c5b16c424ce5103f714daa74bc9746bea5d8))
+
+
 ## v1.0.1 (2026-06-30)
 
 ### Bug Fixes

@@ -1,6 +1,7 @@
 ---
 title: "Contributing"
 description: "How to contribute to the FastAPI webapp template project including guidelines for pull requests and development setup."
+guide-section: "Contributing"
 ---
 
 ## Contributors
@@ -33,7 +34,7 @@ To contribute code to the project:
 
 1. Fork the repository and clone your fork locally
 2. Create a new branch from `main` with a descriptive name
-3. Review the [customization](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/customization.html), [architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/architecture.html), and [authentication](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/authentication.html) pages for guidance on design patterns and code structure and style
+3. Review the [customization](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/customization.html), [architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/architecture.html), and [authentication](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/authentication.html) pages for guidance on design patterns and code structure and style
 4. Ensure all tests pass, including `ty` type checking
 5. Stage, commit, and push your changes to the branch:
    - Use clear, descriptive commit messages
@@ -44,20 +45,18 @@ To contribute code to the project:
 
 ### Rendering the documentation
 
-The README and documentation website are rendered with [Quarto](https://quarto.org/docs/). If you make changes to the `.qmd` files in the root folder and the `docs` folder, you will need to re-render the docs with Quarto.
+The documentation website is built with [Great Docs](https://posit-dev.github.io/great-docs/). If you make changes to the `.qmd` files in the `user_guide/` folder, you will need to rebuild the docs with Great Docs.
 
-Quarto expects environment variables to be set in a file called `_environment`, so before running Quarto render commands, you should copy your `.env` file to `_environment`.
+Great Docs uses Quarto under the hood and expects environment variables to be set in a file called `_environment`, so before running Great Docs build commands, you should copy your `.env` file to `_environment`.
 
 ``` bash
 # To copy the .env file to _environment
 cp .env _environment
-# To render the documentation website
-uv run quarto render
-# To render the README
-uv run quarto render index.qmd --output-dir . --output README.md --to gfm
+# To build the documentation website
+PYTHONPATH=. uv run great-docs build
+# To preview the documentation website locally
+uv run great-docs preview
 ```
-
-Due to a quirk of Quarto, an unnecessary `index.html` file is created in the root folder when the README is rendered. This file can be safely deleted.
 
 Note that even if your pull request is merged, your changes will not be reflected on the live website until a maintainer republishes the docs.
 
@@ -76,8 +75,4 @@ When creating new features,
 
 ### Publishing the documentation
 
-To publish the documentation to GitHub Pages, run the following command:
-
-``` bash
-uv run quarto publish gh-pages
-```
+Documentation is published to GitHub Pages automatically when changes are merged to `main`. Maintainers can also build locally and deploy the contents of `great-docs/_site/`.

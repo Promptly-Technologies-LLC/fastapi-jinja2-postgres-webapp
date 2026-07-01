@@ -1,13 +1,14 @@
 ---
 title: "FastAPI, Jinja2, PostgreSQL Webapp Template"
 description: "A production-ready web application template combining FastAPI, Jinja2, and PostgreSQL with secure authentication, role-based access control, and easy cloud deployment."
+guide-section: "Getting Started"
 ---
 
-![Screenshot of the FastAPI webapp template homepage](docs/static/screenshot.jpg)
+![Screenshot of the FastAPI webapp template homepage](user-guide/static/screenshot.jpg)
 
 ## Quickstart
 
-This quickstart guide provides a high-level overview. See the full documentation for comprehensive information on [features](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/index.html), [installation](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/installation.html), [architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html), [conventions, code style, and customization](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/customization.html), [deployment to cloud platforms](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/deployment.html), and [contributing](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/contributing.html).
+This quickstart guide provides a high-level overview. See the full documentation for comprehensive information on [features](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/), [installation](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/installation.html), [architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/architecture.html), [conventions, code style, and customization](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/customization.html), [deployment to cloud platforms](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/deployment.html), and [contributing](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/contributing.html).
 
 ## Features
 
@@ -42,14 +43,14 @@ The design philosophy of the template is to prefer low-level, best-in-class open
 - [Pytest](https://docs.pytest.org/en/7.4.x/): testing framework
 - [Docker](https://www.docker.com/): development containerization
 - [Github Actions](https://docs.github.com/en/actions): CI/CD pipeline
-- [Quarto](https://quarto.org/docs/): simple documentation website renderer
+- [Great Docs](https://posit-dev.github.io/great-docs/): documentation website generator
 - [ty](https://docs.astral.sh/ty/): static type checker for Python
 - [Bootstrap](https://getbootstrap.com/): HTML/CSS styler
 - [Resend](https://resend.com/): zero- or low-cost email service used for password recovery
 
 ## Installation
 
-For comprehensive installation instructions, see the [installation page](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/installation.html).
+For comprehensive installation instructions, see the [installation page](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/installation.html).
 
 ### uv
 
@@ -145,70 +146,7 @@ uv run ty check .
 
 ## Developing with LLMs
 
-``` {python}
-#| echo: false
-#| include: false
-import re
-from pathlib import Path
-
-
-def extract_file_paths(quarto_yml_path):
-    """
-    Extract href paths from _quarto.yml file.
-    Returns a list of .qmd file paths.
-    """
-    with open(quarto_yml_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-
-    # Find all href entries that point to .qmd files
-    pattern = r'^\s*-\s*href:\s*(.*?\.qmd)\s*$'
-    matches = re.findall(pattern, content, re.MULTILINE)
-    return matches
-
-
-def process_qmd_content(file_path):
-    """
-    Process a .qmd file by converting YAML frontmatter to markdown heading.
-    Returns the processed content as a string.
-    """
-    with open(file_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-
-    # Replace YAML frontmatter with markdown heading
-    pattern = r'^---\s*\ntitle:\s*"([^"]+)"\s*\n---'
-    processed_content = re.sub(pattern, r'# \1', content)
-    return processed_content
-
-
-# Get the current working directory
-base_dir = Path.cwd()
-quarto_yml_path = base_dir / '_quarto.yml'
-
-# Extract file paths from _quarto.yml
-qmd_files = extract_file_paths(quarto_yml_path)
-
-# Process each .qmd file and collect contents
-processed_contents = []
-for qmd_file in qmd_files:
-    file_path = base_dir / qmd_file
-    if file_path.exists():
-        processed_content = process_qmd_content(file_path)
-        processed_contents.append(processed_content)
-
-# Concatenate all contents with double newline separator
-final_content = '\n\n'.join(processed_contents)
-
-# Ensure the output directory exists
-output_dir = base_dir / 'docs' / 'static'
-output_dir.mkdir(parents=True, exist_ok=True)
-
-# Write the concatenated content to the output file
-output_path = output_dir / 'documentation.txt'
-with open(output_path, 'w', encoding='utf-8') as f:
-    f.write(final_content)
-```
-
-The `.cursor/rules` folder contains a set of AI rules for working on this codebase in the Cursor IDE. We have also exposed the full Markdown-formatted project documentation as a [single text file](docs/static/documentation.txt) for easy downloading and embedding for RAG.
+The `.cursor/rules` folder contains a set of AI rules for working on this codebase in the Cursor IDE. The documentation site also publishes [llms.txt](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/llms.txt) and [llms-full.txt](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/llms-full.txt) for easy downloading and embedding for RAG.
 
 ## Contributing
 

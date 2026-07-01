@@ -10,7 +10,8 @@ jobs:
     permissions:
       id-token: write
       contents: write
-    
+      pages: write
+
     services:
       postgres:
         image: postgres:latest
@@ -55,11 +56,6 @@ jobs:
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
 
-      - name: Configure Git
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
       - name: Set required env variables
         run: |
           echo "DB_USER=postgres" > _environment
@@ -75,20 +71,17 @@ jobs:
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@v2
 
-      - name: Render Documentation
+      - name: Build Documentation
         run: |
-          # Publish Quarto documentation
-          uv run quarto publish gh-pages --no-prompt --no-browser
-          
-          # Render README in GitHub Flavored Markdown
-          uv run quarto render index.qmd --output-dir . --output README.md --to gfm
-          
-          # Remove index.html if it exists
-          rm -f index.html
+          set -a
+          source _environment
+          set +a
+          PYTHONPATH=. uv run great-docs build
 
-      - name: Commit version change
-        uses: stefanzweifel/git-auto-commit-action@v5
+      - name: Deploy Documentation
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          commit_message: "Update README"
-          branch: ${{ github.ref_name }}
-          file_pattern: "README.md"
+          github_token: ${{ steps.create_token.outputs.token }}
+          publish_dir: ./great-docs/_site
+          publish_branch: gh-pages
+          force_orphan: false
