@@ -2,7 +2,7 @@
 
 
 <figure class="figure">
-<p><img src="user-guide/static/screenshot.jpg" class="img-fluid figure-img" /></p>
+<p><img src="user-guide/static/screenshot.webp" class="img-fluid figure-img" /></p>
 <figcaption>Screenshot of the FastAPI webapp template homepage</figcaption>
 </figure>
 

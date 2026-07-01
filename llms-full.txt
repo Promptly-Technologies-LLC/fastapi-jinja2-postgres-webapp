@@ -18,7 +18,7 @@ This is the User Guide documentation for the package.
 
 ### FastAPI, Jinja2, PostgreSQL Webapp Template
 
-![Screenshot of the FastAPI webapp template homepage](user-guide/static/screenshot.jpg)
+![Screenshot of the FastAPI webapp template homepage](user-guide/static/screenshot.webp)
 
 ## Quickstart
 

@@ -3,6 +3,19 @@
 This changelog is generated automatically from [GitHub Releases](https://github.com/promptly-technologies-llc/fastapi-jinja2-postgres-webapp/releases).
 
 
+# v1.1.0
+
+*2026-07-01* · [GitHub](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/releases/tag/v1.1.0)
+
+
+## What's Changed
+
+- docs: migrate documentation from raw Quarto to Great Docs by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/211
+- New frontend theme by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/212
+
+**Full Changelog**: https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/compare/v1.0.2…v1.1.0
+
+
 # v1.0.2
 
 *2026-06-30* · [GitHub](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/releases/tag/v1.0.2)
