@@ -1,70 +1,70 @@
 {
-  "build_time": "2026-07-01T00:25:04Z",
-  "total_seconds": 22.844,
+  "build_time": "2026-07-01T16:45:21Z",
+  "total_seconds": 25.379,
   "pages": [
     {
       "page": "user-guide/customization.qmd",
-      "seconds": 6.251,
+      "seconds": 7.925,
       "frozen": false
     },
     {
       "page": "skill.md",
-      "seconds": 3.842,
-      "frozen": false
-    },
-    {
-      "page": "changelog.qmd",
-      "seconds": 3.073,
-      "frozen": false
-    },
-    {
-      "page": "user-guide/architecture.qmd",
-      "seconds": 2.819,
+      "seconds": 3.959,
       "frozen": false
     },
     {
       "page": "user-guide/authentication.qmd",
-      "seconds": 2.752,
+      "seconds": 3.363,
+      "frozen": false
+    },
+    {
+      "page": "changelog.qmd",
+      "seconds": 3.144,
+      "frozen": false
+    },
+    {
+      "page": "user-guide/architecture.qmd",
+      "seconds": 3.141,
       "frozen": false
     },
     {
       "page": "user-guide/deployment.qmd",
-      "seconds": 1.136,
-      "frozen": false
-    },
-    {
-      "page": "index.qmd",
-      "seconds": 0.502,
+      "seconds": 0.711,
       "frozen": false
     },
     {
       "page": "user-guide/installation.qmd",
-      "seconds": 0.495,
+      "seconds": 0.53,
+      "frozen": false
+    },
+    {
+      "page": "index.qmd",
+      "seconds": 0.521,
       "frozen": false
     },
     {
       "page": "user-guide/contributing.qmd",
-      "seconds": 0.469,
+      "seconds": 0.494,
       "frozen": false
     },
     {
       "page": "skills.qmd",
-      "seconds": 0.394,
+      "seconds": 0.419,
       "frozen": false
     },
     {
       "page": "license.qmd",
-      "seconds": 0.377,
+      "seconds": 0.4,
       "frozen": false
     },
     {
       "page": "reference/index.qmd",
-      "seconds": 0.371,
+      "seconds": 0.391,
       "frozen": false
     },
     {
       "page": "reference/app.qmd",
-      "seconds": 0.363,
+      "seconds": 0.381,
       "frozen": false
     }
   ]

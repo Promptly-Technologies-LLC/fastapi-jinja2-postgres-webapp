@@ -366,7 +366,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
-<p>Toast partials are rendered from <code>templates/base/partials/toast.html</code> and injected into the persistent <code>#toast-container</code> div in <code>base.html</code> using <code>hx-swap-oob="true"</code>. The toast is displayed using Bootstrap’s toast component and can be dismissed by the user.</p>
+<p>Toast partials are rendered from <code>templates/base/partials/toast.html</code> and injected into the persistent <code>#toast-container</code> div in <code>base.html</code> using <code>hx-swap-oob="true"</code>. The toast is styled by the custom stylesheet (<code>static/css/styles.css</code>); it auto-dismisses via the htmx <code>remove-me</code> extension and can also be dismissed manually (handled in <code>static/js/ui.js</code>).</p>
 </section>
 <section id="htmx-request-detection" class="level2">
 <h2 class="anchored" data-anchor-id="htmx-request-detection">HTMX request detection</h2>

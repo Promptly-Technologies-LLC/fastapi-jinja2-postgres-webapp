@@ -41,7 +41,7 @@ The PRG path is preserved for all non-HTMX clients (e.g. browsers with JavaScri
 | Login failure (`CredentialsError`) | Full-page error template, `401` | Toast partial, `401` |
 | Success | `303` redirect → GET → full page | `200` HTML partial swapped into target element |
 
-Toast partials are rendered from `templates/base/partials/toast.html` and injected into the persistent `#toast-container` div in `base.html` using `hx-swap-oob="true"`. The toast is displayed using Bootstrap's toast component and can be dismissed by the user.
+Toast partials are rendered from `templates/base/partials/toast.html` and injected into the persistent `#toast-container` div in `base.html` using `hx-swap-oob="true"`. The toast is styled by the custom stylesheet (`static/css/styles.css`); it auto-dismisses via the htmx `remove-me` extension and can also be dismissed manually (handled in `static/js/ui.js`).
 
 
 ## HTMX request detection

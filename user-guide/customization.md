@@ -333,108 +333,51 @@ To generate the HTML pages to be returned from our GET routes, we use Jinja2 tem
 With Jinja2, we can use the `{% block %}` tag to define content blocks, and the `{% extends %}` tag to extend a base template. We can also use the `{% include %}` tag to include a component in a parent template. See the [Jinja2 documentation on template inheritance](https://jinja.palletsprojects.com/en/stable/templates/#template-inheritance) for more details.
 
 
-## Custom theming with Bootstrap
+## Styling
 
-[Install Node.js](https://nodejs.org/en/download/) on your local machine if it is not there already.
+The frontend ships its own small, self-contained CSS framework in `static/css/styles.css` -- there is no Bootstrap dependency and no build step (no Node.js, Sass, or gulp required). The stylesheet is plain CSS and can be edited directly. It provides:
 
-Install `bootstrap`, `sass`, `gulp`, and `gulp-sass` in your project:
+- A **design-token layer** (colors, typefaces, radii, shadows, spacing) declared as CSS custom properties in the `:root` block.
+- A **reboot** and base typography.
+- A small **grid** (`container`, `row`, `col-md-*`, `offset-md-*`), the **utility classes** the templates use (spacing, flex, text, display), and the **components** they rely on (buttons, cards, navbar, dropdowns, forms, list groups, tables, badges, alerts, modals, toasts).
 
-``` bash
-npm install --save-dev bootstrap sass gulp gulp-cli gulp-sass
+Interactive components -- dropdowns, modals, the mobile navbar collapse, and toast dismissal -- are powered by `static/js/ui.js`. It reads `data-bs-toggle`, `data-bs-target`, and `data-bs-dismiss` attributes and wires everything through document-level event delegation, so behavior keeps working for markup that htmx swaps in after the initial load. `ui.js` is loaded with `defer` in `<head>` (outside `<body>`) so it is never re-processed during `hx-boost` body swaps.
+
+
+### Re-theming
+
+To change the look of the whole app, edit the design tokens at the top of `static/css/styles.css`:
+
+``` css
+:root {
+    /* Type */
+    --font-display: "Space Grotesk", system-ui, sans-serif;
+    --font-body: "IBM Plex Sans", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+    /* Palette */
+    --primary: #0e7c7b;
+    --primary-strong: #0a5f5e;
+    --slate: #1c2a30;
+    --success: #0f7a52;
+    --danger: #b42318;
+    --warning: #b45309;
+
+    /* Shape */
+    --radius: 0.55rem;
+    --shadow: 0 12px 30px -20px rgba(16, 24, 28, 0.35);
+    /* ... */
+}
 ```
 
-This will create a `node_modules` folder, a `package-lock.json` file, and a `package.json` file in the root directory of the project.
+Because every component derives its colors, fonts, radii, and shadows from these variables, changing them re-themes the entire interface.
 
-Create an `scss` folder and a basic `scss/styles.scss` file:
-
-``` bash
-mkdir scss
-touch scss/styles.scss
-```
-
-Your custom styles will go in `scss/styles.scss`, along with `@import` statements to include the Bootstrap components you want.
+Typefaces are loaded from Google Fonts in `templates/base.html`. To swap fonts, update the `<link>` to Google Fonts (or self-host the files under `static/`) and point the `--font-*` tokens at the new families.
 
 
-### Customizing the Bootstrap SCSS
+### Page-specific styles
 
-The default CSS for the template was compiled from the following `scss/styles.scss` configuration, which imports all of Bootstrap and overrides the `$theme-colors` and `$font-family-base` variables:
-
-``` scss
-// styles.scss
-
-// Include any default variable overrides here (functions won't be available)
-
-// State colors
-$primary: #7464a1;
-$secondary: #64a19d;
-$success: #67c29c;
-$info: #1cabc4;
-$warning: #e4c662;
-$danger: #a16468;
-$light: #f8f9fa;
-$dark: #343a40;
-
-// Bootstrap color map
-$theme-colors: (
-    "primary": $primary,
-    "secondary": $secondary,
-    "success": $success,
-    "info": $info,
-    "warning": $warning,
-    "danger": $danger,
-    "light": $light,
-    "dark": $dark
-);
-
-$font-family-base: (
-    "Nunito",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    "Helvetica Neue",
-    Arial,
-    sans-serif,
-    "Apple Color Emoji",
-    "Segoe UI Emoji",
-    "Segoe UI Symbol",
-    "Noto Color Emoji"
-);
-
-// Include all of Bootstrap
-
-@import "../node_modules/bootstrap/scss/bootstrap";
-```
-
-The most common use case for `styles.scss` is to define a custom color scheme and fonts, but it's also possible to customize some other visual details such as border radius and box shadow depth. See the [Bootstrap Sass customization documentation](https://getbootstrap.com/docs/5.3/customize/sass/) and the many free templates available at [Start Bootstrap](https://startbootstrap.com) for examples.
-
-
-### Compiling the SCSS to CSS
-
-To compile the SCSS files to CSS, we use `gulp`. In the project root directory, create a `gulpfile.js` file with the following content:
-
-``` javascript
-   const gulp = require('gulp');
-   const sass = require('gulp-sass')(require('sass'));
-
-   // Define a task to compile Sass
-   gulp.task('sass', function() {
-       return gulp.src('scss/**/*.scss') // Source folder containing Sass files
-           .pipe(sass().on('error', sass.logError))
-           .pipe(gulp.dest('static/css')); // Destination folder for compiled CSS
-   });
-
-   // Define a default task
-   gulp.task('default', gulp.series('sass'));
-```
-
-To compile the SCSS file to `static/css`, run this command:
-
-``` bash
-npx gulp
-```
-
-Note that this will overwrite the existing `static/css/styles.css` file, so if you want to define any custom CSS styles, you should do so in either the `scss/styles.scss` file or in `static/css/extras.css`.
+`static/css/styles.css` is the framework; keep page- or component-specific rules in `static/css/extras.css`, which is loaded after it. The landing-page hero and the responsive layout rules for the dashboard, profile, and organization pages live there.
 
 
 ## Client-side form validation
