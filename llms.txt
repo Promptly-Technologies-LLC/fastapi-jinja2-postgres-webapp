@@ -1,0 +1,9 @@
+# utils
+
+> A template webapp with a pure-Python FastAPI backend, frontend templating with Jinja2, and a Postgres database to power user auth
+
+## Docs
+
+### API Reference
+
+- [app](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/reference/app.html)

@@ -1,0 +1,11 @@
+{
+  "skills": [
+    {
+      "name": "utils",
+      "description": "A template webapp with a pure-Python FastAPI backend, frontend templating with Jinja2, and a Postgres database to power user auth. Use when writing Python code that uses the utils package.",
+      "files": [
+        "SKILL.md"
+      ]
+    }
+  ]
+}

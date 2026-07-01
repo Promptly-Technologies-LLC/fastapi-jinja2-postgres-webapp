@@ -6,9 +6,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="description" content="A production-ready web application template combining FastAPI, Jinja2, and PostgreSQL with secure authentication, role-based access control, and easy cloud deployment.">
 
-<title>FastAPI, Jinja2, PostgreSQL Webapp Template – FastAPI Webapp Template | FastAPI Webapp Template</title>
+<title>app – FastAPI Webapp Template | FastAPI Webapp Template</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -24,62 +23,26 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-}
 </style>
 
 
-<script src="site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="site_libs/quarto-nav/headroom.min.js"></script>
-<script src="site_libs/clipboard/clipboard.min.js"></script>
-<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="site_libs/quarto-search/fuse.min.js"></script>
-<script src="site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="./">
-<link href="./user-guide/installation.html" rel="next">
-<script src="site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="site_libs/quarto-html/popper.min.js"></script>
-<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="site_libs/quarto-html/anchor.min.js"></script>
-<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-4374c486a51c078b4a30d8ae56e0846f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-4374c486a51c078b4a30d8ae56e0846f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -115,42 +78,55 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'gd-lightbox-compare.js';s.defer=true;document.head.appendChild(s);})();</script>
 <script>document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:(document.querySelector('meta[name="quarto:offset"]')||{content:''}).content+'gd-lightbox-annotate.css'}));</script>
 <script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'gd-lightbox-annotate.js';s.defer=true;document.head.appendChild(s);})();</script>
-<script src="theme-init.js"></script>
+<script src="../theme-init.js"></script>
 
 
-  <link rel="canonical" href="https://promptly-technologies-llc.github.io/fastapi-jinja2-postgres-webapp/">
+  <link rel="canonical" href="https://promptly-technologies-llc.github.io/fastapi-jinja2-postgres-webapp/reference/app.html">
+  <meta name="description" content="A template webapp with a pure-Python FastAPI backend, frontend templating with Jinja2, and a Postgres database to power user auth">
   <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareSourceCode",
-  "name": "FastAPI Webapp Template",
-  "description": "A template webapp with a pure-Python FastAPI backend, frontend templating with Jinja2, and a Postgres database to power user auth",
-  "url": "https://promptly-technologies-llc.github.io/fastapi-jinja2-postgres-webapp",
-  "documentation": "https://promptly-technologies-llc.github.io/fastapi-jinja2-postgres-webapp",
-  "programmingLanguage": {
-    "@type": "ComputerLanguage",
-    "name": "Python"
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareSourceCode",
+    "name": "FastAPI Webapp Template",
+    "description": "A template webapp with a pure-Python FastAPI backend, frontend templating with Jinja2, and a Postgres database to power user auth",
+    "url": "https://promptly-technologies-llc.github.io/fastapi-jinja2-postgres-webapp",
+    "documentation": "https://promptly-technologies-llc.github.io/fastapi-jinja2-postgres-webapp",
+    "programmingLanguage": {
+      "@type": "ComputerLanguage",
+      "name": "Python"
+    }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "app - FastAPI Webapp Template",
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "FastAPI Webapp Template"
+    },
+    "url": "https://promptly-technologies-llc.github.io/fastapi-jinja2-postgres-webapp/reference/app.html"
   }
-}
+]
 </script>
   <meta property="og:type" content="website">
-  <meta property="og:title" content="FastAPI, Jinja2, PostgreSQL Webapp Template – FastAPI Webapp Template | FastAPI Webapp Template">
-  <meta property="og:description" content="A production-ready web application template combining FastAPI, Jinja2, and PostgreSQL with secure authentication, role-based access control, and easy cloud deployment.">
-  <meta property="og:url" content="https://promptly-technologies-llc.github.io/fastapi-jinja2-postgres-webapp">
+  <meta property="og:title" content="app – FastAPI Webapp Template | FastAPI Webapp Template">
+  <meta property="og:description" content="A template webapp with a pure-Python FastAPI backend, frontend templating with Jinja2, and a Postgres database to power user auth">
+  <meta property="og:url" content="https://promptly-technologies-llc.github.io/fastapi-jinja2-postgres-webapp/reference/app.html">
   <meta property="og:site_name" content="FastAPI Webapp Template">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="FastAPI, Jinja2, PostgreSQL Webapp Template – FastAPI Webapp Template | FastAPI Webapp Template">
-  <meta name="twitter:description" content="A production-ready web application template combining FastAPI, Jinja2, and PostgreSQL with secure authentication, role-based access control, and easy cloud deployment.">
+  <meta name="twitter:title" content="app – FastAPI Webapp Template | FastAPI Webapp Template">
+  <meta name="twitter:description" content="A template webapp with a pure-Python FastAPI backend, frontend templating with Jinja2, and a Postgres database to power user auth">
 </head>
 
-<body class="nav-sidebar floating nav-fixed fullcontent quarto-light">
+<body class="gd-ref-sidebar nav-sidebar floating nav-fixed doc-api-page quarto-light">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="./index.html">
+    <a class="navbar-brand" href="../index.html">
     <span class="navbar-title">FastAPI Webapp Template <span class="version-badge" title="Released 2026-06-30">v1.0.2</span></span>
     </a>
   </div>
@@ -161,11 +137,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="./reference/index.html"> 
+    <a class="nav-link active" href="../reference/index.html" aria-current="page"> 
 <span class="menu-text">Reference</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./changelog.html"> 
+    <a class="nav-link" href="../changelog.html"> 
 <span class="menu-text">Changelog</span></a>
   </li>  
 </ul>
@@ -186,7 +162,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <h1 class="quarto-secondary-nav-title no-breadcrumbs">FastAPI, Jinja2, PostgreSQL Webapp Template</h1>
+        <h1 class="quarto-secondary-nav-title no-breadcrumbs gd-ref-title"><span class="gd-ref-title-prefix">API</span><span class="gd-ref-title-sep">/</span><span class="gd-ref-title-name">app</span></h1>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
     </div>
@@ -198,76 +174,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
     <div class="sidebar-menu-container"> 
     <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container" style="padding-bottom: 0.5rem; padding-top: 0.25rem;"> 
+  <a href="../reference/index.html" style="font-family: &quot;Open Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif;" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">API Index</span></a>
+  </div>
+</li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start">
- <span class="menu-text">Getting Started</span></a>
+ <span class="menu-text">Other</span></a>
 </div>
       <ul id="quarto-sidebar-section-1" class="list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./index.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Home</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./user-guide/installation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Installation</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start">
- <span class="menu-text">Application</span></a>
-</div>
-      <ul id="quarto-sidebar-section-2" class="list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./user-guide/architecture.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Architecture</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./user-guide/authentication.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Authentication</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./user-guide/customization.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Customization</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start">
- <span class="menu-text">Deployment</span></a>
-</div>
-      <ul id="quarto-sidebar-section-3" class="list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./user-guide/deployment.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Deployment</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start">
- <span class="menu-text">Contributing</span></a>
-</div>
-      <ul id="quarto-sidebar-section-4" class="list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./user-guide/contributing.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Contributing</span></a>
+  <a href="../reference/app.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="doc-object-name doc-module doc-label doc-label-module">app</span></span></a>
   </div>
 </li>
       </ul>
@@ -277,20 +199,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </nav>
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+        
+    </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title d-none d-lg-block">FastAPI, Jinja2, PostgreSQL Webapp Template</h1>
+<h2 class="title" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 1.25rem;"><span class="doc-object-name doc-module doc-label doc-label-module">app</span></h2>
 </div>
 
-<div>
-  <div class="description">
-    A production-ready web application template combining FastAPI, Jinja2, and PostgreSQL with secure authentication, role-based access control, and easy cloud deployment.
-  </div>
-</div>
 
 
 <div class="quarto-title-meta">
@@ -305,172 +224,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="user-guide/static/screenshot.jpg" class="img-fluid figure-img"></p>
-<figcaption>Screenshot of the FastAPI webapp template homepage</figcaption>
-</figure>
+<div class="doc-signature doc-module">
+<p><a href="app.html#utils.app" class="gdls-link gdls-code">app</a></p>
 </div>
-<section id="quickstart" class="level1">
-<h1>Quickstart</h1>
-<p>This quickstart guide provides a high-level overview. See the full documentation for comprehensive information on <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/">features</a>, <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/installation.html">installation</a>, <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/architecture.html">architecture</a>, <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/customization.html">conventions, code style, and customization</a>, <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/deployment.html">deployment to cloud platforms</a>, and <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/contributing.html">contributing</a>.</p>
-</section>
-<section id="features" class="level1">
-<h1>Features</h1>
-<p>This template combines three of the most lightweight and performant open-source web development frameworks into a customizable webapp template with:</p>
-<ul>
-<li>Pure Python backend</li>
-<li>Minimal-Javascript frontend</li>
-<li>Powerful, easy-to-manage database</li>
-</ul>
-<p>The template also includes full-featured secure auth with:</p>
-<ul>
-<li>Token-based authentication</li>
-<li>Password recovery flow</li>
-<li>Role-based access control system</li>
-</ul>
-</section>
-<section id="design-philosophy" class="level1">
-<h1>Design Philosophy</h1>
-<p>The design philosophy of the template is to prefer low-level, best-in-class open-source frameworks that offer flexibility, scalability, and performance without vendor-lock-in. You’ll find the template amazingly easy not only to understand and customize, but also to deploy to any major cloud hosting platform.</p>
-</section>
-<section id="tech-stack" class="level1">
-<h1>Tech Stack</h1>
-<p><strong>Core frameworks:</strong></p>
-<ul>
-<li><a href="https://fastapi.tiangolo.com/">FastAPI</a>: scalable, high-performance, type-annotated Python web backend framework</li>
-<li><a href="https://www.postgresql.org/">PostgreSQL</a>: the world’s most advanced open-source database engine</li>
-<li><a href="https://jinja.palletsprojects.com/en/3.1.x/">Jinja2</a>: frontend HTML templating engine</li>
-<li><a href="https://sqlmodel.tiangolo.com/">SQLModel</a>: easy-to-use Python ORM</li>
-</ul>
-<p><strong>Additional technologies:</strong></p>
-<ul>
-<li><a href="https://docs.astral.sh/uv/">uv</a>: Python dependency manager</li>
-<li><a href="https://docs.pytest.org/en/7.4.x/">Pytest</a>: testing framework</li>
-<li><a href="https://www.docker.com/">Docker</a>: development containerization</li>
-<li><a href="https://docs.github.com/en/actions">Github Actions</a>: CI/CD pipeline</li>
-<li><a href="https://posit-dev.github.io/great-docs/">Great Docs</a>: documentation website generator</li>
-<li><a href="https://docs.astral.sh/ty/">ty</a>: static type checker for Python</li>
-<li><a href="https://getbootstrap.com/">Bootstrap</a>: HTML/CSS styler</li>
-<li><a href="https://resend.com/">Resend</a>: zero- or low-cost email service used for password recovery</li>
-</ul>
-</section>
-<section id="installation" class="level1">
-<h1>Installation</h1>
-<p>For comprehensive installation instructions, see the <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/installation.html">installation page</a>.</p>
-<section id="uv" class="level2">
-<h2 class="anchored" data-anchor-id="uv">uv</h2>
-<p>MacOS and Linux:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">wget</span> <span class="at">-qO-</span> https://astral.sh/uv/install.sh <span class="kw">|</span> <span class="fu">sh</span></span></code></pre></div>
-<p>Windows:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">powershell</span> <span class="at">-ExecutionPolicy</span> ByPass <span class="at">-c</span> <span class="st">"irm https://astral.sh/uv/install.ps1 | iex"</span></span></code></pre></div>
-<p>See the <a href="https://docs.astral.sh/uv/getting-started/installation/">uv installation docs</a> for more information.</p>
-</section>
-<section id="python" class="level2">
-<h2 class="anchored" data-anchor-id="python">Python</h2>
-<p>Install Python 3.12 or higher from either the official <a href="https://www.python.org/downloads/">downloads page</a> or using uv:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> python install</span></code></pre></div>
-</section>
-<section id="docker-and-docker-compose" class="level2">
-<h2 class="anchored" data-anchor-id="docker-and-docker-compose">Docker and Docker Compose</h2>
-<p>Install Docker Desktop and Coker Compose for your operating system by following the <a href="https://docs.docker.com/compose/install/">instructions in the documentation</a>.</p>
-</section>
-<section id="postgresql-headers" class="level2">
-<h2 class="anchored" data-anchor-id="postgresql-headers">PostgreSQL headers</h2>
-<p>For Ubuntu/Debian:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update <span class="kw">&amp;&amp;</span> <span class="fu">sudo</span> apt install <span class="at">-y</span> python3-dev libpq-dev libwebp-dev</span></code></pre></div>
-<p>For macOS:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">brew</span> install postgresql</span></code></pre></div>
-<p>For Windows:</p>
-<ul>
-<li>No installation required</li>
-</ul>
-</section>
-<section id="python-dependencies" class="level2">
-<h2 class="anchored" data-anchor-id="python-dependencies">Python dependencies</h2>
-<p>From the root directory, run:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> venv</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> sync</span></code></pre></div>
-<p>This will create an in-project virtual environment and install all dependencies.</p>
-</section>
-<section id="set-environment-variables" class="level2">
-<h2 class="anchored" data-anchor-id="set-environment-variables">Set environment variables</h2>
-<p>Copy <code>.env.example</code> to <code>.env</code> with <code>cp .env.example .env</code>.</p>
-<p>Generate a 256 bit secret key with <code>openssl rand -base64 32</code> and paste it into the .env file.</p>
-<p>Set your desired database name, username, and password in the .env file.</p>
-<p>To use password recovery and other email features, register a <a href="https://resend.com/">Resend</a> account, verify a domain, get an API key, and paste the API key and the email address you want to send emails from into the .env file. Note that you will need to <a href="https://resend.com/docs/dashboard/domains/introduction">verify a domain through the Resend dashboard</a> to send emails from that domain.</p>
-</section>
-<section id="start-development-database" class="level2">
-<h2 class="anchored" data-anchor-id="start-development-database">Start development database</h2>
-<p>To start the development database, run the following command in your terminal from the root directory:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> compose up <span class="at">-d</span></span></code></pre></div>
-</section>
-<section id="run-the-development-server" class="level2">
-<h2 class="anchored" data-anchor-id="run-the-development-server">Run the development server</h2>
-<p>Make sure the development database is running and tables and default permissions/roles are created first.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python <span class="at">-m</span> uvicorn main:app <span class="at">--host</span> 0.0.0.0 <span class="at">--port</span> 8000 <span class="at">--reload</span></span></code></pre></div>
-<p>Navigate to http://localhost:8000/</p>
-</section>
-<section id="type-check-with-ty" class="level2">
-<h2 class="anchored" data-anchor-id="type-check-with-ty">Type check with ty</h2>
-<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run ty check .</span></code></pre></div>
-</section>
-</section>
-<section id="developing-with-llms" class="level1">
-<h1>Developing with LLMs</h1>
-<p>The <code>.cursor/rules</code> folder contains a set of AI rules for working on this codebase in the Cursor IDE. The documentation site also publishes <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/llms.txt">llms.txt</a> and <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/llms-full.txt">llms-full.txt</a> for easy downloading and embedding for RAG.</p>
-</section>
-<section id="contributing" class="level1">
-<h1>Contributing</h1>
-<p>Your contributions are welcome! See the <a href="https://github.com/promptly-technologies-llc/fastapi-jinja2-postgres-webapp/issues">issues page</a> for ideas. Fork the repository, create a new branch, make your changes, and submit a pull request.</p>
-</section>
-<section id="license" class="level1">
-<h1>License</h1>
-<p>This project is created and maintained by <a href="https://promptlytechnologies.com/">Promptly Technologies, LLC</a> and licensed under the MIT License. See the LICENSE file for more details.</p>
-<div class="gd-meta-sidebar">
-<section id="ai-agents" class="level3">
-<h3 class="anchored" data-anchor-id="ai-agents">AI / Agents</h3>
-<p><a href="skills.html">Skills<svg class="gd-sparkle" xmlns="http://www.w3.org/2000/svg" width="0.85em" height="0.85em" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -0.1em; margin-left: 0.25em;"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .963L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path></svg></a><br> <a href="llms.txt">llms.txt</a><br> <a href="llms-full.txt">llms-full.txt</a><br></p>
-</section>
-<section id="developers" class="level3">
-<h3 class="anchored" data-anchor-id="developers">Developers</h3>
-<div>
-<span>
-<p>
-<strong style="padding-bottom: 4px;">Christopher Carroll Smith</strong>
-</p>
-</span><span style="margin-top: -0.15em; display: block;">
-<p>
-<small>Author</small>
-</p>
-</span><span style="margin-top: -0.15em; display: block;"><a href="mailto:chriscarrollsmith@gmail.com" title="Email"><i class="bi bi-envelope-fill"></i></a></span>
+<div class="doc-usage-source">
+<p>Usage</p>
 </div>
-<div style="padding-top: 10px;">
-<span>
-<p>
-<strong style="padding-bottom: 4px;">Promptly Technologies, LLC</strong>
-</p>
-</span><span style="margin-top: -0.15em; display: block;">
-<p>
-<small>Copyright holder</small>
-</p>
-</span>
-</div>
-</section>
-<section id="community" class="level3">
-<h3 class="anchored" data-anchor-id="community">Community</h3>
-<p><a href="./license.html">Full license</a><br></p>
-</section>
-<section id="meta" class="level3">
-<h3 class="anchored" data-anchor-id="meta">Meta</h3>
-<p><strong>Requires:</strong> Python <code>&lt;4.0,&gt;=3.13</code></p>
-</section>
+<div class="doc-subject">
+<p>This folder is where you would define application-specific, auth-protected utilities.</p>
 </div>
 
 
-</section>
 
-</main> <!-- /main -->
+</main>
+<hr style="padding: 0; margin: 0;">
+ <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";
@@ -809,15 +577,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
   });
   </script>
-<nav class="page-navigation">
-  <div class="nav-page nav-page-previous">
-  </div>
-  <div class="nav-page nav-page-next">
-      <a href="./user-guide/installation.html" class="pagination-link" aria-label="Installation">
-        <span class="nav-page-text">Installation</span> <i class="bi bi-arrow-right-short"></i>
-      </a>
-  </div>
-</nav>
 </div> <!-- /content -->
 <footer class="footer">
   <div class="nav-footer">
@@ -826,23 +585,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </footer>
-<script src="github-widget.js"></script>
-<script src="sidebar-wrap.js"></script>
+<script src="../github-widget.js"></script>
+<script src="../copy-page.js"></script>
+<script src="../sidebar-wrap.js"></script>
 <script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'sidebar-float.js';document.body.appendChild(s);})();</script>
-<script src="sidebar-filter.js"></script>
-<script src="dark-mode-toggle.js"></script>
-<script src="back-to-top.js"></script>
+<script src="../sidebar-filter.js"></script>
+<script src="../dark-mode-toggle.js"></script>
+<script src="../back-to-top.js"></script>
 <script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'on-this-page.js';document.body.appendChild(s);})();</script>
-<script src="keyboard-nav.js"></script>
-<script src="copy-code.js"></script>
-<script src="details.js"></script>
-<script src="mermaid-renderer.js"></script>
-<script src="tooltips.js"></script>
+<script src="../keyboard-nav.js"></script>
+<script src="../copy-code.js"></script>
+<script src="../details.js"></script>
+<script src="../mermaid-renderer.js"></script>
+<script src="../tooltips.js"></script>
 <script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'color-swatch.js';document.body.appendChild(s);})();</script>
-<script src="responsive-tables.js"></script>
+<script src="../responsive-tables.js"></script>
 <script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'video-embed.js';document.body.appendChild(s);})();</script>
 <script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'termshow.js';document.body.appendChild(s);})();</script>
-<script src="navbar-widgets.js"></script>
+<script src="../navbar-widgets.js"></script>
 
 
 

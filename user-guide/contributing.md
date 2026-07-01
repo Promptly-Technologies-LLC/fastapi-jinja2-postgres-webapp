@@ -1,0 +1,77 @@
+# Contributing
+
+
+# Contributors
+
+
+## Opening issues and bug reports
+
+When opening a new issue or submitting a bug report, please include:
+
+1.  A clear, descriptive title
+2.  For bug reports:
+    - Description of the expected behavior
+    - Description of the actual behavior
+    - Steps to reproduce the issue
+    - Version information (OS, Python version, package version)
+    - Any relevant error messages or screenshots
+3.  For feature requests:
+    - Description of the proposed feature
+    - Use case or motivation for the feature
+    - Any implementation suggestions (optional)
+
+Labels help categorize issues: - Use `bug` for reporting problems - Use `enhancement` for feature requests - Use `documentation` for documentation improvements - Use `question` for general queries
+
+
+## Contributing code
+
+To contribute code to the project:
+
+1.  Fork the repository and clone your fork locally
+2.  Create a new branch from `main` with a descriptive name
+3.  Review the [customization](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/customization.html), [architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/architecture.html), and [authentication](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/authentication.html) pages for guidance on design patterns and code structure and style
+4.  Ensure all tests pass, including `ty` type checking
+5.  Stage, commit, and push your changes to the branch:
+    - Use clear, descriptive commit messages
+    - Keep commits focused and atomic
+6.  Submit your pull request:
+    - Provide a clear description of the changes
+    - Link to any related issues
+
+
+## Rendering the documentation
+
+The documentation website is built with [Great Docs](https://posit-dev.github.io/great-docs/). If you make changes to the `.qmd` files in the `user_guide/` folder, you will need to rebuild the docs with Great Docs.
+
+Great Docs uses Quarto under the hood and expects environment variables to be set in a file called `_environment`, so before running Great Docs build commands, you should copy your `.env` file to `_environment`.
+
+``` bash
+# To copy the .env file to _environment
+cp .env _environment
+# To build the documentation website
+PYTHONPATH=. uv run great-docs build
+# To preview the documentation website locally
+uv run great-docs preview
+```
+
+Note that even if your pull request is merged, your changes will not be reflected on the live website until a maintainer republishes the docs.
+
+
+# Maintainers
+
+
+## Git flow
+
+When creating new features,
+
+1.  Open a Github issue with the label `feature` and assign it to yourself.
+2.  Create a new branch from the issue sidebar.
+3.  Follow the instructions in the popup to check out the branch locally and make your changes on the branch.
+4.  Commit your changes and push to the branch.
+5.  When you are ready to merge, open a pull request from the branch to main.
+6.  Assign someone else for code review.
+
+
+## Publishing the documentation
+
+Documentation is published to GitHub Pages automatically when changes are merged to `main`. Maintainers can also build locally and deploy the contents of `great-docs/_site/`.

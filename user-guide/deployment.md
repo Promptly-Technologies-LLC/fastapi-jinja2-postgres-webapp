@@ -1,0 +1,384 @@
+# Deployment
+
+This application requires two services to be deployed and connected to each other:
+
+1.  A PostgreSQL database (the storage layer)
+2.  A FastAPI app (the application layer)
+
+There are *many* hosting options available for each of these services; this guide will cover only a few of them.
+
+> **Note: Note**
+>
+> Deployment artifacts (Dockerfiles, deploy scripts, compose files, etc.) are kept on separate git branches -- one per deployment target -- to avoid cluttering the main branch. See the `modal` branch for Modal deployment files and the `hetzner` branch for Hetzner Cloud deployment files. The documentation below describes how to use them.
+
+
+# Deploying and Configuring the FastAPI App
+
+
+## On Modal.com, with separately hosted PostgreSQL
+
+The big advantages of deploying on Modal.com are: 1. that they offer \$30/month of free credits for each user, plus generous additional free credit allotments for startups and researchers, and 2. that it's a very user-friendly platform.
+
+The disadvantages are: 1. that Modal is a Python-only platform and cannot run the database layer, so you'll have to deploy that somewhere else, 2. that you'll need to make some modest changes to the codebase to get it to work on Modal, and 3. that Modal offers a [static IP address for the application server](https://modal.com/docs/guide/proxy-ips) only if you pay for a higher-tier plan starting at \$250/year, which makes securing the database layer with a firewall rule cost prohibitive.
+
+
+### Getting Started
+
+- [Sign up for a Modal.com account](https://modal.com/signup)
+- Install modal in the project directory with `uv add modal`
+- Run `uv run modal setup` to authenticate with Modal
+
+
+### Defining the Modal Image and App
+
+Create a new Python file in the root of your project, for example, `deploy.py`. This file will define the Modal Image and the ASGI app deployment.
+
+1.  **Define the Modal Image in `deploy.py`:**
+
+    - Use `modal.Image` to define the container environment. Chain methods to install dependencies and add code/files.
+    - Start with a Debian base image matching your Python version (e.g., 3.13).
+    - Install necessary system packages (`libpq-dev` for `psycopg2`, `libwebp-dev` for Pillow WebP support).
+    - Install Python dependencies using `run_commands` with `uv`.
+    - Add your local Python modules (`routers`, `utils`, `exceptions`) using `add_local_python_source`.
+    - Add the `static` and `templates` directories using `add_local_dir`. The default behaviour (copying on container startup) is usually fine for development, but consider `copy=True` for production stability if these files are large or rarely change.
+
+    ``` python
+    # deploy.py
+    import modal
+    import os
+
+    # Define the base image
+    image = (
+        modal.Image.debian_slim(python_version="3.13")
+        .apt_install("libpq-dev", "libwebp-dev")
+        .pip_install_from_pyproject("pyproject.toml")
+        .add_local_python_source("main")
+        .add_local_python_source("routers")
+        .add_local_python_source("utils")
+        .add_local_python_source("exceptions")
+        .add_local_dir("static", remote_path="/root/static")
+        .add_local_dir("templates", remote_path="/root/templates")
+    )
+
+    # Define the Modal App
+    app = modal.App(
+        name="your-app-name",
+        image=image,
+        secrets=[modal.Secret.from_name("your-app-name-secret")]
+    )
+    ```
+
+2.  **Define the ASGI App Function in `deploy.py`:**
+
+    - Create a function decorated with `@app.function()` and `@modal.asgi_app()`.
+    - Inside this function, import your FastAPI application instance from `main.py`.
+    - Return the FastAPI app instance.
+    - Use `@modal.concurrent()` to allow the container to handle multiple requests concurrently.
+
+    ``` python
+    # deploy.py (continued)
+
+    # Define the ASGI app function
+    @app.function(
+        allow_concurrent_inputs=100 # Adjust concurrency as needed
+    )
+    @modal.asgi_app()
+    def fastapi_app():
+        # Important: Import the app *inside* the function
+        # This ensures it runs within the Modal container environment
+        # and has access to the installed packages and secrets.
+        # It also ensures the lifespan function (db setup) runs correctly
+        # with the environment variables provided by the Modal Secret.
+        from main import app as web_app
+
+        return web_app
+    ```
+
+For more information on Modal FastAPI images and applications, see [this guide](https://modal.com/docs/guide/webhooks#how-do-web-endpoints-run-in-the-cloud).
+
+
+### Deploying the App
+
+From your terminal, in the root directory of your project, run:
+
+``` bash
+modal deploy deploy.py
+```
+
+Modal will build the image (if it hasn't been built before or if dependencies changed) and deploy the ASGI app. It will output a public URL (e.g., `https://your-username--your-app-name.modal.run`).
+
+
+### Setting Up Modal Secrets
+
+The application relies on environment variables stored in `.env` (like `SECRET_KEY`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `RESEND_API_KEY`, `BASE_URL`). These sensitive values should be stored securely using Modal Secrets.
+
+Create a Modal Secret either through the Modal UI or CLI. Note that the name of the secret has to match the secret name you used in the `deploy.py` file, above (e.g., `your-app-name-secret`).
+
+``` bash
+# Example using CLI
+modal secret create your-app-name-secret \
+    SECRET_KEY='your_actual_secret_key' \
+    DB_USER='your_db_user' \
+    DB_PASSWORD='your_db_password' \
+    DB_HOST='your_external_db_host' \
+    DB_PORT='your_db_port' \
+    DB_NAME='your_db_name' \
+    RESEND_API_KEY='your_resend_api_key' \
+    BASE_URL='https://your-username--your-app-name-serve.modal.run'
+```
+
+**Important:** Ensure `DB_HOST` points to your *cloud* database host address, not `localhost` or `host.docker.internal`.
+
+
+### Deploying and Configuring the PostgreSQL Database on Digital Ocean to work with Modal
+
+
+#### Getting Started
+
+- Create a [DigitalOcean](https://www.digitalocean.com) account
+- Install the [`doctl` CLI tool](https://docs.digitalocean.com/reference/doctl) and authenticate with `doctl auth init`
+- Install the [`psql` client](https://www.postgresql.org/download)
+
+
+#### Create a Project
+
+Create a new project to organize your resources:
+
+``` bash
+# List existing projects
+doctl projects list
+
+# Create a new project
+doctl projects create --name "YOUR-PROJECT-NAME" --purpose "YOUR-PROJECT-PURPOSE" --environment "Production"
+```
+
+
+#### Set Up a Managed PostgreSQL Database
+
+Create a managed, serverless PostgreSQL database instance:
+
+``` bash
+doctl databases create your-db-name --engine pg --version 17 --size db-s-1vcpu-1gb --num-nodes 1 --wait
+```
+
+Get the database ID from the output of the create command and use it to retrieve the database connection details:
+
+``` bash
+# Get the database connection details
+doctl databases connection "your-database-id" --format Host,Port,User,Password,Database
+```
+
+Store these details securely in a `.env.production` file (you will need to set them later in application deployment as production secrets):
+
+``` bash
+# Database connection parameters
+DB_HOST=your-host
+DB_PORT=your-port
+DB_USER=your-user
+DB_PASS=your-password
+DB_NAME=your-database
+```
+
+You may also want to save your database id, although you can always find it again later by listing your databases with `doctl databases list`.
+
+
+#### Setting Up a Firewall Rule (after Deploying Your Application Layer)
+
+Note that by default your database is publicly accessible from the Internet, so you should create a firewall rule to restrict access to only your application's IP address once you have deployed the application. The command to do this is:
+
+``` bash
+doctl databases firewalls append <database-cluster-id> --rule <type>:<value>
+```
+
+where `<type>` is `ip_addr` and `<value>` is the IP address of the application server. See the [DigitalOcean documentation](https://docs.digitalocean.com/reference/doctl/reference/databases/firewalls/append/) for more details.
+
+**Note:** You can only complete this step after you have deployed your application layer and obtained a static IP address for the application server.
+
+
+### Testing the Deployment
+
+Access the provided Modal URL in your browser. Browse the site and test the registration and password reset features to ensure database and Resend connections work.
+
+
+## On Hetzner Cloud, with Same-Server PostgreSQL
+
+Hetzner Cloud offers affordable, dedicated VMs with predictable pricing. Unlike Modal, Hetzner runs both the database and application on the same server, giving you a self-contained deployment with a static IP and automatic TLS via Caddy.
+
+**Advantages:**
+
+1.  Very affordable -- a 2 vCPU / 2GB server starts at ~€4/month
+2.  Full control over the server, static IP included
+3.  Runs both the app and database on a single server (no external database needed)
+4.  Automatic HTTPS via Caddy and Let's Encrypt
+
+**Disadvantages:**
+
+1.  No automatic scaling -- you get a fixed-size server
+2.  You are responsible for server maintenance and updates
+3.  You pay a fixed cost even with zero traffic
+
+
+### Getting Started
+
+- Create a [Hetzner Cloud](https://www.hetzner.com/cloud) account
+- Generate an API token in the Cloud Console under **Security \> API Tokens**
+- Install the [`hcloud` CLI](https://github.com/hetznercloud/cli) and create a context:
+
+``` bash
+hcloud context create myproject
+# Paste your API token when prompted
+```
+
+
+### Preparing the Environment File
+
+Copy `.env.example` to `.env.production` and fill in your production values:
+
+``` bash
+SECRET_KEY=your-secret-key
+BASE_URL=https://your-domain.com
+DOMAIN=your-domain.com
+USE_POOL=0
+DB_HOST=db
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=a-strong-password
+DB_NAME=webapp
+DB_SSLMODE=disable
+RESEND_API_KEY=your-resend-key
+EMAIL_FROM=noreply@your-domain.com
+```
+
+Note that `DB_HOST=db` refers to the Docker Compose service name -- the database runs on the same server as the app.
+
+
+### Deploying
+
+Run the included deploy script:
+
+``` bash
+./deploy-hetzner.sh .env.production
+```
+
+The script will:
+
+1.  Create (or reuse) an SSH key and register it with Hetzner
+2.  Create a firewall allowing SSH, HTTP, and HTTPS
+3.  Provision a server with Docker pre-installed via cloud-init
+4.  Rsync the project files to the server
+5.  Start the app, database, and Caddy reverse proxy via Docker Compose
+
+
+### DNS Setup
+
+After deployment, the script prints the server's IP address. Create a DNS **A record** pointing your domain to this IP. Once DNS propagates, Caddy will automatically provision a TLS certificate from Let's Encrypt.
+
+
+### Configuration
+
+You can customize the server by setting environment variables before running the script:
+
+| Variable | Default | Description |
+|----|----|----|
+| `HETZNER_SERVER_NAME` | `fastapi-webapp` | Server name in Hetzner |
+| `HETZNER_SERVER_TYPE` | `cpx11` | Server type (2 shared vCPU, 2GB RAM) |
+| `HETZNER_IMAGE` | `ubuntu-24.04` | OS image |
+| `HETZNER_LOCATION` | `ash` | Datacenter location (Ashburn, VA) |
+| `HETZNER_SSH_KEY_NAME` | `deploy-key` | SSH key name in Hetzner |
+
+
+### Managing the Deployment
+
+``` bash
+# SSH into the server
+ssh root@<server-ip>
+
+# View logs
+ssh root@<server-ip> 'cd /opt/app && docker compose -f docker-compose.prod.yml logs -f'
+
+# Restart services
+ssh root@<server-ip> 'cd /opt/app && docker compose -f docker-compose.prod.yml restart'
+
+# Redeploy after code changes (run locally)
+./deploy-hetzner.sh .env.production
+
+# Tear down the server
+hcloud server delete fastapi-webapp
+```
+
+
+# Connection Pooling
+
+When deploying to production with many concurrent connections or in serverless environments, you may want to use an external connection pooler like [PgBouncer](https://www.pgbouncer.org/), [Supabase Pooler](https://supabase.com/docs/guides/database/connecting-to-postgres#connection-pooler), or [AWS RDS Proxy](https://aws.amazon.com/rds/proxy/).
+
+Connection poolers sit between your application and database, managing a pool of persistent connections. This reduces connection overhead and allows your application to handle more concurrent requests without exhausting database connections.
+
+
+## Configuring Pooled Connections
+
+This template supports switching between direct and pooled database connections via the `USE_POOL` environment variable.
+
+**Direct mode (default):** Set `USE_POOL=0` or leave it unset. The application connects directly to the database using:
+
+- `DB_HOST` - Database host
+- `DB_PORT` - Database port (typically 5432)
+- `DB_NAME` - Database name
+- `DB_USER` - Database username
+- `DB_PASSWORD` - Database password
+
+**Pooled mode:** Set `USE_POOL=1`. The application connects via the pooler using:
+
+- `DB_HOST` - Pooler host (may be the same as the database host)
+- `DB_POOL_PORT` - Pooler port (typically 6543 for PgBouncer)
+- `DB_POOL_NAME` - Database name for pooled connections
+- `DB_APPUSER` - Application-specific database user
+- `DB_APPUSER_PASSWORD` - Application user password
+
+Both modes support `DB_SSLMODE` (defaults to `prefer`) for configuring SSL connections.
+
+
+## Setting Up a Restricted Application User
+
+When using connection pooling, it's a security best practice to create a separate database user with restricted permissions for your application's runtime connections. This follows the principle of least privilege - the app user can only perform the operations it needs, limiting potential damage from SQL injection or other vulnerabilities.
+
+Connect to your database as the admin user and run:
+
+``` sql
+-- Create the application user
+CREATE USER appuser WITH PASSWORD 'your-secure-password';
+
+-- Grant connect permission
+GRANT CONNECT ON DATABASE yourdb TO appuser;
+
+-- Grant usage on the public schema
+GRANT USAGE ON SCHEMA public TO appuser;
+
+-- Grant permissions on all existing tables
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO appuser;
+
+-- Grant permissions on sequences (needed for auto-incrementing IDs)
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO appuser;
+
+-- Ensure future tables also get these permissions
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO appuser;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO appuser;
+```
+
+Then configure your environment to use this user for pooled connections:
+
+``` bash
+DB_APPUSER=appuser
+DB_APPUSER_PASSWORD=your-secure-password
+```
+
+Keep your admin credentials (`DB_USER`, `DB_PASSWORD`) for direct connections used during schema migrations or administrative tasks.
+
+
+## When to Use Connection Pooling
+
+Consider using a connection pooler when:
+
+- Running in serverless environments (Modal, AWS Lambda, Vercel) where cold starts create many new connections
+- Your application handles many concurrent requests
+- You're hitting database connection limits
+- You want to reduce connection latency for frequently-accessed queries

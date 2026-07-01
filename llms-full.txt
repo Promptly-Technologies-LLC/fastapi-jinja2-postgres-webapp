@@ -1,13 +1,28 @@
----
-title: "FastAPI, Jinja2, PostgreSQL Webapp Template"
-description: "A production-ready web application template combining FastAPI, Jinja2, and PostgreSQL with secure authentication, role-based access control, and easy cloud deployment."
----
+----------------------------------------------------------------------
+This is the API documentation for the utils library.
+----------------------------------------------------------------------
 
-![Screenshot of the FastAPI webapp template homepage](docs/static/screenshot.jpg)
+
+## Other
+
+Additional exports
+
+
+
+----------------------------------------------------------------------
+This is the User Guide documentation for the package.
+----------------------------------------------------------------------
+
+
+## Getting Started
+
+### FastAPI, Jinja2, PostgreSQL Webapp Template
+
+![Screenshot of the FastAPI webapp template homepage](user-guide/static/screenshot.jpg)
 
 ## Quickstart
 
-This quickstart guide provides a high-level overview. See the full documentation for comprehensive information on [features](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/index.html), [installation](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/installation.html), [architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html), [conventions, code style, and customization](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/customization.html), [deployment to cloud platforms](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/deployment.html), and [contributing](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/contributing.html).
+This quickstart guide provides a high-level overview. See the full documentation for comprehensive information on [features](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/), [installation](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/installation.html), [architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/architecture.html), [conventions, code style, and customization](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/customization.html), [deployment to cloud platforms](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/deployment.html), and [contributing](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/contributing.html).
 
 ## Features
 
@@ -42,14 +57,14 @@ The design philosophy of the template is to prefer low-level, best-in-class open
 - [Pytest](https://docs.pytest.org/en/7.4.x/): testing framework
 - [Docker](https://www.docker.com/): development containerization
 - [Github Actions](https://docs.github.com/en/actions): CI/CD pipeline
-- [Quarto](https://quarto.org/docs/): simple documentation website renderer
+- [Great Docs](https://posit-dev.github.io/great-docs/): documentation website generator
 - [ty](https://docs.astral.sh/ty/): static type checker for Python
 - [Bootstrap](https://getbootstrap.com/): HTML/CSS styler
 - [Resend](https://resend.com/): zero- or low-cost email service used for password recovery
 
 ## Installation
 
-For comprehensive installation instructions, see the [installation page](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/installation.html).
+For comprehensive installation instructions, see the [installation page](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/installation.html).
 
 ### uv
 
@@ -145,70 +160,7 @@ uv run ty check .
 
 ## Developing with LLMs
 
-``` {python}
-#| echo: false
-#| include: false
-import re
-from pathlib import Path
-
-
-def extract_file_paths(quarto_yml_path):
-    """
-    Extract href paths from _quarto.yml file.
-    Returns a list of .qmd file paths.
-    """
-    with open(quarto_yml_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-
-    # Find all href entries that point to .qmd files
-    pattern = r'^\s*-\s*href:\s*(.*?\.qmd)\s*$'
-    matches = re.findall(pattern, content, re.MULTILINE)
-    return matches
-
-
-def process_qmd_content(file_path):
-    """
-    Process a .qmd file by converting YAML frontmatter to markdown heading.
-    Returns the processed content as a string.
-    """
-    with open(file_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-
-    # Replace YAML frontmatter with markdown heading
-    pattern = r'^---\s*\ntitle:\s*"([^"]+)"\s*\n---'
-    processed_content = re.sub(pattern, r'# \1', content)
-    return processed_content
-
-
-# Get the current working directory
-base_dir = Path.cwd()
-quarto_yml_path = base_dir / '_quarto.yml'
-
-# Extract file paths from _quarto.yml
-qmd_files = extract_file_paths(quarto_yml_path)
-
-# Process each .qmd file and collect contents
-processed_contents = []
-for qmd_file in qmd_files:
-    file_path = base_dir / qmd_file
-    if file_path.exists():
-        processed_content = process_qmd_content(file_path)
-        processed_contents.append(processed_content)
-
-# Concatenate all contents with double newline separator
-final_content = '\n\n'.join(processed_contents)
-
-# Ensure the output directory exists
-output_dir = base_dir / 'docs' / 'static'
-output_dir.mkdir(parents=True, exist_ok=True)
-
-# Write the concatenated content to the output file
-output_path = output_dir / 'documentation.txt'
-with open(output_path, 'w', encoding='utf-8') as f:
-    f.write(final_content)
-```
-
-The `.cursor/rules` folder contains a set of AI rules for working on this codebase in the Cursor IDE. We have also exposed the full Markdown-formatted project documentation as a [single text file](docs/static/documentation.txt) for easy downloading and embedding for RAG.
+The `.cursor/rules` folder contains a set of AI rules for working on this codebase in the Cursor IDE. The documentation site also publishes [llms.txt](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/llms.txt) and [llms-full.txt](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/llms-full.txt) for easy downloading and embedding for RAG.
 
 ## Contributing
 
@@ -219,10 +171,8 @@ Your contributions are welcome! See the [issues page](https://github.com/promptl
 This project is created and maintained by [Promptly Technologies, LLC](https://promptlytechnologies.com/) and licensed under the MIT License. See the LICENSE file for more details.
 
 
----
-title: "Architecture"
-description: "Overview of the FastAPI webapp template architecture including data flow, database schema, project structure, and routing."
----
+
+## Application
 
 ## Data flow
 
@@ -359,11 +309,6 @@ def is_htmx_request(request: Request) -> bool:
 
 HTMX automatically adds the `HX-Request: true` header to every request it initiates. Non-HTMX form submissions (standard browser POSTs) do not include this header, so they follow the PRG path unchanged.
 
----
-title: "Authentication"
-description: "Guide to the FastAPI webapp template's authentication system including token-based auth, password recovery, and role-based access control."
----
-
 ## Security features
 
 This template implements a comprehensive authentication system with security best practices:
@@ -489,10 +434,8 @@ reset.render('static/reset_flow', format='png', cleanup=True)
 ![Password reset flow](static/reset_flow.png)
 
 
----
-title: "Installation"
-description: "Step-by-step installation guide for the FastAPI webapp template including Dev Container setup, manual installation, and environment configuration."
----
+
+## Getting Started
 
 ## Install all development dependencies in a VSCode Dev Container
 
@@ -592,9 +535,15 @@ It is also recommended to install the [Python](https://marketplace.visualstudio.
 
 ## Install documentation dependencies manually
 
-### Quarto CLI
+### Great Docs
 
-To render the project documentation, you will need to download and install the [Quarto CLI](https://quarto.org/docs/get-started/) for your operating system.
+To build the project documentation, install Great Docs as a development dependency:
+
+``` bash
+uv sync
+```
+
+Great Docs uses the [Quarto CLI](https://quarto.org/docs/get-started/) under the hood. Install Quarto for your operating system if it is not already available.
 
 ### Graphviz
 
@@ -668,10 +617,8 @@ uv run ty check .
 ```
 
 
----
-title: "Customization"
-description: "Guide to customizing the FastAPI webapp template including development workflow, code style conventions, and project structure."
----
+
+## Application
 
 ## Development workflow
 
@@ -736,7 +683,7 @@ We find that static type checking is an enormous time-saver, catching many error
 
 ### Developing with LLMs
 
-The `.cursor/rules` folder contains a set of AI rules for working on this codebase in the Cursor IDE. We have also exposed the full Markdown-formatted project documentation as a [single text file](docs/static/documentation.txt) for easy downloading and embedding for RAG.
+The `.cursor/rules` folder contains a set of AI rules for working on this codebase in the Cursor IDE. The documentation site also publishes [llms.txt](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/llms.txt) and [llms-full.txt](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/llms-full.txt) for easy downloading and embedding for RAG.
 
 ## Application architecture
 
@@ -749,7 +696,7 @@ We also create POST endpoints, which accept form submissions so the user can cre
 - **Non-HTMX (PRG):** When a form is submitted without HTMX, the server processes the data and returns a `303 See Other` redirect to a GET endpoint, which re-renders the full page with updated data.
 - **HTMX:** When HTMX submits the same form, the server detects the `HX-Request: true` header and instead returns a `200` HTML partial that HTMX swaps into the relevant part of the page — no full-page reload needed.
 
-Both paths use the same POST route URLs and form field contracts. (See [Architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html) for more details.)
+Both paths use the same POST route URLs and form field contracts. (See [Architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/architecture.html) for more details.)
 
 #### File structure
 
@@ -782,10 +729,10 @@ Both paths use the same POST route URLs and form field contracts. (See [Architec
 - Environment variables: `.env.example`, `.env`
 - CI/CD configuration: `.github/`
 - Project configuration: `pyproject.toml`
-- Quarto documentation: 
-    - README source: `index.qmd`
-    - Website source: `index.qmd` + `docs/`
-    - Configuration: `_quarto.yml` + `_environment`
+- Documentation:
+    - README: `README.md`
+    - Website source: `user_guide/`
+    - Configuration: `great-docs.yml` + `_environment`
 - Rules for developing with LLMs in Cursor IDE: `.cursor/rules/`
 
 Most everything else is auto-generated and should not be manually modified.
@@ -892,7 +839,12 @@ Here's an entity-relationship diagram (ERD) of the current core database schema,
 #| echo: false
 #| warning: false
 import sys
-sys.path.append("..")
+from pathlib import Path
+
+_project_root = Path.cwd()
+while _project_root != _project_root.parent and not (_project_root / "pyproject.toml").exists():
+    _project_root = _project_root.parent
+sys.path.insert(0, str(_project_root))
 from utils.core.models import *
 from utils.core.db import get_connection_url
 from sqlmodel import create_engine
@@ -1111,10 +1063,10 @@ Best practices dictate implementing thorough client-side validation via JavaScri
 
 Server-side validation remains essential as a security measure against malicious requests that bypass client-side validation, but it should rarely be encountered during normal user interaction. See `templates/authentication/register.html` for a client-side form validation example involving both JavaScript and HTML regex `pattern` matching.
 
----
-title: "Deployment"
-description: "Guide to deploying the FastAPI webapp template to cloud platforms including Railway, Render, and other hosting services."
----
+
+## Deployment
+
+### Deployment
 
 This application requires two services to be deployed and connected to each other:
 
@@ -1479,10 +1431,8 @@ Consider using a connection pooler when:
 - You're hitting database connection limits
 - You want to reduce connection latency for frequently-accessed queries
 
----
-title: "Contributing"
-description: "How to contribute to the FastAPI webapp template project including guidelines for pull requests and development setup."
----
+
+## Contributing
 
 ## Contributors
 
@@ -1514,7 +1464,7 @@ To contribute code to the project:
 
 1. Fork the repository and clone your fork locally
 2. Create a new branch from `main` with a descriptive name
-3. Review the [customization](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/customization.html), [architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/architecture.html), and [authentication](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/authentication.html) pages for guidance on design patterns and code structure and style
+3. Review the [customization](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/customization.html), [architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/architecture.html), and [authentication](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/authentication.html) pages for guidance on design patterns and code structure and style
 4. Ensure all tests pass, including `ty` type checking
 5. Stage, commit, and push your changes to the branch:
    - Use clear, descriptive commit messages
@@ -1525,20 +1475,18 @@ To contribute code to the project:
 
 ### Rendering the documentation
 
-The README and documentation website are rendered with [Quarto](https://quarto.org/docs/). If you make changes to the `.qmd` files in the root folder and the `docs` folder, you will need to re-render the docs with Quarto.
+The documentation website is built with [Great Docs](https://posit-dev.github.io/great-docs/). If you make changes to the `.qmd` files in the `user_guide/` folder, you will need to rebuild the docs with Great Docs.
 
-Quarto expects environment variables to be set in a file called `_environment`, so before running Quarto render commands, you should copy your `.env` file to `_environment`.
+Great Docs uses Quarto under the hood and expects environment variables to be set in a file called `_environment`, so before running Great Docs build commands, you should copy your `.env` file to `_environment`.
 
 ``` bash
 # To copy the .env file to _environment
 cp .env _environment
-# To render the documentation website
-uv run quarto render
-# To render the README
-uv run quarto render index.qmd --output-dir . --output README.md --to gfm
+# To build the documentation website
+PYTHONPATH=. uv run great-docs build
+# To preview the documentation website locally
+uv run great-docs preview
 ```
-
-Due to a quirk of Quarto, an unnecessary `index.html` file is created in the root folder when the README is rendered. This file can be safely deleted.
 
 Note that even if your pull request is merged, your changes will not be reflected on the live website until a maintainer republishes the docs.
 
@@ -1557,8 +1505,5 @@ When creating new features,
 
 ### Publishing the documentation
 
-To publish the documentation to GitHub Pages, run the following command:
+Documentation is published to GitHub Pages automatically when changes are merged to `main`. Maintainers can also build locally and deploy the contents of `great-docs/_site/`.
 
-``` bash
-uv run quarto publish gh-pages
-```

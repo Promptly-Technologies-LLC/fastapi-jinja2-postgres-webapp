@@ -1,0 +1,195 @@
+# Installation
+
+
+# Install all development dependencies in a VSCode Dev Container
+
+If you use VSCode with Docker to develop in a container, the following VSCode Dev Container configuration will install all development dependencies:
+
+``` json
+{
+    "name": "Python 3",
+    "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
+    "postCreateCommand": "sudo apt update && sudo apt install -y python3-dev libpq-dev graphviz libwebp-dev && npm install bootstrap@5.3.3 && npm install -g sass && npm install -g gulp && uv venv && uv sync",
+    "features": {
+        "ghcr.io/va-h/devcontainers-features/uv:1": {
+            "version": "latest"
+        },
+        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+        "ghcr.io/rocker-org/devcontainer-features/quarto-cli:1": {}
+    }
+}
+```
+
+Simply create a `.devcontainer` folder in the root of the project and add a `devcontainer.json` file in the folder with the above content. VSCode may prompt you to install the Dev Container extension if you haven't already, and/or to open the project in a container. If not, you can manually select "Dev Containers: Reopen in Container" from `View > Command Palette`.
+
+*IMPORTANT: If using this dev container configuration, you will need to set the `DB_HOST` environment variable to "host.docker.internal" in the `.env` file.*
+
+
+# Install development dependencies manually
+
+
+## uv
+
+MacOS and Linux:
+
+``` bash
+wget -qO- https://astral.sh/uv/install.sh | sh
+```
+
+Windows:
+
+``` bash
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+See the [uv installation docs](https://docs.astral.sh/uv/getting-started/installation/) for more information.
+
+
+## Python
+
+Install Python 3.12 or higher from either the official [downloads page](https://www.python.org/downloads/) or using uv:
+
+``` bash
+# Installs the latest version
+uv python install
+```
+
+
+## Docker and Docker Compose
+
+Install Docker Desktop and Docker Compose for your operating system by following the [instructions in the documentation](https://docs.docker.com/compose/install/).
+
+
+## PostgreSQL headers
+
+For Ubuntu/Debian:
+
+``` bash
+sudo apt update && sudo apt install -y python3-dev libpq-dev libwebp-dev
+```
+
+For macOS:
+
+``` bash
+brew install postgresql
+```
+
+For Windows:
+
+- No installation required
+
+
+## Python dependencies
+
+From the root directory, run:
+
+``` bash
+uv venv
+```
+
+This will create an in-project virtual environment. Then run:
+
+``` bash
+uv sync
+```
+
+This will install all dependencies.
+
+(Note: if `psycopg2` installation fails, you probably just need to install the PostgreSQL headers first and then try again.)
+
+
+## Configure IDE
+
+If you are using VSCode or Cursor as your IDE, you will need to select the `uv`-managed Python version as your interpreter for the project. Go to `View > Command Palette`, search for `Python: Select Interpreter`, and select the Python version labeled `('.venv':venv)`.
+
+It is also recommended to install the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and [Quarto](https://marketplace.visualstudio.com/items?itemName=quarto.quarto) IDE extensions.
+
+
+# Install documentation dependencies manually
+
+
+## Great Docs
+
+To build the project documentation, install Great Docs as a development dependency:
+
+``` bash
+uv sync
+```
+
+Great Docs uses the [Quarto CLI](https://quarto.org/docs/get-started/) under the hood. Install Quarto for your operating system if it is not already available.
+
+
+## Graphviz
+
+Architecture diagrams in the documentation are rendered with [Graphviz](https://graphviz.org/).
+
+For macOS:
+
+``` bash
+brew install graphviz
+```
+
+For Ubuntu/Debian:
+
+``` bash
+sudo apt update && sudo apt install -y graphviz
+```
+
+For Windows:
+
+- Download and install from [Graphviz.org](https://graphviz.org/download/#windows)
+
+
+# Set environment variables
+
+Copy .env.example to .env with `cp .env.example .env`.
+
+Generate a 256 bit secret key with `openssl rand -base64 32` and paste it into the .env file.
+
+Set your desired database name, username, and password in the .env file.
+
+To use password recovery, register a [Resend](https://resend.com/) account, verify a domain, get an API key, and paste the API key and sender email address into the .env file.
+
+If using the dev container configuration, you will need to set the `DB_HOST` environment variable to "host.docker.internal" in the .env file. Otherwise, set `DB_HOST` to "localhost" for local development. (In production, `DB_HOST` will be set to the hostname of the database server.)
+
+
+# Start development database
+
+To start the development database, run the following command in your terminal from the root directory:
+
+``` bash
+docker compose up -d
+```
+
+If at any point you change the environment variables in the .env file, you will need to stop the database service *and tear down the volume*:
+
+``` bash
+# Don't forget the -v flag to tear down the volume!
+docker compose down -v
+```
+
+You may also need to restart the terminal session to pick up the new environment variables. You can also add the `--force-recreate` and `--build` flags to the startup command to ensure the container is rebuilt:
+
+``` bash
+docker compose up -d --force-recreate --build
+```
+
+
+# Run the development server
+
+Before running the development server, make sure the development database is running and tables and default permissions/roles are created first. Then run the following command in your terminal from the root directory:
+
+``` bash
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Navigate to http://localhost:8000/.
+
+(Note: If startup fails with a sqlalchemy/psycopg2 connection error, make sure that Docker Desktop and the database service are running and that the environment variables in the `.env` file are correctly populated, and then try again.)
+
+
+# Type check with ty
+
+``` bash
+uv run ty check .
+```

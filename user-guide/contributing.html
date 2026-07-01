@@ -8,7 +8,7 @@
 
 <meta name="description" content="How to contribute to the FastAPI webapp template project including guidelines for pull requests and development setup.">
 
-<title>Contributing – FastAPI Webapp Template</title>
+<title>Contributing – FastAPI Webapp Template | FastAPI Webapp Template</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -69,6 +69,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
+<link href="../user-guide/deployment.html" rel="prev">
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -78,7 +79,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-bba5ebae505b5c03f3f0d8040a416a6b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-4374c486a51c078b4a30d8ae56e0846f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -106,18 +107,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script>document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:(document.querySelector('meta[name="quarto:offset"]')||{content:''}).content+'termshow.css'}));</script>
+<script>document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:(document.querySelector('meta[name="quarto:offset"]')||{content:''}).content+'gd-lightbox.css'}));</script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'gd-lightbox.js';s.defer=true;document.head.appendChild(s);})();</script>
+<script>document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:(document.querySelector('meta[name="quarto:offset"]')||{content:''}).content+'gd-lightbox-compare.css'}));</script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'gd-lightbox-compare.js';s.defer=true;document.head.appendChild(s);})();</script>
+<script>document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:(document.querySelector('meta[name="quarto:offset"]')||{content:''}).content+'gd-lightbox-annotate.css'}));</script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'gd-lightbox-annotate.js';s.defer=true;document.head.appendChild(s);})();</script>
+<script src="../theme-init.js"></script>
 
 
-<link rel="stylesheet" href="../docs/static/styles.css">
-<meta property="og:title" content="Contributing – FastAPI Webapp Template">
-<meta property="og:description" content="How to contribute to the FastAPI webapp template project including guidelines for pull requests and development setup.">
-<meta property="og:site_name" content="FastAPI Webapp Template">
-<meta name="twitter:title" content="Contributing – FastAPI Webapp Template">
-<meta name="twitter:description" content="How to contribute to the FastAPI webapp template project including guidelines for pull requests and development setup.">
-<meta name="twitter:card" content="summary">
+  <link rel="canonical" href="https://promptly-technologies-llc.github.io/fastapi-jinja2-postgres-webapp/user-guide/contributing.html">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Contributing – FastAPI Webapp Template | FastAPI Webapp Template">
+  <meta property="og:description" content="How to contribute to the FastAPI webapp template project including guidelines for pull requests and development setup.">
+  <meta property="og:url" content="https://promptly-technologies-llc.github.io/fastapi-jinja2-postgres-webapp/user-guide/contributing.html">
+  <meta property="og:site_name" content="FastAPI Webapp Template">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Contributing – FastAPI Webapp Template | FastAPI Webapp Template">
+  <meta name="twitter:description" content="How to contribute to the FastAPI webapp template project including guidelines for pull requests and development setup.">
 </head>
 
-<body class="nav-fixed quarto-light">
+<body class="nav-sidebar floating nav-fixed quarto-light">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
@@ -125,49 +137,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
     <a class="navbar-brand" href="../index.html">
-    <span class="navbar-title">FastAPI Webapp Template</span>
+    <span class="navbar-title">FastAPI Webapp Template <span class="version-badge" title="Released 2026-06-30">v1.0.2</span></span>
     </a>
   </div>
-            <div id="quarto-search" class="" title="Search"></div>
+            <div id="quarto-search" class=""></div>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="../index.html"> 
-<span class="menu-text">Home</span></a>
+    <a class="nav-link" href="../reference/index.html"> 
+<span class="menu-text">Reference</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../docs/architecture.html"> 
-<span class="menu-text">Architecture</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/authentication.html"> 
-<span class="menu-text">Authentication</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/installation.html"> 
-<span class="menu-text">Installation</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/customization.html"> 
-<span class="menu-text">Customization</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../docs/deployment.html"> 
-<span class="menu-text">Deployment</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link active" href="../docs/contributing.html" aria-current="page"> 
-<span class="menu-text">Contributing</span></a>
+    <a class="nav-link" href="../changelog.html"> 
+<span class="menu-text">Changelog</span></a>
   </li>  
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
-  <li class="nav-item compact">
-    <a class="nav-link" href="https://github.com/promptly-technologies-llc/fastapi-jinja2-postgres-webapp"> <i class="bi bi-github" role="img">
-</i> 
-<span class="menu-text"></span></a>
+  <li class="nav-item">
+    <span class="nav-link">
+<div id="github-widget" data-owner="promptly-technologies-llc" data-repo="fastapi-jinja2-postgres-webapp" data-stars="9" data-forks="3"></div>
+    </span>
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
@@ -175,16 +167,107 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
       </div> <!-- /container-fluid -->
     </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <h1 class="quarto-secondary-nav-title no-breadcrumbs">Contributing</h1>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
 </header>
 <!-- content -->
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start">
+ <span class="menu-text">Getting Started</span></a>
+</div>
+      <ul id="quarto-sidebar-section-1" class="list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Home</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/installation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Installation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start">
+ <span class="menu-text">Application</span></a>
+</div>
+      <ul id="quarto-sidebar-section-2" class="list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/architecture.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Architecture</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/authentication.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Authentication</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/customization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Customization</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start">
+ <span class="menu-text">Deployment</span></a>
+</div>
+      <ul id="quarto-sidebar-section-3" class="list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/deployment.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Deployment</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start">
+ <span class="menu-text">Contributing</span></a>
+</div>
+      <ul id="quarto-sidebar-section-4" class="list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/contributing.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Contributing</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         <nav id="TOC" role="doc-toc" class="toc-active">
     <h2 id="toc-title">On this page</h2>
    
-  <ul>
+  <ul class="collapse">
   <li><a href="#contributors" id="toc-contributors" class="nav-link active" data-scroll-target="#contributors">Contributors</a>
   <ul class="collapse">
   <li><a href="#opening-issues-and-bug-reports" id="toc-opening-issues-and-bug-reports" class="nav-link" data-scroll-target="#opening-issues-and-bug-reports">Opening issues and bug reports</a></li>
@@ -204,7 +287,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Contributing</h1>
+<h1 class="title d-none d-lg-block">Contributing</h1>
 </div>
 
 <div>
@@ -226,10 +309,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="contributors" class="level2">
-<h2 class="anchored" data-anchor-id="contributors">Contributors</h2>
-<section id="opening-issues-and-bug-reports" class="level3">
-<h3 class="anchored" data-anchor-id="opening-issues-and-bug-reports">Opening issues and bug reports</h3>
+<section id="contributors" class="level1">
+<h1>Contributors</h1>
+<section id="opening-issues-and-bug-reports" class="level2">
+<h2 class="anchored" data-anchor-id="opening-issues-and-bug-reports">Opening issues and bug reports</h2>
 <p>When opening a new issue or submitting a bug report, please include:</p>
 <ol type="1">
 <li>A clear, descriptive title</li>
@@ -250,13 +333,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ol>
 <p>Labels help categorize issues: - Use <code>bug</code> for reporting problems - Use <code>enhancement</code> for feature requests - Use <code>documentation</code> for documentation improvements - Use <code>question</code> for general queries</p>
 </section>
-<section id="contributing-code" class="level3">
-<h3 class="anchored" data-anchor-id="contributing-code">Contributing code</h3>
+<section id="contributing-code" class="level2">
+<h2 class="anchored" data-anchor-id="contributing-code">Contributing code</h2>
 <p>To contribute code to the project:</p>
 <ol type="1">
 <li>Fork the repository and clone your fork locally</li>
 <li>Create a new branch from <code>main</code> with a descriptive name</li>
-<li>Review the <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/customization.html">customization</a>, <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/architecture.html">architecture</a>, and <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/authentication.html">authentication</a> pages for guidance on design patterns and code structure and style</li>
+<li>Review the <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/customization.html">customization</a>, <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/architecture.html">architecture</a>, and <a href="https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/authentication.html">authentication</a> pages for guidance on design patterns and code structure and style</li>
 <li>Ensure all tests pass, including <code>ty</code> type checking</li>
 <li>Stage, commit, and push your changes to the branch:
 <ul>
@@ -270,24 +353,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul></li>
 </ol>
 </section>
-<section id="rendering-the-documentation" class="level3">
-<h3 class="anchored" data-anchor-id="rendering-the-documentation">Rendering the documentation</h3>
-<p>The README and documentation website are rendered with <a href="https://quarto.org/docs/">Quarto</a>. If you make changes to the <code>.qmd</code> files in the root folder and the <code>docs</code> folder, you will need to re-render the docs with Quarto.</p>
-<p>Quarto expects environment variables to be set in a file called <code>_environment</code>, so before running Quarto render commands, you should copy your <code>.env</code> file to <code>_environment</code>.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># To copy the .env file to _environment</span></span>
+<section id="rendering-the-documentation" class="level2">
+<h2 class="anchored" data-anchor-id="rendering-the-documentation">Rendering the documentation</h2>
+<p>The documentation website is built with <a href="https://posit-dev.github.io/great-docs/">Great Docs</a>. If you make changes to the <code>.qmd</code> files in the <code>user_guide/</code> folder, you will need to rebuild the docs with Great Docs.</p>
+<p>Great Docs uses Quarto under the hood and expects environment variables to be set in a file called <code>_environment</code>, so before running Great Docs build commands, you should copy your <code>.env</code> file to <code>_environment</code>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># To copy the .env file to _environment</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> .env _environment</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># To render the documentation website</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run quarto render</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># To render the README</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run quarto render index.qmd <span class="at">--output-dir</span> . <span class="at">--output</span> README.md <span class="at">--to</span> gfm</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Due to a quirk of Quarto, an unnecessary <code>index.html</code> file is created in the root folder when the README is rendered. This file can be safely deleted.</p>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># To build the documentation website</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="va">PYTHONPATH</span><span class="op">=</span>. <span class="ex">uv</span> run great-docs build</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># To preview the documentation website locally</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run great-docs preview</span></code></pre></div>
 <p>Note that even if your pull request is merged, your changes will not be reflected on the live website until a maintainer republishes the docs.</p>
 </section>
 </section>
-<section id="maintainers" class="level2">
-<h2 class="anchored" data-anchor-id="maintainers">Maintainers</h2>
-<section id="git-flow" class="level3">
-<h3 class="anchored" data-anchor-id="git-flow">Git flow</h3>
+<section id="maintainers" class="level1">
+<h1>Maintainers</h1>
+<section id="git-flow" class="level2">
+<h2 class="anchored" data-anchor-id="git-flow">Git flow</h2>
 <p>When creating new features,</p>
 <ol type="1">
 <li>Open a Github issue with the label <code>feature</code> and assign it to yourself.</li>
@@ -298,10 +380,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Assign someone else for code review.</li>
 </ol>
 </section>
-<section id="publishing-the-documentation" class="level3">
-<h3 class="anchored" data-anchor-id="publishing-the-documentation">Publishing the documentation</h3>
-<p>To publish the documentation to GitHub Pages, run the following command:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run quarto publish gh-pages</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="publishing-the-documentation" class="level2">
+<h2 class="anchored" data-anchor-id="publishing-the-documentation">Publishing the documentation</h2>
+<p>Documentation is published to GitHub Pages automatically when changes are merged to <code>main</code>. Maintainers can also build locally and deploy the contents of <code>great-docs/_site/</code>.</p>
 
 
 </section>
@@ -317,68 +398,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       icon: icon
     };
     anchorJS.add('.anchored');
-    const isCodeAnnotation = (el) => {
-      for (const clz of el.classList) {
-        if (clz.startsWith('code-annotation-')) {                     
-          return true;
-        }
-      }
-      return false;
-    }
-    const onCopySuccess = function(e) {
-      // button target
-      const button = e.trigger;
-      // don't keep focus
-      button.blur();
-      // flash "checked"
-      button.classList.add('code-copy-button-checked');
-      var currentTitle = button.getAttribute("title");
-      button.setAttribute("title", "Copied!");
-      let tooltip;
-      if (window.bootstrap) {
-        button.setAttribute("data-bs-toggle", "tooltip");
-        button.setAttribute("data-bs-placement", "left");
-        button.setAttribute("data-bs-title", "Copied!");
-        tooltip = new bootstrap.Tooltip(button, 
-          { trigger: "manual", 
-            customClass: "code-copy-button-tooltip",
-            offset: [0, -8]});
-        tooltip.show();    
-      }
-      setTimeout(function() {
-        if (tooltip) {
-          tooltip.hide();
-          button.removeAttribute("data-bs-title");
-          button.removeAttribute("data-bs-toggle");
-          button.removeAttribute("data-bs-placement");
-        }
-        button.setAttribute("title", currentTitle);
-        button.classList.remove('code-copy-button-checked');
-      }, 1000);
-      // clear code selection
-      e.clearSelection();
-    }
-    const getTextToCopy = function(trigger) {
-      const outerScaffold = trigger.parentElement.cloneNode(true);
-      const codeEl = outerScaffold.querySelector('code');
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-    }
-    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
-      text: getTextToCopy
-    });
-    clipboard.on('success', onCopySuccess);
-    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
-      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
-        text: getTextToCopy,
-        container: window.document.getElementById('quarto-embedded-source-code-modal')
-      });
-      clipboardModal.on('success', onCopySuccess);
-    }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
         var filterRegex = new RegExp("https:\/\/promptlytechnologies\.com\/fastapi-jinja2-postgres-webapp\/");
@@ -708,27 +727,41 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
   });
   </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../user-guide/deployment.html" class="pagination-link" aria-label="Deployment">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Deployment</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+  </div>
+</nav>
 </div> <!-- /content -->
 <footer class="footer">
   <div class="nav-footer">
-    <div class="nav-footer-left">
-<p>Copyright 2024, Promptly Technologies, LLC. MIT License.</p>
-</div>   
-    <div class="nav-footer-center">
-      &nbsp;
-    </div>
-    <div class="nav-footer-right">
-      <ul class="footer-items list-unstyled">
-    <li class="nav-item compact">
-    <a class="nav-link" href="https://github.com/promptly-technologies-llc/fastapi-jinja2-postgres-webapp">
-      <i class="bi bi-github" role="img">
-</i> 
-    </a>
-  </li>  
-</ul>
-    </div>
-  </div>
+<div class="nav-footer-center">
+<p>Developed by <strong>Christopher&nbsp;Carroll&nbsp;Smith</strong>. Supported by <strong>Promptly&nbsp;Technologies,&nbsp;LLC</strong>.<br>Site created with <strong>Great&nbsp;Docs</strong>.</p>
+</div>
+</div>
 </footer>
+<script src="../github-widget.js"></script>
+<script src="../copy-page.js"></script>
+<script src="../sidebar-wrap.js"></script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'sidebar-float.js';document.body.appendChild(s);})();</script>
+<script src="../sidebar-filter.js"></script>
+<script src="../dark-mode-toggle.js"></script>
+<script src="../back-to-top.js"></script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'on-this-page.js';document.body.appendChild(s);})();</script>
+<script src="../keyboard-nav.js"></script>
+<script src="../copy-code.js"></script>
+<script src="../details.js"></script>
+<script src="../mermaid-renderer.js"></script>
+<script src="../tooltips.js"></script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'color-swatch.js';document.body.appendChild(s);})();</script>
+<script src="../responsive-tables.js"></script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'video-embed.js';document.body.appendChild(s);})();</script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'termshow.js';document.body.appendChild(s);})();</script>
+<script src="../navbar-widgets.js"></script>
 
 
 

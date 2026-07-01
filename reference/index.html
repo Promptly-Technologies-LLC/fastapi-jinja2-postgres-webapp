@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>changelog – FastAPI Webapp Template</title>
+<title>Reference – FastAPI Webapp Template | FastAPI Webapp Template</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -26,23 +26,23 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="site_libs/quarto-nav/headroom.min.js"></script>
-<script src="site_libs/clipboard/clipboard.min.js"></script>
-<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="site_libs/quarto-search/fuse.min.js"></script>
-<script src="site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="./">
-<script src="site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="site_libs/quarto-html/popper.min.js"></script>
-<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="site_libs/quarto-html/anchor.min.js"></script>
-<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-bba5ebae505b5c03f3f0d8040a416a6b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-4374c486a51c078b4a30d8ae56e0846f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -70,68 +70,74 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script>document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:(document.querySelector('meta[name="quarto:offset"]')||{content:''}).content+'termshow.css'}));</script>
+<script>document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:(document.querySelector('meta[name="quarto:offset"]')||{content:''}).content+'gd-lightbox.css'}));</script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'gd-lightbox.js';s.defer=true;document.head.appendChild(s);})();</script>
+<script>document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:(document.querySelector('meta[name="quarto:offset"]')||{content:''}).content+'gd-lightbox-compare.css'}));</script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'gd-lightbox-compare.js';s.defer=true;document.head.appendChild(s);})();</script>
+<script>document.head.appendChild(Object.assign(document.createElement('link'),{rel:'stylesheet',href:(document.querySelector('meta[name="quarto:offset"]')||{content:''}).content+'gd-lightbox-annotate.css'}));</script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'gd-lightbox-annotate.js';s.defer=true;document.head.appendChild(s);})();</script>
+<script src="../theme-init.js"></script>
 
 
-<link rel="stylesheet" href="docs/static/styles.css">
-<meta property="og:title" content="FastAPI Webapp Template">
-<meta property="og:description" content="A production-ready FastAPI web application template with Jinja2 templates, PostgreSQL database, and built-in authentication.">
-<meta property="og:site_name" content="FastAPI Webapp Template">
-<meta name="twitter:title" content="FastAPI Webapp Template">
-<meta name="twitter:description" content="A production-ready FastAPI web application template with Jinja2 templates, PostgreSQL database, and built-in authentication.">
-<meta name="twitter:card" content="summary">
+  <link rel="canonical" href="https://promptly-technologies-llc.github.io/fastapi-jinja2-postgres-webapp/reference/">
+  <meta name="description" content="A template webapp with a pure-Python FastAPI backend, frontend templating with Jinja2, and a Postgres database to power user auth">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "FastAPI Webapp Template",
+  "description": "A template webapp with a pure-Python FastAPI backend, frontend templating with Jinja2, and a Postgres database to power user auth",
+  "url": "https://promptly-technologies-llc.github.io/fastapi-jinja2-postgres-webapp",
+  "documentation": "https://promptly-technologies-llc.github.io/fastapi-jinja2-postgres-webapp",
+  "programmingLanguage": {
+    "@type": "ComputerLanguage",
+    "name": "Python"
+  }
+}
+</script>
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Reference – FastAPI Webapp Template | FastAPI Webapp Template">
+  <meta property="og:description" content="A template webapp with a pure-Python FastAPI backend, frontend templating with Jinja2, and a Postgres database to power user auth">
+  <meta property="og:url" content="https://promptly-technologies-llc.github.io/fastapi-jinja2-postgres-webapp/reference/">
+  <meta property="og:site_name" content="FastAPI Webapp Template">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Reference – FastAPI Webapp Template | FastAPI Webapp Template">
+  <meta name="twitter:description" content="A template webapp with a pure-Python FastAPI backend, frontend templating with Jinja2, and a Postgres database to power user auth">
 </head>
 
-<body class="nav-fixed quarto-light">
+<body class="gd-ref-sidebar nav-sidebar floating nav-fixed doc-reference quarto-light">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="./index.html">
-    <span class="navbar-title">FastAPI Webapp Template</span>
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">FastAPI Webapp Template <span class="version-badge" title="Released 2026-06-30">v1.0.2</span></span>
     </a>
   </div>
-            <div id="quarto-search" class="" title="Search"></div>
+            <div id="quarto-search" class=""></div>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="./index.html"> 
-<span class="menu-text">Home</span></a>
+    <a class="nav-link active" href="../reference/index.html" aria-current="page"> 
+<span class="menu-text">Reference</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./docs/architecture.html"> 
-<span class="menu-text">Architecture</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./docs/authentication.html"> 
-<span class="menu-text">Authentication</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./docs/installation.html"> 
-<span class="menu-text">Installation</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./docs/customization.html"> 
-<span class="menu-text">Customization</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./docs/deployment.html"> 
-<span class="menu-text">Deployment</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./docs/contributing.html"> 
-<span class="menu-text">Contributing</span></a>
+    <a class="nav-link" href="../changelog.html"> 
+<span class="menu-text">Changelog</span></a>
   </li>  
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
-  <li class="nav-item compact">
-    <a class="nav-link" href="https://github.com/promptly-technologies-llc/fastapi-jinja2-postgres-webapp"> <i class="bi bi-github" role="img">
-</i> 
-<span class="menu-text"></span></a>
+  <li class="nav-item">
+    <span class="nav-link">
+<div id="github-widget" data-owner="promptly-technologies-llc" data-repo="fastapi-jinja2-postgres-webapp" data-stars="9" data-forks="3"></div>
+    </span>
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
@@ -139,76 +145,92 @@ ul.task-list li input[type="checkbox"] {
 </div>
       </div> <!-- /container-fluid -->
     </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <h1 class="quarto-secondary-nav-title no-breadcrumbs gd-ref-title"><span class="gd-ref-title-prefix">API</span><span class="gd-ref-title-sep">/</span><span class="gd-ref-title-name">Index</span></h1>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
 </header>
 <!-- content -->
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container" style="padding-bottom: 0.5rem; padding-top: 0.25rem;"> 
+  <a href="../reference/index.html" style="font-family: &quot;Open Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif;" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">API Index</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start">
+ <span class="menu-text">Other</span></a>
+</div>
+      <ul id="quarto-sidebar-section-1" class="list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../reference/app.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="doc-object-name doc-module doc-label doc-label-module">app</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         <nav id="TOC" role="doc-toc" class="toc-active">
     <h2 id="toc-title">On this page</h2>
    
-  <ul>
-  <li><a href="#changelog" id="toc-changelog" class="nav-link active" data-scroll-target="#changelog">Changelog</a>
   <ul class="collapse">
-  <li><a href="#v1.0.1-2026-06-30" id="toc-v1.0.1-2026-06-30" class="nav-link" data-scroll-target="#v1.0.1-2026-06-30">v1.0.1 (2026-06-30)</a>
-  <ul class="collapse">
-  <li><a href="#bug-fixes" id="toc-bug-fixes" class="nav-link" data-scroll-target="#bug-fixes">Bug Fixes</a></li>
-  <li><a href="#refactoring" id="toc-refactoring" class="nav-link" data-scroll-target="#refactoring">Refactoring</a></li>
-  </ul></li>
-  <li><a href="#v1.0.0-2026-06-23" id="toc-v1.0.0-2026-06-23" class="nav-link" data-scroll-target="#v1.0.0-2026-06-23">v1.0.0 (2026-06-23)</a>
-  <ul class="collapse">
-  <li><a href="#chores" id="toc-chores" class="nav-link" data-scroll-target="#chores">Chores</a></li>
-  <li><a href="#continuous-integration" id="toc-continuous-integration" class="nav-link" data-scroll-target="#continuous-integration">Continuous Integration</a></li>
-  </ul></li>
-  </ul></li>
+  <li><a href="#other" id="toc-other" class="nav-link active" data-scroll-target="#other">Other</a></li>
   </ul>
 </nav>
     </div>
 <!-- main -->
-<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Reference</h1>
+</div>
 
 
 
+<div class="quarto-title-meta">
 
-<section id="changelog" class="level1">
-<h1>Changelog</h1>
-<p>All notable changes to this project will be documented in this file.</p>
-<p>The format is based on <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>, and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
-<!-- version list -->
-<section id="v1.0.1-2026-06-30" class="level2">
-<h2 class="anchored" data-anchor-id="v1.0.1-2026-06-30">v1.0.1 (2026-06-30)</h2>
-<section id="bug-fixes" class="level3">
-<h3 class="anchored" data-anchor-id="bug-fixes">Bug Fixes</h3>
-<ul>
-<li><p>Address review nits on invitation warning pages (<a href="https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/03e08c9fdbf022ece4a82b53121a0734db601108"><code>03e08c9</code></a>)</p></li>
-<li><p>Harden profile-form htmx swap tests against CI timing flakiness (<a href="https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/03e08c9fdbf022ece4a82b53121a0734db601108"><code>03e08c9</code></a>)</p></li>
-</ul>
-</section>
-<section id="refactoring" class="level3">
-<h3 class="anchored" data-anchor-id="refactoring">Refactoring</h3>
-<ul>
-<li>Drop overflow-x clip in favor of geometry-based regression tests (<a href="https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/350af447d7693d64d6e0ac95d0e15f9fa01e01d3"><code>350af44</code></a>)</li>
-</ul>
-</section>
-</section>
-<section id="v1.0.0-2026-06-23" class="level2">
-<h2 class="anchored" data-anchor-id="v1.0.0-2026-06-23">v1.0.0 (2026-06-23)</h2>
-<section id="chores" class="level3">
-<h3 class="anchored" data-anchor-id="chores">Chores</h3>
-<ul>
-<li>Release v0.1.30 [skip ci] (<a href="https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/87401665003a8863d28f7c583bc0ac57fdf1f8cb"><code>8740166</code></a>)</li>
-</ul>
-</section>
-<section id="continuous-integration" class="level3">
-<h3 class="anchored" data-anchor-id="continuous-integration">Continuous Integration</h3>
-<ul>
-<li>Add semantic-release workflow and conventional commit enforcement (<a href="https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/203">#203</a>, <a href="https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/e9ab2ad60e1a06b20fc3fe1bcdb91fb958b50e6b"><code>e9ab2ad</code></a>)</li>
-</ul>
+    
+  
+    
+  </div>
+  
 
 
-</section>
-</section>
+</header>
+
+
+<section id="other" class="level2 doc-group">
+<h2 class="doc-group">Other</h2>
+<div class="doc-description">
+<p>Additional exports</p>
+</div>
+<dl>
+<dt><a href="../reference/app.html#utils.app" class="doc-module doc-label doc-label-module">app</a></dt>
+<dd>
+<p>This folder is where you would define application-specific, auth-protected utilities.</p>
+</dd>
+</dl>
+
+
 </section>
 
 </main> <!-- /main -->
@@ -221,68 +243,6 @@ ul.task-list li input[type="checkbox"] {
       icon: icon
     };
     anchorJS.add('.anchored');
-    const isCodeAnnotation = (el) => {
-      for (const clz of el.classList) {
-        if (clz.startsWith('code-annotation-')) {                     
-          return true;
-        }
-      }
-      return false;
-    }
-    const onCopySuccess = function(e) {
-      // button target
-      const button = e.trigger;
-      // don't keep focus
-      button.blur();
-      // flash "checked"
-      button.classList.add('code-copy-button-checked');
-      var currentTitle = button.getAttribute("title");
-      button.setAttribute("title", "Copied!");
-      let tooltip;
-      if (window.bootstrap) {
-        button.setAttribute("data-bs-toggle", "tooltip");
-        button.setAttribute("data-bs-placement", "left");
-        button.setAttribute("data-bs-title", "Copied!");
-        tooltip = new bootstrap.Tooltip(button, 
-          { trigger: "manual", 
-            customClass: "code-copy-button-tooltip",
-            offset: [0, -8]});
-        tooltip.show();    
-      }
-      setTimeout(function() {
-        if (tooltip) {
-          tooltip.hide();
-          button.removeAttribute("data-bs-title");
-          button.removeAttribute("data-bs-toggle");
-          button.removeAttribute("data-bs-placement");
-        }
-        button.setAttribute("title", currentTitle);
-        button.classList.remove('code-copy-button-checked');
-      }, 1000);
-      // clear code selection
-      e.clearSelection();
-    }
-    const getTextToCopy = function(trigger) {
-      const outerScaffold = trigger.parentElement.cloneNode(true);
-      const codeEl = outerScaffold.querySelector('code');
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-    }
-    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
-      text: getTextToCopy
-    });
-    clipboard.on('success', onCopySuccess);
-    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
-      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
-        text: getTextToCopy,
-        container: window.document.getElementById('quarto-embedded-source-code-modal')
-      });
-      clipboardModal.on('success', onCopySuccess);
-    }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
         var filterRegex = new RegExp("https:\/\/promptlytechnologies\.com\/fastapi-jinja2-postgres-webapp\/");
@@ -615,24 +575,28 @@ ul.task-list li input[type="checkbox"] {
 </div> <!-- /content -->
 <footer class="footer">
   <div class="nav-footer">
-    <div class="nav-footer-left">
-<p>Copyright 2024, Promptly Technologies, LLC. MIT License.</p>
-</div>   
-    <div class="nav-footer-center">
-      &nbsp;
-    </div>
-    <div class="nav-footer-right">
-      <ul class="footer-items list-unstyled">
-    <li class="nav-item compact">
-    <a class="nav-link" href="https://github.com/promptly-technologies-llc/fastapi-jinja2-postgres-webapp">
-      <i class="bi bi-github" role="img">
-</i> 
-    </a>
-  </li>  
-</ul>
-    </div>
-  </div>
+<div class="nav-footer-center">
+<p>Developed by <strong>Christopher&nbsp;Carroll&nbsp;Smith</strong>. Supported by <strong>Promptly&nbsp;Technologies,&nbsp;LLC</strong>.<br>Site created with <strong>Great&nbsp;Docs</strong>.</p>
+</div>
+</div>
 </footer>
+<script src="../github-widget.js"></script>
+<script src="../sidebar-wrap.js"></script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'sidebar-float.js';document.body.appendChild(s);})();</script>
+<script src="../sidebar-filter.js"></script>
+<script src="../dark-mode-toggle.js"></script>
+<script src="../back-to-top.js"></script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'on-this-page.js';document.body.appendChild(s);})();</script>
+<script src="../keyboard-nav.js"></script>
+<script src="../copy-code.js"></script>
+<script src="../details.js"></script>
+<script src="../mermaid-renderer.js"></script>
+<script src="../tooltips.js"></script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'color-swatch.js';document.body.appendChild(s);})();</script>
+<script src="../responsive-tables.js"></script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'video-embed.js';document.body.appendChild(s);})();</script>
+<script>(function(){var s=document.createElement('script');var m=document.querySelector('meta[name="quarto:offset"]');s.src=(m?m.content:'')+'termshow.js';document.body.appendChild(s);})();</script>
+<script src="../navbar-widgets.js"></script>
 
 
 
