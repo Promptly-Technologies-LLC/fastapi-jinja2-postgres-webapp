@@ -62,7 +62,8 @@ to deploy to any major cloud hosting platform.
 - [Github Actions](https://docs.github.com/en/actions): CI/CD pipeline
 - [Great Docs](https://posit-dev.github.io/great-docs/): documentation website generator
 - [ty](https://docs.astral.sh/ty/): static type checker for Python
-- [Bootstrap](https://getbootstrap.com/): HTML/CSS styler
+- [htmx](https://htmx.org/): dynamic HTML interactions with no JS build step
+  (the frontend is styled with a custom, dependency-free stylesheet)
 - [Resend](https://resend.com/): zero- or low-cost email service used
   for password recovery
 
