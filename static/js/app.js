@@ -1,4 +1,4 @@
-// app.js — global utilities loaded with defer in <head>.
+// app.js — global htmx wiring loaded with defer in <head>.
 // Because this script lives in <head> (outside <body>), it is never
 // re-processed during htmx hx-boost body swaps, which means the event
 // listeners registered here persist across page navigations.
@@ -17,9 +17,8 @@ document.body.addEventListener('htmx:configRequest', function() {
 }, { once: true });
 
 
-// Global handler: when a server response includes HX-Trigger: modalDismiss,
-// clean up any Bootstrap modal backdrop left behind by OOB swaps that
-// replaced the modal element before afterRequest could call .hide().
+// When a modal closes, reset any create-* form it contains so reopening it
+// starts blank. ui.js dispatches 'hidden.bs.modal' when a modal is hidden.
 document.body.addEventListener('hidden.bs.modal', function(event) {
     var modal = event.target;
     if (modal.id && modal.id.startsWith('create')) {
@@ -28,15 +27,11 @@ document.body.addEventListener('hidden.bs.modal', function(event) {
     }
 });
 
+// Server responses can include HX-Trigger: modalDismiss to close a modal after
+// an OOB swap has already replaced the modal element (so afterRequest can no
+// longer hide it). Clean up any open modal and leftover backdrop.
 document.body.addEventListener('modalDismiss', function() {
-    document.querySelectorAll('.modal.show').forEach(function(el) {
-        var modal = bootstrap.Modal.getInstance(el);
-        if (modal) {
-            modal.hide();
-        }
-    });
-    document.querySelectorAll('.modal-backdrop').forEach(function(el) { el.remove(); });
-    document.body.classList.remove('modal-open');
-    document.body.style.removeProperty('overflow');
-    document.body.style.removeProperty('padding-right');
+    if (window.UI) {
+        window.UI.hideAllModals();
+    }
 });
