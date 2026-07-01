@@ -2,21 +2,21 @@
 
 
 ![Screenshot of the FastAPI webapp template
-homepage](docs/static/screenshot.jpg)
+homepage](user_guide/static/screenshot.jpg)
 
 ## Quickstart
 
 This quickstart guide provides a high-level overview. See the full
 documentation for comprehensive information on
-[features](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/index.html),
-[installation](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/installation.html),
-[architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/architecture.html),
+[features](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/),
+[installation](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/installation.html),
+[architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/architecture.html),
 [conventions, code style, and
-customization](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/customization.html),
+customization](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/customization.html),
 [deployment to cloud
-platforms](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/deployment.html),
+platforms](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/deployment.html),
 and
-[contributing](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/contributing.html).
+[contributing](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/contributing.html).
 
 ## Features
 
@@ -60,8 +60,7 @@ to deploy to any major cloud hosting platform.
 - [Pytest](https://docs.pytest.org/en/7.4.x/): testing framework
 - [Docker](https://www.docker.com/): development containerization
 - [Github Actions](https://docs.github.com/en/actions): CI/CD pipeline
-- [Quarto](https://quarto.org/docs/): simple documentation website
-  renderer
+- [Great Docs](https://posit-dev.github.io/great-docs/): documentation website generator
 - [ty](https://docs.astral.sh/ty/): static type checker for Python
 - [Bootstrap](https://getbootstrap.com/): HTML/CSS styler
 - [Resend](https://resend.com/): zero- or low-cost email service used
@@ -70,7 +69,7 @@ to deploy to any major cloud hosting platform.
 ## Installation
 
 For comprehensive installation instructions, see the [installation
-page](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/docs/installation.html).
+page](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/installation.html).
 
 ### uv
 
@@ -182,10 +181,11 @@ uv run ty check .
 ## Developing with LLMs
 
 The `.cursor/rules` folder contains a set of AI rules for working on
-this codebase in the Cursor IDE. We have also exposed the full
-Markdown-formatted project documentation as a [single text
-file](docs/static/documentation.txt) for easy downloading and embedding
-for RAG.
+this codebase in the Cursor IDE. The documentation site also publishes
+[llms.txt](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/llms.txt)
+and
+[llms-full.txt](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/llms-full.txt)
+for easy downloading and embedding for RAG.
 
 ## Contributing
 
