@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- version list -->
 
+## v1.1.1 (2026-07-01)
+
+### Bug Fixes
+
+- Broken screenshot link
+  ([#213](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/213),
+  [`28e1222`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/28e12220b476476be829c97963437fd38e538069))
+
+- Convert screenshot to WebP and update doc links
+  ([#213](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/213),
+  [`28e1222`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/28e12220b476476be829c97963437fd38e538069))
+
+
 ## v1.1.0 (2026-07-01)
 
 ### Documentation
