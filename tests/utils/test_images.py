@@ -1,10 +1,15 @@
 import pytest
 from PIL import Image
 import io
+import asyncio
+from unittest.mock import AsyncMock, MagicMock
 from utils.core.images import (
     validate_and_process_image,
+    read_upload_with_size_limit,
+    reject_oversized_content_length,
     InvalidImageError,
     MAX_FILE_SIZE,
+    MAX_AVATAR_UPLOAD_BYTES,
     MIN_DIMENSION,
     MAX_DIMENSION,
 )
@@ -87,6 +92,41 @@ def test_file_too_large():
     with pytest.raises(InvalidImageError) as exc_info:
         validate_and_process_image(large_image_data, "image/png")
     assert "File too large" in str(exc_info.value.detail)
+
+
+def test_read_upload_with_size_limit_rejects_oversized_stream():
+    upload = MagicMock()
+    chunk_size = 64 * 1024
+    upload.read = AsyncMock(
+        side_effect=[b"x" * chunk_size, b"x" * (MAX_FILE_SIZE - chunk_size + 1), b""]
+    )
+
+    with pytest.raises(InvalidImageError) as exc_info:
+        asyncio.run(read_upload_with_size_limit(upload, MAX_FILE_SIZE))
+
+    assert "File too large" in str(exc_info.value.detail)
+    assert upload.read.await_count == 2
+
+
+def test_read_upload_with_size_limit_accepts_valid_stream():
+    upload = MagicMock()
+    upload.read = AsyncMock(side_effect=[b"abc", b"def", b""])
+
+    data = asyncio.run(read_upload_with_size_limit(upload, MAX_FILE_SIZE))
+
+    assert data == b"abcdef"
+
+
+def test_reject_oversized_content_length():
+    with pytest.raises(InvalidImageError):
+        reject_oversized_content_length(
+            str(MAX_AVATAR_UPLOAD_BYTES + 1), MAX_AVATAR_UPLOAD_BYTES
+        )
+
+
+def test_reject_oversized_content_length_allows_missing_or_valid():
+    reject_oversized_content_length(None, MAX_AVATAR_UPLOAD_BYTES)
+    reject_oversized_content_length(str(MAX_FILE_SIZE), MAX_AVATAR_UPLOAD_BYTES)
 
 
 def test_corrupt_image_data():
