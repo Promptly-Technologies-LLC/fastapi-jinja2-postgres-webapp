@@ -1,9 +1,9 @@
 import importlib
 import time
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import utils.core.rate_limit as rate_limit_module
-from utils.core.rate_limit import RateLimitWindow
+from utils.core.rate_limit import RateLimitWindow, get_client_ip
 
 
 # ---------------------------------------------------------------------------
@@ -162,3 +162,53 @@ def test_module_limiters_honor_env_configuration(monkeypatch):
         assert rate_limit_module.forgot_password_email_limiter.window_seconds == 91
 
     importlib.reload(rate_limit_module)
+
+
+# ---------------------------------------------------------------------------
+# Client IP behind trusted proxies
+# ---------------------------------------------------------------------------
+
+
+def _make_request(
+    peer_host: str | None,
+    headers: dict[str, str] | None = None,
+) -> MagicMock:
+    request = MagicMock()
+    if peer_host is None:
+        request.client = None
+    else:
+        request.client = MagicMock(host=peer_host)
+    request.headers = headers or {}
+    return request
+
+
+def test_get_client_ip_ignores_x_forwarded_for_without_trusted_proxy(monkeypatch):
+    monkeypatch.delenv("TRUSTED_PROXY_IPS", raising=False)
+    request = _make_request(
+        "203.0.113.10",
+        headers={"x-forwarded-for": "198.51.100.7"},
+    )
+    assert get_client_ip(request) == "203.0.113.10"
+
+
+def test_get_client_ip_uses_x_forwarded_for_from_trusted_proxy(monkeypatch):
+    monkeypatch.setenv("TRUSTED_PROXY_IPS", "127.0.0.1")
+    request = _make_request(
+        "127.0.0.1",
+        headers={"x-forwarded-for": "198.51.100.7, 127.0.0.1"},
+    )
+    assert get_client_ip(request) == "198.51.100.7"
+
+
+def test_get_client_ip_falls_back_to_peer_when_x_forwarded_for_missing(
+    monkeypatch,
+):
+    monkeypatch.setenv("TRUSTED_PROXY_IPS", "127.0.0.1")
+    request = _make_request("127.0.0.1")
+    assert get_client_ip(request) == "127.0.0.1"
+
+
+def test_get_client_ip_unknown_when_peer_missing(monkeypatch):
+    monkeypatch.delenv("TRUSTED_PROXY_IPS", raising=False)
+    request = _make_request(None)
+    assert get_client_ip(request) == "unknown"
