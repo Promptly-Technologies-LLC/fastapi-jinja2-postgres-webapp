@@ -21,6 +21,7 @@ from utils.core.dependencies import (
     require_unauthenticated_client,
 )
 from utils.core.auth import refresh_token_is_persistent, set_auth_cookies
+from utils.core.rate_limit import get_trusted_proxy_hosts
 from utils.core.csrf import (
     CSRF_COOKIE_NAME,
     UNSAFE_HTTP_METHODS,
@@ -62,6 +63,12 @@ async def lifespan(app: FastAPI):
 
 # Initialize the FastAPI app
 app: FastAPI = FastAPI(lifespan=lifespan)
+
+trusted_proxy_hosts = get_trusted_proxy_hosts()
+if trusted_proxy_hosts:
+    from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+
+    app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=list(trusted_proxy_hosts))
 
 # Mount static files (e.g., CSS, JS) and initialize Jinja2 templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
