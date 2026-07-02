@@ -21,7 +21,10 @@ from utils.core.dependencies import (
 )
 from utils.core.images import (
     validate_and_process_image,
+    read_upload_with_size_limit,
+    reject_oversized_content_length,
     MAX_FILE_SIZE,
+    MAX_AVATAR_UPLOAD_BYTES,
     MIN_DIMENSION,
     MAX_DIMENSION,
     ALLOWED_CONTENT_TYPES,
@@ -131,7 +134,10 @@ async def update_profile(
     # Handle avatar update
     if avatar_changed:
         assert avatar_file is not None
-        avatar_data = await avatar_file.read()
+        reject_oversized_content_length(
+            request.headers.get("content-length"), MAX_AVATAR_UPLOAD_BYTES
+        )
+        avatar_data = await read_upload_with_size_limit(avatar_file, MAX_FILE_SIZE)
         avatar_content_type = avatar_file.content_type
 
         processed_image, content_type = validate_and_process_image(
