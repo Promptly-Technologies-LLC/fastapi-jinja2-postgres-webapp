@@ -734,6 +734,8 @@ async def reset_password(
     session.commit()
     session.refresh(authorized_account)
 
+    revoke_all_refresh_tokens(authorized_account.id, session)
+
     # Auto-login: issue new auth cookies so the user doesn't have to re-enter credentials
     access_token = create_access_token(
         data={"sub": authorized_account.email, "fresh": True}
