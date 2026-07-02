@@ -2,6 +2,7 @@ import pytest
 from PIL import Image
 import io
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import AsyncMock, MagicMock
 from utils.core.images import (
     validate_and_process_image,
@@ -21,6 +22,12 @@ def create_test_image(width: int, height: int, format: str = "PNG") -> bytes:
     output = io.BytesIO()
     image.save(output, format=format)
     return output.getvalue()
+
+
+def _run_async(coro):
+    """Run a coroutine when pytest may already have an event loop active."""
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        return executor.submit(asyncio.run, coro).result()
 
 
 def test_webp_dependencies_are_installed():
@@ -102,7 +109,7 @@ def test_read_upload_with_size_limit_rejects_oversized_stream():
     )
 
     with pytest.raises(InvalidImageError) as exc_info:
-        asyncio.run(read_upload_with_size_limit(upload, MAX_FILE_SIZE))
+        _run_async(read_upload_with_size_limit(upload, MAX_FILE_SIZE))
 
     assert "File too large" in str(exc_info.value.detail)
     assert upload.read.await_count == 2
@@ -112,7 +119,7 @@ def test_read_upload_with_size_limit_accepts_valid_stream():
     upload = MagicMock()
     upload.read = AsyncMock(side_effect=[b"abc", b"def", b""])
 
-    data = asyncio.run(read_upload_with_size_limit(upload, MAX_FILE_SIZE))
+    data = _run_async(read_upload_with_size_limit(upload, MAX_FILE_SIZE))
 
     assert data == b"abcdef"
 
