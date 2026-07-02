@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- version list -->
 
+## v1.1.5 (2026-07-02)
+
+### Bug Fixes
+
+- Enforce avatar upload size limit before buffering body
+  ([#220](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/220),
+  [`73cdebe`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/73cdebe0e94a8caeb7b8d229aee9e60aa0571fc5))
+
+- Run async upload-limit tests outside pytest event loop
+  ([#220](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/220),
+  [`73cdebe`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/73cdebe0e94a8caeb7b8d229aee9e60aa0571fc5))
+
+
 ## v1.1.4 (2026-07-02)
 
 ### Bug Fixes

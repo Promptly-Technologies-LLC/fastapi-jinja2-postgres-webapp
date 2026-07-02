@@ -3,7 +3,11 @@ import time
 from unittest.mock import MagicMock, patch
 
 import utils.core.rate_limit as rate_limit_module
-from utils.core.rate_limit import RateLimitWindow, get_client_ip
+from utils.core.rate_limit import (
+    PostgresRateLimitWindow,
+    RateLimitWindow,
+    get_client_ip,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -161,6 +165,24 @@ def test_module_limiters_honor_env_configuration(monkeypatch):
         assert rate_limit_module.login_ip_limiter.max_attempts == 17
         assert rate_limit_module.forgot_password_email_limiter.window_seconds == 91
 
+    importlib.reload(rate_limit_module)
+
+
+def test_postgres_rate_limit_window_enforces_limit(engine, env_vars, monkeypatch):
+    monkeypatch.setenv("RATE_LIMIT_BACKEND", "postgres")
+    importlib.reload(rate_limit_module)
+
+    limiter = PostgresRateLimitWindow("test_scope", max_attempts=2, window_seconds=60)
+    limiter.clear()
+    limiter.record("shared-key")
+    limiter.record("shared-key")
+    assert limiter.check("shared-key")[0] is True
+
+    second = PostgresRateLimitWindow("test_scope", max_attempts=2, window_seconds=60)
+    assert second.check("shared-key")[0] is True
+
+    limiter.clear()
+    monkeypatch.delenv("RATE_LIMIT_BACKEND", raising=False)
     importlib.reload(rate_limit_module)
 
 
