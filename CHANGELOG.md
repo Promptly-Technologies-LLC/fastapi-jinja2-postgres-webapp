@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- version list -->
 
+## v1.1.2 (2026-07-02)
+
+### Bug Fixes
+
+- Revoke sessions on password reset
+  ([#215](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/215),
+  [`523fc48`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/523fc487daacf6a52e2bfab106f58831e2b3f846))
+
+
 ## v1.1.1 (2026-07-01)
 
 ### Bug Fixes
