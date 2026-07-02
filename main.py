@@ -21,6 +21,16 @@ from utils.core.dependencies import (
     require_unauthenticated_client,
 )
 from utils.core.auth import refresh_token_is_persistent, set_auth_cookies
+from utils.core.rate_limit import get_trusted_proxy_hosts
+from utils.core.csrf import (
+    CSRF_COOKIE_NAME,
+    UNSAFE_HTTP_METHODS,
+    csrf_enabled,
+    extract_submitted_csrf_token,
+    generate_csrf_token,
+    set_csrf_cookie,
+    validate_csrf_token,
+)
 from utils.core.htmx import (
     is_htmx_request,
     toast_response,
@@ -30,6 +40,7 @@ from utils.core.htmx import (
 from exceptions.http_exceptions import (
     AlreadyAuthenticatedError,
     AuthenticationError,
+    CsrfError,
     PasswordValidationError,
     CredentialsError,
     RateLimitError,
@@ -53,6 +64,12 @@ async def lifespan(app: FastAPI):
 # Initialize the FastAPI app
 app: FastAPI = FastAPI(lifespan=lifespan)
 
+trusted_proxy_hosts = get_trusted_proxy_hosts()
+if trusted_proxy_hosts:
+    from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+
+    app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=list(trusted_proxy_hosts))
+
 # Mount static files (e.g., CSS, JS) and initialize Jinja2 templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -70,6 +87,22 @@ async def flash_cookie_middleware(request: Request, call_next):
     response = await call_next(request)
     if flash:
         response.delete_cookie(FLASH_COOKIE_NAME, path="/")
+    return response
+
+
+@app.middleware("http")
+async def csrf_middleware(request: Request, call_next):
+    token = request.cookies.get(CSRF_COOKIE_NAME) or generate_csrf_token()
+    request.state.csrf_token = token
+
+    if csrf_enabled() and request.method in UNSAFE_HTTP_METHODS:
+        submitted = await extract_submitted_csrf_token(request)
+        if not validate_csrf_token(request, submitted):
+            return await csrf_error_handler(request, CsrfError())
+
+    response = await call_next(request)
+    if request.cookies.get(CSRF_COOKIE_NAME) != token:
+        set_csrf_cookie(response, token)
     return response
 
 
@@ -135,6 +168,25 @@ async def rate_limit_error_handler(request: Request, exc: RateLimitError):
     )
     response.headers["Retry-After"] = str(exc.retry_after)
     return response
+
+
+@app.exception_handler(CsrfError)
+async def csrf_error_handler(request: Request, exc: CsrfError):
+    if is_htmx_request(request):
+        return toast_response(
+            request,
+            templates,
+            exc.detail,
+            level="danger",
+            status_code=403,
+        )
+    user = await get_user_from_request(request)
+    return templates.TemplateResponse(
+        request,
+        "errors/error.html",
+        {"status_code": 403, "detail": exc.detail, "errors": None, "user": user},
+        status_code=403,
+    )
 
 
 # Handle CredentialsError (invalid email/password) with toast for HTMX

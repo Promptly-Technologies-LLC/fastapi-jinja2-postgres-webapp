@@ -62,6 +62,7 @@ def env_vars(monkeypatch):
         m.setenv("RESEND_API_KEY", "test")
         m.setenv("EMAIL_FROM", "test@example.com")
         m.setenv("BASE_URL", "http://localhost:8000")
+        m.setenv("CSRF_ENABLED", "0")
         yield
 
 

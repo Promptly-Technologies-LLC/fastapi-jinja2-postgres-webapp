@@ -1,0 +1,16 @@
+{% extends "account/auth_base.html" %}
+
+
+{% block auth_header %}Recover Your Account{% endblock %}
+
+{% block auth_content %}
+<p class="mb-4">
+    Use this page to restore your account email and sign out all active sessions.
+    You will be asked to set a new password after confirming.
+</p>
+<form action="{{ url_for('recover_account') }}" method="post">
+    {% include 'base/partials/csrf_field.html' %}
+    <input type="hidden" name="token" value="{{ token }}">
+    <button type="submit" class="btn btn-primary w-100">Recover account</button>
+</form>
+{% endblock %}

@@ -1,3 +1,4 @@
+
 <!-- Organization Roles -->
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
@@ -55,6 +56,7 @@
                                       hx-target="#roles-card-content"
                                       hx-swap="innerHTML"
                                       hx-confirm="Are you sure you want to delete this role?">
+                                      {% include 'base/partials/csrf_field.html' %}
                                     <input type="hidden" name="id" value="{{ role.id }}">
                                     <input type="hidden" name="organization_id" value="{{ organization.id }}">
                                     <button type="submit" class="btn btn-sm btn-outline-danger" {% if role.users|length > 0 %}disabled{% endif %}>
@@ -84,6 +86,7 @@
             hx-post="{{ url_for('create_role') }}"
             hx-target="#roles-card-content"
             hx-swap="innerHTML">
+            {% include 'base/partials/csrf_field.html' %}
         <div class="modal-header">
           <h5 class="modal-title" id="createRoleModalLabel">Create New Role</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -131,6 +134,7 @@
                 hx-post="{{ url_for('update_role') }}"
                 hx-target="#roles-card-content"
                 hx-swap="innerHTML">
+                {% include 'base/partials/csrf_field.html' %}
             <div class="modal-header">
               <h5 class="modal-title" id="editRoleModalLabel{{ role.id }}">Edit Role: {{ role.name }}</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

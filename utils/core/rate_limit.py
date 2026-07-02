@@ -3,6 +3,7 @@ import time
 import threading
 import math
 from datetime import UTC, datetime, timedelta
+import ipaddress
 from logging import getLogger
 from typing import Protocol, Tuple, runtime_checkable
 
@@ -43,6 +44,58 @@ class RateLimiter(Protocol):
     def prune(self) -> None: ...
 
     def clear(self) -> None: ...
+
+
+def get_trusted_proxy_hosts() -> tuple[str, ...]:
+    """
+    Return trusted reverse-proxy peer addresses from TRUSTED_PROXY_IPS.
+
+    Comma-separated list, e.g. ``127.0.0.1,::1,172.18.0.2``.
+    """
+    raw = os.environ.get("TRUSTED_PROXY_IPS", "")
+    return tuple(part.strip() for part in raw.split(",") if part.strip())
+
+
+def _peer_host(request: Request) -> str | None:
+    if request.client is None:
+        return None
+    return request.client.host
+
+
+def _parse_forwarded_client_ip(forwarded_for: str) -> str | None:
+    for candidate in forwarded_for.split(","):
+        value = candidate.strip()
+        if not value:
+            continue
+        try:
+            return str(ipaddress.ip_address(value))
+        except ValueError:
+            continue
+    return None
+
+
+def get_client_ip(request: Request) -> str:
+    """
+    Extract the client IP for rate limiting.
+
+    When the immediate peer is listed in TRUSTED_PROXY_IPS, the left-most
+    valid address in X-Forwarded-For is treated as the client. Otherwise only
+    request.client.host is used so clients cannot spoof their IP.
+    """
+    peer = _peer_host(request)
+    if peer is None:
+        return "unknown"
+
+    trusted_hosts = get_trusted_proxy_hosts()
+    if peer not in trusted_hosts:
+        return peer
+
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if not forwarded_for:
+        return peer
+
+    client_ip = _parse_forwarded_client_ip(forwarded_for)
+    return client_ip or peer
 
 
 class RateLimitWindow:
