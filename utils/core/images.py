@@ -2,6 +2,7 @@
 from PIL import Image
 import io
 from typing import Tuple
+from fastapi import UploadFile
 from exceptions.http_exceptions import InvalidImageError
 
 
@@ -9,12 +10,47 @@ from exceptions.http_exceptions import InvalidImageError
 
 
 MAX_FILE_SIZE = 2 * 1024 * 1024  # 2MB in bytes
+# Multipart overhead for the profile form (fields + boundaries).
+MAX_AVATAR_UPLOAD_BYTES = MAX_FILE_SIZE + 64 * 1024
+READ_CHUNK_SIZE = 64 * 1024
 ALLOWED_CONTENT_TYPES = {"image/jpeg": "JPEG", "image/png": "PNG", "image/webp": "WEBP"}
 MIN_DIMENSION = 100
 MAX_DIMENSION = 2000
 
 
 # --- Functions ---
+
+
+def reject_oversized_content_length(content_length: str | None, max_bytes: int) -> None:
+    """Reject requests whose Content-Length exceeds the byte budget."""
+    if not content_length:
+        return
+    try:
+        declared_size = int(content_length)
+    except ValueError:
+        return
+    if declared_size > max_bytes:
+        raise InvalidImageError(message="File too large (max 2MB)")
+
+
+async def read_upload_with_size_limit(
+    upload_file: UploadFile, max_bytes: int = MAX_FILE_SIZE
+) -> bytes:
+    """
+    Read an upload in fixed-size chunks, aborting before buffering more than
+    max_bytes into memory.
+    """
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await upload_file.read(READ_CHUNK_SIZE)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_bytes:
+            raise InvalidImageError(message="File too large (max 2MB)")
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 
 def validate_and_process_image(

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- version list -->
 
+## v1.1.4 (2026-07-02)
+
+### Bug Fixes
+
+- Honor X-Forwarded-For for rate limits behind trusted proxies
+  ([#221](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/221),
+  [`aeac6e5`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/aeac6e511cec581fc0598bef807b18224c19e6f6))
+
+
 ## v1.1.3 (2026-07-02)
 
 ### Bug Fixes
