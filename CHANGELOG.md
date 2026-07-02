@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- version list -->
 
+## v1.1.6 (2026-07-02)
+
+### Bug Fixes
+
+- Add Postgres-backed rate limiter for multi-worker deployments
+  ([#222](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/222),
+  [`d46bddf`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/d46bddf8f6dbf33e7b573d1175ab0a1d16ae52ad))
+
+- Remove duplicate get_client_ip definition
+  ([#222](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/222),
+  [`d46bddf`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/d46bddf8f6dbf33e7b573d1175ab0a1d16ae52ad))
+
+
 ## v1.1.5 (2026-07-02)
 
 ### Bug Fixes
