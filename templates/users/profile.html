@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+
 {% from 'users/macros/organizations.html' import render_organizations with context %}
 
 {% block title %}Profile{% endblock %}
@@ -20,6 +21,7 @@
         <div class="card-body">
             <form action="{{ url_for('update_communication_preferences') }}" method="post"
                   hx-post="{{ url_for('update_communication_preferences') }}" hx-swap="none">
+                  {% include 'base/partials/csrf_field.html' %}
                 {% include 'partials/communication_preferences_fields.html' with context %}
                 <button type="submit" class="btn btn-primary mt-3">Save Preferences</button>
             </form>
@@ -51,6 +53,7 @@
                             {% if not email.is_primary and email.verified %}
                             <form action="{{ url_for('promote_email') }}" method="post" class="profile-email-action-form mb-0"
                                   hx-post="{{ url_for('promote_email') }}" hx-swap="none">
+                                  {% include 'base/partials/csrf_field.html' %}
                                 <input type="hidden" name="email_id" value="{{ email.id }}">
                                 <button type="submit" class="btn btn-sm btn-outline-primary">Make Primary</button>
                             </form>
@@ -58,6 +61,7 @@
                             {% if not email.is_primary %}
                             <form action="{{ url_for('remove_email') }}" method="post" class="profile-email-action-form mb-0"
                                   hx-post="{{ url_for('remove_email') }}" hx-swap="none">
+                                  {% include 'base/partials/csrf_field.html' %}
                                 <input type="hidden" name="email_id" value="{{ email.id }}">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
                             </form>
@@ -73,6 +77,7 @@
             <form action="{{ url_for('add_email') }}" method="post" class="profile-add-email-form"
                   hx-post="{{ url_for('add_email') }}" hx-swap="none"
                   hx-on::after-settle="this.reset()">
+                  {% include 'base/partials/csrf_field.html' %}
                 <div class="input-group">
                     <input type="email" class="form-control" name="new_email" placeholder="Add Email Address" required>
                     <button type="submit" class="btn btn-primary">Add Email</button>
@@ -91,6 +96,8 @@
         <div class="card-body">
             {% if show_form %}
             <form action="{{ url_for('forgot_password') }}" method="post">
+        {% include 'base/partials/csrf_field.html' %}
+        {% include 'base/partials/csrf_field.html' %}
                 <input type="hidden" name="email" value="{{ user.account.email }}">
                 <p>To change your password, please confirm your email. A password reset link will be sent to your email address.</p>
                 <button type="submit" class="btn btn-primary">Send Password Reset Email</button>
@@ -111,6 +118,8 @@
         </div>
         <div class="card-body">
             <form action="{{ url_for('delete_account') }}" method="post">
+        {% include 'base/partials/csrf_field.html' %}
+        {% include 'base/partials/csrf_field.html' %}
                 <p class="text-danger">This action cannot be undone. Please confirm your email and password to delete your account.</p>
                 <div class="mb-3">
                     <label for="delete_email" class="form-label">Email</label>

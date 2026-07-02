@@ -765,8 +765,27 @@ async def reset_password(
 
 
 @router.get("/recover")
-async def recover_account(
+async def recover_account_confirm(
+    request: Request,
     token: str = Query(...),
+    session: Session = Depends(get_session),
+):
+    """Show a confirmation form before performing account recovery."""
+    account, recovery_token = get_account_from_recovery_token(token, session)
+
+    if not account or not recovery_token:
+        raise CredentialsError(message="Invalid or expired recovery token")
+
+    return templates.TemplateResponse(
+        request,
+        "account/recover_confirm.html",
+        {"token": token, "user": None},
+    )
+
+
+@router.post("/recover")
+async def recover_account(
+    token: str = Form(...),
     session: Session = Depends(get_session),
 ):
     """
@@ -1023,7 +1042,6 @@ async def promote_email(
         access_token,
         refresh_token,
         persistent=False,
-        samesite="lax",
     )
     return response
 
