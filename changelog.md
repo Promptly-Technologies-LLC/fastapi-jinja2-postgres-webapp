@@ -3,6 +3,18 @@
 This changelog is generated automatically from [GitHub Releases](https://github.com/promptly-technologies-llc/fastapi-jinja2-postgres-webapp/releases).
 
 
+# v1.1.3
+
+*2026-07-02* · [GitHub](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/releases/tag/v1.1.3)
+
+
+## What's Changed
+
+- fix: add CSRF tokens and convert account recovery to POST by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/223
+
+**Full Changelog**: https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/compare/v1.1.2…v1.1.3
+
+
 # v1.1.2
 
 *2026-07-02* · [GitHub](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/releases/tag/v1.1.2)
