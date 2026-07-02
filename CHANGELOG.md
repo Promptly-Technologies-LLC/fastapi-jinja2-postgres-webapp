@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- version list -->
 
+## v1.1.3 (2026-07-02)
+
+### Bug Fixes
+
+- Add CSRF tokens and convert account recovery to POST
+  ([#223](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/223),
+  [`b33ab5c`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/b33ab5cd4dc1fee8e73357487e0ec5cac0b34856))
+
+
 ## v1.1.2 (2026-07-02)
 
 ### Bug Fixes

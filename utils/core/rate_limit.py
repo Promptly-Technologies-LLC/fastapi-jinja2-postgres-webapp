@@ -2,6 +2,7 @@ import os
 import time
 import threading
 import math
+import ipaddress
 from logging import getLogger
 from typing import Tuple
 
@@ -11,6 +12,58 @@ from dotenv import load_dotenv
 
 logger = getLogger("uvicorn.error")
 load_dotenv()
+
+
+def get_trusted_proxy_hosts() -> tuple[str, ...]:
+    """
+    Return trusted reverse-proxy peer addresses from TRUSTED_PROXY_IPS.
+
+    Comma-separated list, e.g. ``127.0.0.1,::1,172.18.0.2``.
+    """
+    raw = os.environ.get("TRUSTED_PROXY_IPS", "")
+    return tuple(part.strip() for part in raw.split(",") if part.strip())
+
+
+def _peer_host(request: Request) -> str | None:
+    if request.client is None:
+        return None
+    return request.client.host
+
+
+def _parse_forwarded_client_ip(forwarded_for: str) -> str | None:
+    for candidate in forwarded_for.split(","):
+        value = candidate.strip()
+        if not value:
+            continue
+        try:
+            return str(ipaddress.ip_address(value))
+        except ValueError:
+            continue
+    return None
+
+
+def get_client_ip(request: Request) -> str:
+    """
+    Extract the client IP for rate limiting.
+
+    When the immediate peer is listed in TRUSTED_PROXY_IPS, the left-most
+    valid address in X-Forwarded-For is treated as the client. Otherwise only
+    request.client.host is used so clients cannot spoof their IP.
+    """
+    peer = _peer_host(request)
+    if peer is None:
+        return "unknown"
+
+    trusted_hosts = get_trusted_proxy_hosts()
+    if peer not in trusted_hosts:
+        return peer
+
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if not forwarded_for:
+        return peer
+
+    client_ip = _parse_forwarded_client_ip(forwarded_for)
+    return client_ip or peer
 
 
 class RateLimitWindow:
@@ -170,18 +223,6 @@ def clear_all_rate_limiters() -> None:
 
 
 # --- Dependency helpers ---
-
-
-def get_client_ip(request: Request) -> str:
-    """
-    Extract client IP from the request.
-
-    Uses request.client.host only. Does NOT trust X-Forwarded-For
-    because this app has no trusted-proxy middleware.
-    """
-    if request.client:
-        return request.client.host
-    return "unknown"
 
 
 def _enforce_rate_limit(limiter: RateLimitWindow, key: str, scope: str) -> int:
