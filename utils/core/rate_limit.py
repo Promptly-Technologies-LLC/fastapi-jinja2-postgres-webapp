@@ -2,15 +2,47 @@ import os
 import time
 import threading
 import math
+from datetime import UTC, datetime, timedelta
 from logging import getLogger
-from typing import Tuple
+from typing import Protocol, Tuple, runtime_checkable
 
 from fastapi import Request, Form
 from pydantic import EmailStr
 from dotenv import load_dotenv
+from sqlmodel import Session, col, create_engine, delete, select
+
+from utils.core.db import get_connection_url
+from utils.core.models import RateLimitAttempt
 
 logger = getLogger("uvicorn.error")
 load_dotenv()
+
+_rate_limit_engine = None
+
+
+def _get_rate_limit_engine():
+    global _rate_limit_engine
+    if _rate_limit_engine is None:
+        _rate_limit_engine = create_engine(get_connection_url())
+    return _rate_limit_engine
+
+
+@runtime_checkable
+class RateLimiter(Protocol):
+    max_attempts: int
+    window_seconds: int
+
+    def check(self, key: str) -> Tuple[bool, int]: ...
+
+    def record(self, key: str) -> None: ...
+
+    def remaining(self, key: str) -> int: ...
+
+    def reset(self, key: str) -> None: ...
+
+    def prune(self) -> None: ...
+
+    def clear(self) -> None: ...
 
 
 class RateLimitWindow:
@@ -115,6 +147,100 @@ class RateLimitWindow:
             self._prune_stale_keys(now)
             self._next_prune_at = now + self.prune_interval_seconds
 
+    def clear(self) -> None:
+        """Clear all recorded attempts."""
+        with self._lock:
+            self._attempts.clear()
+
+
+class PostgresRateLimitWindow:
+    """
+    Sliding-window rate limiter backed by PostgreSQL.
+
+    Use when running multiple workers or replicas so configured limits apply
+    cluster-wide instead of per process.
+    """
+
+    def __init__(self, scope: str, max_attempts: int, window_seconds: int):
+        self.scope = scope
+        self.max_attempts = max_attempts
+        self.window_seconds = window_seconds
+
+    def _cutoff(self, now: datetime) -> datetime:
+        return now - timedelta(seconds=self.window_seconds)
+
+    def _recent_attempts(self, session: Session, key: str, now: datetime):
+        return session.exec(
+            select(RateLimitAttempt)
+            .where(
+                col(RateLimitAttempt.scope) == self.scope,
+                col(RateLimitAttempt.key) == key,
+                col(RateLimitAttempt.attempted_at) > self._cutoff(now),
+            )
+            .order_by(col(RateLimitAttempt.attempted_at))
+        ).all()
+
+    def check(self, key: str) -> Tuple[bool, int]:
+        now = datetime.now(UTC)
+        with Session(_get_rate_limit_engine()) as session:
+            attempts = self._recent_attempts(session, key, now)
+            if len(attempts) >= self.max_attempts:
+                oldest = attempts[0].attempted_at
+                if oldest.tzinfo is None:
+                    oldest = oldest.replace(tzinfo=UTC)
+                retry_after = math.ceil(
+                    (
+                        oldest + timedelta(seconds=self.window_seconds) - now
+                    ).total_seconds()
+                )
+                return True, max(retry_after, 1)
+            return False, 0
+
+    def record(self, key: str) -> None:
+        with Session(_get_rate_limit_engine()) as session:
+            session.add(
+                RateLimitAttempt(
+                    scope=self.scope, key=key, attempted_at=datetime.now(UTC)
+                )
+            )
+            session.commit()
+
+    def remaining(self, key: str) -> int:
+        now = datetime.now(UTC)
+        with Session(_get_rate_limit_engine()) as session:
+            attempts = self._recent_attempts(session, key, now)
+            return max(0, self.max_attempts - len(attempts))
+
+    def reset(self, key: str) -> None:
+        with Session(_get_rate_limit_engine()) as session:
+            session.exec(
+                delete(RateLimitAttempt).where(
+                    col(RateLimitAttempt.scope) == self.scope,
+                    col(RateLimitAttempt.key) == key,
+                )
+            )
+            session.commit()
+
+    def prune(self) -> None:
+        cutoff = self._cutoff(datetime.now(UTC))
+        with Session(_get_rate_limit_engine()) as session:
+            session.exec(
+                delete(RateLimitAttempt).where(
+                    col(RateLimitAttempt.scope) == self.scope,
+                    col(RateLimitAttempt.attempted_at) <= cutoff,
+                )
+            )
+            session.commit()
+
+    def clear(self) -> None:
+        with Session(_get_rate_limit_engine()) as session:
+            session.exec(
+                delete(RateLimitAttempt).where(
+                    col(RateLimitAttempt.scope) == self.scope
+                )
+            )
+            session.commit()
+
 
 # --- Configuration helpers ---
 
@@ -131,25 +257,42 @@ def _int_env(name: str, default: int) -> int:
     return default
 
 
+def _rate_limit_backend() -> str:
+    return os.environ.get("RATE_LIMIT_BACKEND", "memory").lower()
+
+
+def _make_rate_limiter(
+    scope: str, max_attempts: int, window_seconds: int
+) -> RateLimiter:
+    if _rate_limit_backend() == "postgres":
+        return PostgresRateLimitWindow(scope, max_attempts, window_seconds)
+    return RateLimitWindow(max_attempts=max_attempts, window_seconds=window_seconds)
+
+
 # --- Shared limiter instances ---
 
-login_ip_limiter = RateLimitWindow(
+login_ip_limiter = _make_rate_limiter(
+    "login_ip",
     max_attempts=_int_env("LOGIN_IP_LIMIT", 10),
     window_seconds=_int_env("LOGIN_IP_WINDOW_SECONDS", 60),
 )
-login_email_limiter = RateLimitWindow(
+login_email_limiter = _make_rate_limiter(
+    "login_email",
     max_attempts=_int_env("LOGIN_EMAIL_LIMIT", 5),
     window_seconds=_int_env("LOGIN_EMAIL_WINDOW_SECONDS", 60),
 )
-register_ip_limiter = RateLimitWindow(
+register_ip_limiter = _make_rate_limiter(
+    "register_ip",
     max_attempts=_int_env("REGISTER_IP_LIMIT", 5),
     window_seconds=_int_env("REGISTER_IP_WINDOW_SECONDS", 60),
 )
-forgot_password_ip_limiter = RateLimitWindow(
+forgot_password_ip_limiter = _make_rate_limiter(
+    "forgot_password_ip",
     max_attempts=_int_env("FORGOT_PASSWORD_IP_LIMIT", 5),
     window_seconds=_int_env("FORGOT_PASSWORD_IP_WINDOW_SECONDS", 60),
 )
-forgot_password_email_limiter = RateLimitWindow(
+forgot_password_email_limiter = _make_rate_limiter(
+    "forgot_password_email",
     max_attempts=_int_env("FORGOT_PASSWORD_EMAIL_LIMIT", 3),
     window_seconds=_int_env("FORGOT_PASSWORD_EMAIL_WINDOW_SECONDS", 60),
 )
@@ -164,9 +307,9 @@ _ALL_LIMITERS = (
 
 
 def clear_all_rate_limiters() -> None:
-    """Clear all in-memory rate limiter state."""
+    """Clear all rate limiter state for the active backend."""
     for limiter in _ALL_LIMITERS:
-        limiter._attempts.clear()
+        limiter.clear()
 
 
 # --- Dependency helpers ---
@@ -184,7 +327,7 @@ def get_client_ip(request: Request) -> str:
     return "unknown"
 
 
-def _enforce_rate_limit(limiter: RateLimitWindow, key: str, scope: str) -> int:
+def _enforce_rate_limit(limiter: RateLimiter, key: str, scope: str) -> int:
     """
     Check the limiter for the given key. If limited, raise RateLimitError.
     Otherwise, record the attempt and return.

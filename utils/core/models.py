@@ -156,6 +156,17 @@ class RefreshToken(SQLModel, table=True):
         return datetime.now(UTC) > self.expires_at.replace(tzinfo=UTC)
 
 
+class RateLimitAttempt(SQLModel, table=True):
+    """Shared rate-limit counter row for multi-worker deployments."""
+
+    __table_args__ = {"schema": "private"}
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    scope: str = Field(index=True)
+    key: str = Field(index=True)
+    attempted_at: datetime = Field(default_factory=utc_now, index=True)
+
+
 # --- Public database models ---
 
 
