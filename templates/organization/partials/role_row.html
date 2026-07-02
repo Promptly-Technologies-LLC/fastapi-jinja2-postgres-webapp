@@ -1,3 +1,4 @@
+
 {# Partial: single role <tr>. Swapped into <tr id="role-row-{{ role.id }}"> via outerHTML. #}
 <tr id="role-row-{{ role.id }}">
     <td>{{ role.name }}</td>
@@ -23,6 +24,7 @@
               hx-target="#roles-card-content"
               hx-swap="innerHTML"
               hx-confirm="Are you sure you want to delete this role?">
+              {% include 'base/partials/csrf_field.html' %}
             <input type="hidden" name="id" value="{{ role.id }}">
             <input type="hidden" name="organization_id" value="{{ organization.id }}">
             <button type="submit" class="btn btn-sm btn-outline-danger" {% if role.users|length > 0 %}disabled{% endif %}>

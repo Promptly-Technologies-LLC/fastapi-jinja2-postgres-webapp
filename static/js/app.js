@@ -16,6 +16,13 @@ document.body.addEventListener('htmx:configRequest', function() {
     }
 }, { once: true });
 
+document.body.addEventListener('htmx:configRequest', function(event) {
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta && meta.content) {
+        event.detail.headers['X-CSRF-Token'] = meta.content;
+    }
+});
+
 
 // When a modal closes, reset any create-* form it contains so reopening it
 // starts blank. ui.js dispatches 'hidden.bs.modal' when a modal is hidden.

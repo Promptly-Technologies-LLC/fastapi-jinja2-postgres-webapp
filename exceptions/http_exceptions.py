@@ -246,3 +246,10 @@ class InvitationProcessingError(HTTPException):
             status_code=500,  # Internal Server Error
             detail=detail,
         )
+
+
+class CsrfError(HTTPException):
+    """Raised when CSRF validation fails."""
+
+    def __init__(self):
+        super().__init__(status_code=403, detail="CSRF validation failed")
