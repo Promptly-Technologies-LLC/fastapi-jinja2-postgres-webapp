@@ -706,6 +706,46 @@ def test_password_reset_auto_logs_in_and_shows_flash(
     assert any("flash_message=" in c for c in cookie_headers)
 
 
+def test_password_reset_revokes_existing_sessions(
+    unauth_client: TestClient, session: Session, test_account: Account
+):
+    """Password reset revokes all existing refresh tokens before auto-login."""
+    attacker_session = RefreshToken(
+        account_id=test_account.id,
+        expires_at=datetime.now(UTC) + timedelta(days=30),
+    )
+    session.add(attacker_session)
+    session.commit()
+    session.refresh(attacker_session)
+
+    reset_token = PasswordResetToken(account_id=test_account.id)
+    session.add(reset_token)
+    session.commit()
+    session.refresh(reset_token)
+
+    response = unauth_client.post(
+        app.url_path_for("reset_password"),
+        data={
+            "email": test_account.email,
+            "token": reset_token.token,
+            "password": "NewPass123!@#",
+            "confirm_password": "NewPass123!@#",
+        },
+    )
+    assert response.status_code == 303
+
+    session.refresh(attacker_session)
+    assert attacker_session.revoked is True
+
+    active_tokens = session.exec(
+        select(RefreshToken).where(
+            RefreshToken.account_id == test_account.id,
+            RefreshToken.revoked == False,  # noqa: E712
+        )
+    ).all()
+    assert len(active_tokens) == 1
+
+
 def test_password_reset_after_recovery_auto_logs_in(
     unauth_client: TestClient, session: Session
 ):
