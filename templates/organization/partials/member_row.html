@@ -1,3 +1,4 @@
+
 {# Partial: single member <tr>. Swapped into <tr id="member-row-{{ member.id }}"> via outerHTML. #}
 {% from 'base/macros/silhouette.html' import render_silhouette %}
 <tr id="member-row-{{ member.id }}">
@@ -31,6 +32,7 @@
               hx-target="#members-card-content"
               hx-swap="innerHTML"
               hx-confirm="Remove {{ member.name }} from this organization?">
+              {% include 'base/partials/csrf_field.html' %}
             <input type="hidden" name="user_id" value="{{ member.id }}">
             <input type="hidden" name="organization_id" value="{{ organization.id }}">
             <button type="submit" class="btn btn-sm btn-outline-danger" {% if member.id == user.id %}disabled{% endif %}>

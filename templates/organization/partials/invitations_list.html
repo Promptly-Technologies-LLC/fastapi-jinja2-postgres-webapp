@@ -1,3 +1,4 @@
+
 {# Partial: <li> items for pending invitations. Swapped into <ul id="invitations-list">. #}
 {# Set show_invitation_cancel=true via {% with %} to render Resend/Cancel controls (members card only). #}
 {% for inv in pending_invitations %}
@@ -19,6 +20,7 @@
                   hx-post="{{ url_for('resend_invitation') }}"
                   hx-target="#members-card-content"
                   hx-swap="innerHTML">
+                  {% include 'base/partials/csrf_field.html' %}
                 <input type="hidden" name="invitation_id" value="{{ inv.id }}">
                 <input type="hidden" name="organization_id" value="{{ organization.id }}">
                 <button type="submit" class="btn btn-sm btn-outline-primary btn-invitation-resend">
@@ -30,6 +32,7 @@
                   hx-target="#members-card-content"
                   hx-swap="innerHTML"
                   hx-confirm="Cancel invitation for {{ inv.invitee_email }}?">
+                  {% include 'base/partials/csrf_field.html' %}
                 <input type="hidden" name="invitation_id" value="{{ inv.id }}">
                 <input type="hidden" name="organization_id" value="{{ organization.id }}">
                 <button type="submit" class="btn btn-sm btn-outline-danger">
