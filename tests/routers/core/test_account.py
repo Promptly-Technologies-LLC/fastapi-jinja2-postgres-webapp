@@ -792,11 +792,8 @@ def test_password_reset_after_recovery_auto_logs_in(
     session.commit()
     session.refresh(recovery_token)
 
-    # Step 1: Hit recovery endpoint
-    recovery_response = unauth_client.get(
-        app.url_path_for("recover_account"),
-        params={"token": recovery_token.token},
-    )
+    # Step 1: Confirm and submit recovery
+    recovery_response = _submit_account_recovery(unauth_client, recovery_token.token)
     assert recovery_response.status_code == 303
     reset_location = recovery_response.headers["location"]
     assert "reset_password" in reset_location
@@ -1659,6 +1656,35 @@ def test_promote_email_swaps_primary(
     assert test_account_email.is_primary is False
 
 
+def test_promote_email_reissues_auth_cookies_with_strict_samesite(
+    auth_client: TestClient,
+    test_account: Account,
+    test_account_email,
+    session: Session,
+    mock_resend_send,
+):
+    secondary = AccountEmail(
+        account_id=test_account.id,
+        email="secondary@example.com",
+        is_primary=False,
+        verified=True,
+        verified_at=datetime.now(UTC),
+    )
+    session.add(secondary)
+    session.commit()
+    session.refresh(secondary)
+
+    response = auth_client.post(
+        app.url_path_for("promote_email"),
+        data={"email_id": secondary.id},
+    )
+
+    cookie_headers = response.headers.get_list("set-cookie")
+    auth_cookies = [header for header in cookie_headers if "access_token=" in header]
+    assert auth_cookies
+    assert all("samesite=strict" in header.lower() for header in auth_cookies)
+
+
 def test_promote_email_updates_account_email_field(
     auth_client: TestClient,
     test_account: Account,
@@ -2322,16 +2348,40 @@ def _setup_compromised_account(session: Session) -> tuple:
     return account, recovery_token, original_email
 
 
+def _get_recovery_confirm(unauth_client: TestClient, token: str):
+    return unauth_client.get(
+        app.url_path_for("recover_account_confirm"),
+        params={"token": token},
+    )
+
+
+def _submit_account_recovery(unauth_client: TestClient, token: str):
+    confirm = _get_recovery_confirm(unauth_client, token)
+    assert confirm.status_code == 200
+    return unauth_client.post(
+        app.url_path_for("recover_account"),
+        data={"token": token},
+    )
+
+
+def test_recover_account_confirm_page_shows_form(
+    unauth_client: TestClient, session: Session
+):
+    _, recovery_token, _ = _setup_compromised_account(session)
+
+    response = _get_recovery_confirm(unauth_client, recovery_token.token)
+
+    assert response.status_code == 200
+    assert "Recover account" in response.text
+
+
 def test_recover_account_restores_email_as_primary(
     unauth_client: TestClient, session: Session
 ):
     """Test that recovery restores the victim's email as primary."""
     account, recovery_token, original_email = _setup_compromised_account(session)
 
-    response = unauth_client.get(
-        app.url_path_for("recover_account"),
-        params={"token": recovery_token.token},
-    )
+    response = _submit_account_recovery(unauth_client, recovery_token.token)
     assert response.status_code == 303
 
     session.refresh(account)
@@ -2353,10 +2403,7 @@ def test_recover_account_removes_attacker_emails(
     """Test that recovery removes all existing AccountEmail rows (attacker's emails)."""
     account, recovery_token, original_email = _setup_compromised_account(session)
 
-    unauth_client.get(
-        app.url_path_for("recover_account"),
-        params={"token": recovery_token.token},
-    )
+    _submit_account_recovery(unauth_client, recovery_token.token)
 
     all_emails = session.exec(
         select(AccountEmail).where(AccountEmail.account_id == account.id)
@@ -2378,10 +2425,7 @@ def test_recover_account_revokes_all_sessions(
     session.add(rt)
     session.commit()
 
-    unauth_client.get(
-        app.url_path_for("recover_account"),
-        params={"token": recovery_token.token},
-    )
+    _submit_account_recovery(unauth_client, recovery_token.token)
 
     session.refresh(rt)
     assert rt.revoked is True
@@ -2393,10 +2437,7 @@ def test_recover_account_generates_password_reset_token(
     """Test that recovery creates a PasswordResetToken."""
     account, recovery_token, _ = _setup_compromised_account(session)
 
-    unauth_client.get(
-        app.url_path_for("recover_account"),
-        params={"token": recovery_token.token},
-    )
+    _submit_account_recovery(unauth_client, recovery_token.token)
 
     reset_token = session.exec(
         select(PasswordResetToken).where(
@@ -2413,10 +2454,7 @@ def test_recover_account_redirects_to_reset_password(
     """Test that recovery redirects to the reset password page."""
     account, recovery_token, original_email = _setup_compromised_account(session)
 
-    response = unauth_client.get(
-        app.url_path_for("recover_account"),
-        params={"token": recovery_token.token},
-    )
+    response = _submit_account_recovery(unauth_client, recovery_token.token)
     assert response.status_code == 303
     location = response.headers["location"]
     assert "/account/reset_password" in location
@@ -2427,10 +2465,7 @@ def test_recover_account_marks_token_used(unauth_client: TestClient, session: Se
     """Test that the recovery token is marked as used after recovery."""
     account, recovery_token, _ = _setup_compromised_account(session)
 
-    unauth_client.get(
-        app.url_path_for("recover_account"),
-        params={"token": recovery_token.token},
-    )
+    _submit_account_recovery(unauth_client, recovery_token.token)
 
     session.refresh(recovery_token)
     assert recovery_token.used is True
@@ -2444,10 +2479,7 @@ def test_recover_account_expired_token_fails(
     recovery_token.expires_at = datetime.now(UTC) - timedelta(hours=1)
     session.commit()
 
-    response = unauth_client.get(
-        app.url_path_for("recover_account"),
-        params={"token": recovery_token.token},
-    )
+    response = _get_recovery_confirm(unauth_client, recovery_token.token)
     assert response.status_code == 401
 
 
@@ -2457,10 +2489,7 @@ def test_recover_account_used_token_fails(unauth_client: TestClient, session: Se
     recovery_token.used = True
     session.commit()
 
-    response = unauth_client.get(
-        app.url_path_for("recover_account"),
-        params={"token": recovery_token.token},
-    )
+    response = _get_recovery_confirm(unauth_client, recovery_token.token)
     assert response.status_code == 401
 
 
@@ -2468,10 +2497,7 @@ def test_recover_account_invalid_token_fails(
     unauth_client: TestClient, session: Session
 ):
     """Test that a nonexistent recovery token fails."""
-    response = unauth_client.get(
-        app.url_path_for("recover_account"),
-        params={"token": "nonexistent-token"},
-    )
+    response = _get_recovery_confirm(unauth_client, "nonexistent-token")
     assert response.status_code == 401
 
 
@@ -2496,10 +2522,7 @@ def test_recover_account_readds_removed_email(
     session.commit()
     session.refresh(recovery_token)
 
-    response = unauth_client.get(
-        app.url_path_for("recover_account"),
-        params={"token": recovery_token.token},
-    )
+    response = _submit_account_recovery(unauth_client, recovery_token.token)
     assert response.status_code == 303
 
     session.refresh(account)
@@ -2558,10 +2581,7 @@ def test_recover_account_when_victim_email_still_exists_as_account_email(
     session.commit()
     session.refresh(recovery_token)
 
-    response = unauth_client.get(
-        app.url_path_for("recover_account"),
-        params={"token": recovery_token.token},
-    )
+    response = _submit_account_recovery(unauth_client, recovery_token.token)
     assert response.status_code == 303
 
     # Verify the victim's email is now the only AccountEmail and is primary

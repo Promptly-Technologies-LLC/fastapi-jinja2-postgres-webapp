@@ -1,3 +1,4 @@
+
 {# Partial: card-body content for members. Swapped into #members-card-content. #}
 {% from 'base/macros/silhouette.html' import render_silhouette %}
 {% if organization.users|length <= 1 %}
@@ -49,6 +50,7 @@
                           hx-target="#members-card-content"
                           hx-swap="innerHTML"
                           hx-confirm="Remove {{ member.name }} from this organization?">
+                          {% include 'base/partials/csrf_field.html' %}
                         <input type="hidden" name="user_id" value="{{ member.id }}">
                         <input type="hidden" name="organization_id" value="{{ organization.id }}">
                         <button type="submit" class="btn btn-sm btn-outline-danger" {% if member.id == user.id %}disabled{% endif %}>
@@ -83,6 +85,7 @@
                 hx-post="{{ url_for('update_user_role') }}"
                 hx-target="#members-card-content"
                 hx-swap="innerHTML">
+                {% include 'base/partials/csrf_field.html' %}
             <div class="modal-header">
               <h5 class="modal-title" id="editUserRoleModalLabel{{ member.id }}">Edit Roles for {{ member.name }}</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
