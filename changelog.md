@@ -3,6 +3,18 @@
 This changelog is generated automatically from [GitHub Releases](https://github.com/promptly-technologies-llc/fastapi-jinja2-postgres-webapp/releases).
 
 
+# v1.1.1
+
+*2026-07-01* · [GitHub](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/releases/tag/v1.1.1)
+
+
+## What's Changed
+
+- Fix broken screenshot link in docs by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/213
+
+**Full Changelog**: https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/compare/v1.1.0…v1.1.1
+
+
 # v1.1.0
 
 *2026-07-01* · [GitHub](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/releases/tag/v1.1.0)
