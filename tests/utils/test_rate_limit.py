@@ -3,7 +3,11 @@ import time
 from unittest.mock import MagicMock, patch
 
 import utils.core.rate_limit as rate_limit_module
-from utils.core.rate_limit import PostgresRateLimitWindow, RateLimitWindow, get_client_ip
+from utils.core.rate_limit import (
+    PostgresRateLimitWindow,
+    RateLimitWindow,
+    get_client_ip,
+)
 
 
 # ---------------------------------------------------------------------------

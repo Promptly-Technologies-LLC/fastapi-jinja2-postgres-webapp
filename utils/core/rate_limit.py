@@ -368,18 +368,6 @@ def clear_all_rate_limiters() -> None:
 # --- Dependency helpers ---
 
 
-def get_client_ip(request: Request) -> str:
-    """
-    Extract client IP from the request.
-
-    Uses request.client.host only. Does NOT trust X-Forwarded-For
-    because this app has no trusted-proxy middleware.
-    """
-    if request.client:
-        return request.client.host
-    return "unknown"
-
-
 def _enforce_rate_limit(limiter: RateLimiter, key: str, scope: str) -> int:
     """
     Check the limiter for the given key. If limited, raise RateLimitError.
