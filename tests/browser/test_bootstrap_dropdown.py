@@ -10,38 +10,32 @@ or the app's custom delegation handler is lost during the swap, clicking
 import pytest
 from playwright.sync_api import Page, expect
 
+from tests.browser.conftest import login_user, register_user
+
 
 @pytest.fixture(scope="session")
 def _register_user(browser, live_server: str):
     """Register a user once per session (shared across tests)."""
-    context = browser.new_context(viewport={"width": 1280, "height": 720})
-    p = context.new_page()
-    p.goto(f"{live_server}/account/register")
-    p.fill("#name", "Playwright User")
-    p.fill("#email", "playwright@example.com")
-    p.fill("#password", "TestPass123!@#")
-    p.fill("#confirm_password", "TestPass123!@#")
-    p.click('button[type="submit"]')
-    p.wait_for_function(
-        "window.location.pathname.startsWith('/dashboard')", timeout=10_000
+    register_user(
+        browser,
+        live_server,
+        name="Playwright User",
+        email="playwright@example.com",
+        password="TestPass123!@#",
     )
-    context.close()
 
 
 @pytest.fixture()
 def logged_in_page(browser, live_server: str, _register_user):
     """Log in via a fresh browser context and land on the dashboard."""
-    context = browser.new_context(viewport={"width": 1280, "height": 720})
-    p = context.new_page()
-    p.goto(f"{live_server}/account/login")
-    p.fill("#email", "playwright@example.com")
-    p.fill("#password", "TestPass123!@#")
-    p.click('button[type="submit"]')
-    p.wait_for_function(
-        "window.location.pathname.startsWith('/dashboard')", timeout=10_000
+    page = login_user(
+        browser,
+        live_server,
+        email="playwright@example.com",
+        password="TestPass123!@#",
     )
-    yield p
-    context.close()
+    yield page
+    page.context.close()
 
 
 def test_profile_dropdown_works_on_initial_load(logged_in_page: Page):
