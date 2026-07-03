@@ -19,7 +19,12 @@ from utils.core.models import utc_now
 
 logger = logging.getLogger(__name__)
 
-_UNSET = object()
+
+class _UnsetType:
+    __slots__ = ()
+
+
+_UNSET = _UnsetType()
 
 
 def _as_utc_naive(value: datetime) -> datetime:
@@ -74,37 +79,35 @@ def sync_billing_from_subscription(
     session: Session,
     *,
     org_id: int,
-    stripe_customer_id: str | None | object = _UNSET,
-    stripe_subscription_id: str | None | object = _UNSET,
-    status: str | None | object = _UNSET,
-    price_id: str | None | object = _UNSET,
-    current_period_start: datetime | None | object = _UNSET,
-    current_period_end: datetime | None | object = _UNSET,
-    cancel_at_period_end: bool | object = _UNSET,
+    stripe_customer_id: str | None | _UnsetType = _UNSET,
+    stripe_subscription_id: str | None | _UnsetType = _UNSET,
+    status: str | None | _UnsetType = _UNSET,
+    price_id: str | None | _UnsetType = _UNSET,
+    current_period_start: datetime | None | _UnsetType = _UNSET,
+    current_period_end: datetime | None | _UnsetType = _UNSET,
+    cancel_at_period_end: bool | _UnsetType = _UNSET,
 ) -> OrganizationBilling:
     billing = get_or_create_org_billing(session, org_id)
-    if stripe_customer_id is not _UNSET:
+    if not isinstance(stripe_customer_id, _UnsetType):
         billing.stripe_customer_id = stripe_customer_id
-    if stripe_subscription_id is not _UNSET:
+    if not isinstance(stripe_subscription_id, _UnsetType):
         billing.stripe_subscription_id = stripe_subscription_id
-    if status is not _UNSET:
+    if not isinstance(status, _UnsetType) and status is not None:
         billing.status = status
-    if price_id is not _UNSET:
+    if not isinstance(price_id, _UnsetType):
         billing.price_id = price_id
-    if current_period_start is not _UNSET:
+    if not isinstance(current_period_start, _UnsetType):
+        period_start = current_period_start
         billing.current_period_start = (
-            _as_utc_naive(current_period_start)
-            if current_period_start is not None
-            else None
+            _as_utc_naive(period_start) if period_start is not None else None
         )
-    if current_period_end is not _UNSET:
+    if not isinstance(current_period_end, _UnsetType):
+        period_end = current_period_end
         billing.current_period_end = (
-            _as_utc_naive(current_period_end)
-            if current_period_end is not None
-            else None
+            _as_utc_naive(period_end) if period_end is not None else None
         )
-    if cancel_at_period_end is not _UNSET:
-        billing.cancel_at_period_end = bool(cancel_at_period_end)
+    if not isinstance(cancel_at_period_end, _UnsetType):
+        billing.cancel_at_period_end = cancel_at_period_end
     billing.updated_at = utc_now()
     session.add(billing)
     session.commit()
@@ -233,7 +236,11 @@ def organization_id_from_metadata(metadata: object) -> Optional[int]:
     raw = metadata.get("organization_id")
     if raw is None:
         return None
-    try:
-        return int(raw)
-    except (TypeError, ValueError):
-        return None
+    if isinstance(raw, int):
+        return raw
+    if isinstance(raw, str):
+        try:
+            return int(raw)
+        except ValueError:
+            return None
+    return None

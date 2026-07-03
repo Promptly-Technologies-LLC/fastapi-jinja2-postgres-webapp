@@ -206,9 +206,7 @@ def test_create_default_roles(session: Session, test_organization: Organization)
     assert str(ValidPermissions.DELETE_ORGANIZATION) not in {
         p.name for p in admin_permissions
     }
-    assert str(AppPermissions.MANAGE_BILLING) not in {
-        p.name for p in admin_permissions
-    }
+    assert str(AppPermissions.MANAGE_BILLING) not in {p.name for p in admin_permissions}
 
 
 def test_sync_default_role_permissions_backfills_new_app_permissions(

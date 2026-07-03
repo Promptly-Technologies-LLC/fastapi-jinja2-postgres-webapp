@@ -219,7 +219,9 @@ def release_webhook_event_claim(session: Session, event_id: str) -> None:
         session.commit()
 
 
-def _log_webhook_handled(event_id: str, event_type: str, org_id: int) -> WebhookHandleResult:
+def _log_webhook_handled(
+    event_id: str, event_type: str, org_id: int
+) -> WebhookHandleResult:
     logger.info(
         "Handled Stripe webhook event %s (%s) for org_id=%s",
         event_id,
