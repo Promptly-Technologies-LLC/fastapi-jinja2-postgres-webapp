@@ -136,6 +136,24 @@ def get_account_from_credentials(
     return account, session
 
 
+def get_optional_user_from_access_token(
+    access_token: Optional[str], session: Session
+) -> Optional[User]:
+    """Load a user from a valid access token without touching refresh tokens."""
+    if not access_token:
+        return None
+    decoded = validate_token(access_token, token_type="access")
+    if not decoded:
+        return None
+    email = decoded.get("sub")
+    if not email:
+        return None
+    account = session.exec(select(Account).where(Account.email == email)).first()
+    if account is None or account.id is None:
+        return None
+    return session.exec(select(User).where(User.account_id == account.id)).first()
+
+
 def get_account_from_tokens(
     tokens: tuple[Optional[str], Optional[str]], session: Session
 ) -> tuple[Optional[Account], Optional[str], Optional[str]]:

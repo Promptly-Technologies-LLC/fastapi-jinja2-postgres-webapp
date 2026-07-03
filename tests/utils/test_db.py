@@ -7,6 +7,7 @@ from utils.core.db import (
     create_default_roles,
     create_permissions,
     seed_account_emails,
+    sync_default_role_permissions,
     tear_down_db,
     set_up_db,
 )
@@ -200,11 +201,53 @@ def test_create_default_roles(session: Session, test_organization: Organization)
         .join(RolePermissionLink)
         .where(RolePermissionLink.role_id == admin_role.id)
     ).all()
-    # Admin should have all permissions except DELETE_ORGANIZATION
-    assert len(admin_permissions) == len(all_perms) - 1
+    # Admin should have all permissions except DELETE_ORGANIZATION and MANAGE_BILLING
+    assert len(admin_permissions) == len(all_perms) - 2
     assert str(ValidPermissions.DELETE_ORGANIZATION) not in {
         p.name for p in admin_permissions
     }
+    assert str(AppPermissions.MANAGE_BILLING) not in {
+        p.name for p in admin_permissions
+    }
+
+
+def test_sync_default_role_permissions_backfills_new_app_permissions(
+    session: Session, test_organization: Organization
+):
+    create_permissions(session)
+    session.commit()
+    assert test_organization.id is not None
+    create_default_roles(session, test_organization.id, check_first=True)
+    session.commit()
+
+    owner_role = session.exec(
+        select(Role).where(
+            Role.organization_id == test_organization.id,
+            Role.name == "Owner",
+        )
+    ).one()
+    billing_perm = session.exec(
+        select(Permission).where(Permission.name == AppPermissions.MANAGE_BILLING)
+    ).one()
+    link = session.exec(
+        select(RolePermissionLink).where(
+            RolePermissionLink.role_id == owner_role.id,
+            RolePermissionLink.permission_id == billing_perm.id,
+        )
+    ).first()
+    assert link is not None
+    session.delete(link)
+    session.commit()
+
+    sync_default_role_permissions(session)
+
+    link = session.exec(
+        select(RolePermissionLink).where(
+            RolePermissionLink.role_id == owner_role.id,
+            RolePermissionLink.permission_id == billing_perm.id,
+        )
+    ).first()
+    assert link is not None
 
 
 def test_assign_permissions_to_role(session: Session, test_organization: Organization):

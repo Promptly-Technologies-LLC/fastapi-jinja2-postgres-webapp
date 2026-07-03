@@ -23,6 +23,8 @@ from exceptions.http_exceptions import (
     UserAlreadyMemberError,
     DataIntegrityError,
 )
+from utils.app.billing import cancel_org_stripe_subscription
+from utils.app.credentials import billing_enabled
 from pydantic import EmailStr
 from utils.core.htmx import is_htmx_request, set_flash_cookie
 
@@ -81,8 +83,10 @@ async def read_organization(
             "user": user,
             "user_permissions": user_permissions,
             "ValidPermissions": ValidPermissions,
+            "AppPermissions": AppPermissions,
             "all_permissions": list(ValidPermissions) + list(AppPermissions),
             "pending_invitations": pending_invitations,
+            "billing_enabled": billing_enabled(),
         },
     )
 
@@ -249,6 +253,7 @@ def delete_organization(
     logger.info(
         f"User {user.id} deleting organization {org_id} ('{organization.name}')."
     )
+    cancel_org_stripe_subscription(session, org_id)
     session.delete(organization)
     session.commit()
 

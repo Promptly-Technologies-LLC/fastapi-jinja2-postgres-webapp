@@ -1,0 +1,154 @@
+---
+title: "Billing"
+description: "Organization-scoped Stripe subscriptions with Checkout, Customer Portal, and webhooks."
+guide-section: "Application"
+---
+
+## Overview
+
+The template includes organization-scoped billing wired to **Stripe**:
+
+- **Stripe Checkout** for new subscriptions
+- **Stripe Customer Portal** for payment-method updates and cancellation
+- **Stripe webhooks** to keep subscription state in PostgreSQL
+- **Owner-only** management (`Manage Billing` permission)
+- **Member read access** (`View Billing` permission)
+
+Billing is template wiring. Forks add their own product rules (seat limits, feature gating, trials) using helpers in `utils/app/billing.py`.
+
+The billing page lives at `/organizations/{id}/billing`. Owners also reach it from the profile dropdown in the navbar.
+
+## Environment variables
+
+Add these to `.env` (see `.env.example`):
+
+```bash
+BILLING_ENABLED=1
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRICE_ID=price_...
+STRIPE_PLAN_NAME=Pro
+STRIPE_TAX_ENABLED=1
+BASE_URL=http://localhost:8000
+```
+
+Set `BILLING_ENABLED=0` to hide billing routes and UI entirely (useful when a fork does not need payments yet).
+
+`STRIPE_TAX_ENABLED=1` enables Stripe Tax automatic calculation at Checkout (configure tax in your Stripe Dashboard).
+
+## Stripe Dashboard setup
+
+1. Create a **Product** with a **monthly recurring Price** and copy the Price ID into `STRIPE_PRICE_ID`.
+2. Enable the **Customer Portal** (Settings → Billing → Customer portal) so owners can update cards and cancel.
+3. Add a webhook endpoint pointing to `{BASE_URL}/webhooks/stripe`.
+4. Subscribe to events:
+   - `checkout.session.completed`
+   - `customer.subscription.created`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `invoice.paid`
+   - `invoice.payment_failed`
+5. Enable **Stripe Tax** if you sell to customers in multiple tax jurisdictions.
+
+### Local webhook forwarding
+
+```bash
+stripe listen --forward-to localhost:8000/webhooks/stripe
+```
+
+Use the signing secret printed by the Stripe CLI as `STRIPE_WEBHOOK_SECRET` during development.
+
+### Manual end-to-end checklist
+
+Use this once to confirm billing works against Stripe test mode:
+
+1. Set `BILLING_ENABLED=1` and fill in `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, and `BASE_URL=http://localhost:8000` in `.env`.
+2. Start the app and database (`docker compose up -d`, then `uv run uvicorn main:app --reload`).
+3. In a second terminal, run `stripe listen --forward-to localhost:8000/webhooks/stripe` and copy the printed `whsec_…` value into `STRIPE_WEBHOOK_SECRET`. Restart the app if it was already running.
+4. Register or log in, create an organization, and open **Billing** from the profile dropdown (or the organization settings page).
+5. As the org owner, click **Subscribe with Stripe** and complete Checkout with test card `4242 4242 4242 4242`, any future expiry, any CVC, and any postal code.
+6. After redirect, confirm the billing page shows **Active** (webhooks may take a few seconds).
+7. Check server logs for `Handled Stripe webhook event … for org_id=…`.
+8. Optionally open **Manage billing** to reach the Stripe Customer Portal and verify cancel or payment-method update.
+
+If checkout completes but status stays **Free**, check webhook delivery in the Stripe Dashboard and that `STRIPE_WEBHOOK_SECRET` matches the CLI listener secret.
+
+## Routes
+
+| Route | Who | Purpose |
+|-------|-----|---------|
+| `GET /organizations/{id}/billing` | Members with View Billing | Billing status page |
+| `POST /organizations/{id}/billing/checkout` | Owner | Start Stripe Checkout |
+| `POST /organizations/{id}/billing/portal` | Owner | Open Stripe Customer Portal |
+| `GET /organizations/{id}/billing/success` | Member | Return from Checkout (verifies `session_id` with Stripe) |
+| `POST /webhooks/stripe` | Stripe | Sync subscription state |
+
+## How state is stored
+
+Each organization has one `OrganizationBilling` row (see `utils/app/models.py`):
+
+- Stripe customer and subscription IDs
+- Subscription status (`active`, `past_due`, `canceled`, etc.)
+- Current billing period and last payment timestamp
+
+Card numbers are never stored in your database. Stripe Checkout and the Customer Portal collect and manage payment methods.
+
+## Webhooks
+
+Stripe notifies your app at `POST /webhooks/stripe` when subscriptions change or payments succeed or fail. The handler:
+
+1. Verifies the `Stripe-Signature` header
+2. Claims the event ID (idempotent processing)
+3. Updates `OrganizationBilling` for the matching `organization_id` metadata
+4. Returns `500` on handler failure so Stripe retries
+
+Handled events include checkout completion, subscription lifecycle changes, successful invoices, and failed payments.
+
+## Subscription status helpers
+
+Use these helpers in fork code:
+
+```python
+from utils.app.billing import org_has_active_subscription
+
+if not org_has_active_subscription(session, org_id):
+    raise HTTPException(status_code=402, detail="Subscription required.")
+```
+
+`org_has_active_subscription()` returns `True` only for **`trialing`** and **`active`** statuses. `past_due`, `unpaid`, and `incomplete` are not treated as fully active.
+
+Owners with an `incomplete` checkout can use **Subscribe with Stripe** again to finish payment.
+
+## Organization deletion
+
+Deleting an organization attempts to cancel its Stripe subscription first. If Stripe cancellation fails, deletion is blocked with a `409` response so the owner can cancel in the Customer Portal and try again.
+
+## Upgrading existing databases
+
+If you deployed before billing was added, run:
+
+```bash
+uv run python -m migrations.add_billing_tables .env --apply
+```
+
+Fresh installs create billing tables automatically via `set_up_db()`. Startup also backfills billing permissions onto existing default roles.
+
+## Testing
+
+Billing router tests live in `tests/routers/app/test_billing.py`. Helper tests are in `tests/utils/app/test_billing_helpers.py`.
+
+Run billing tests:
+
+```bash
+uv run pytest tests/routers/app/test_billing.py tests/utils/app/test_billing_helpers.py -q
+```
+
+Tests set dummy Stripe environment variables in `tests/conftest.py` and mock Stripe API calls where needed.
+
+## When billing breaks
+
+Check these in order:
+
+1. **Server logs** — successful webhooks log `Handled Stripe webhook event … for org_id=…`; bad signatures and duplicate events are logged too. Handler failures include a stack trace.
+2. **Stripe Dashboard** — Developers → Webhooks for delivery errors, and Customers / Subscriptions for the live Stripe state.
+3. **Database** — `organization_billing` for the org’s cached status; `stripe_webhook_event` for recently claimed event IDs (idempotency only, not a full audit trail).

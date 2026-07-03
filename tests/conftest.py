@@ -24,6 +24,13 @@ from utils.core.auth import (
     create_access_token,
     create_tracked_refresh_token,
 )
+
+load_dotenv()
+os.environ["BILLING_ENABLED"] = "1"
+os.environ.setdefault("STRIPE_SECRET_KEY", "sk_test_dummy")
+os.environ.setdefault("STRIPE_WEBHOOK_SECRET", "whsec_test_dummy")
+os.environ.setdefault("STRIPE_PRICE_ID", "price_test_dummy")
+
 from main import app
 from datetime import datetime, UTC, timedelta
 from utils.core.rate_limit import clear_all_rate_limiters
@@ -62,6 +69,12 @@ def env_vars(monkeypatch):
         m.setenv("RESEND_API_KEY", "test")
         m.setenv("EMAIL_FROM", "test@example.com")
         m.setenv("BASE_URL", "http://localhost:8000")
+        m.setenv("BILLING_ENABLED", "1")
+        m.setenv("STRIPE_SECRET_KEY", "sk_test_dummy")
+        m.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test_dummy")
+        m.setenv("STRIPE_PRICE_ID", "price_test_dummy")
+        m.setenv("STRIPE_PLAN_NAME", "Pro")
+        m.setenv("STRIPE_TAX_ENABLED", "0")
         m.setenv("CSRF_ENABLED", "0")
         yield
 

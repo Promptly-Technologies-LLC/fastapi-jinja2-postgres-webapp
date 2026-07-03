@@ -19,6 +19,11 @@
                 Delete Organization
             </button>
             {% endif %}
+            {% if billing_enabled and AppPermissions.VIEW_BILLING in user_permissions %}
+            <a class="btn btn-outline-secondary" href="{{ url_for('read_billing', org_id=organization.id) }}">
+                Billing
+            </a>
+            {% endif %}
         </div>
     </div>
 

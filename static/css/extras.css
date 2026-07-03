@@ -434,6 +434,68 @@ input:invalid:not(:placeholder-shown) + .invalid-feedback {
     }
 }
 
+/* Site footer: align horizontal padding with navbar; spread copyright and contact. */
+.site-footer-inner {
+    padding-inline: 1.25rem;
+}
+
+.site-footer-row {
+    display: grid;
+    gap: 1.25rem;
+    text-align: center;
+}
+
+.site-footer-copyright,
+.site-footer-links,
+.site-footer-contact {
+    min-width: 0;
+}
+
+.site-footer-heading {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    color: var(--muted);
+    margin: 0 0 0.5rem;
+}
+
+.site-footer-body,
+.site-footer-body a {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.55;
+    color: var(--muted);
+}
+
+.site-footer-body a:hover {
+    color: var(--primary);
+}
+
+@media (min-width: 992px) {
+    .site-footer-row {
+        grid-template-columns: 1fr auto 1fr;
+        align-items: end;
+        gap: 2rem;
+    }
+
+    .site-footer-copyright {
+        justify-self: start;
+        text-align: start;
+    }
+
+    .site-footer-links {
+        justify-self: center;
+        text-align: center;
+    }
+
+    .site-footer-contact {
+        justify-self: end;
+        text-align: end;
+    }
+}
+
 /* Pending invitations in organization members card. */
 .invitation-list-item-body {
     display: flex;
@@ -517,4 +579,49 @@ input:invalid:not(:placeholder-shown) + .invalid-feedback {
         min-width: 0;
         width: 100%;
     }
+}
+
+/* --- Billing page --- */
+
+.billing-page-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.billing-status-card .card-header {
+    background: var(--surface-elevated, #f8fafb);
+}
+
+.billing-status-badge {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.billing-status-badge-none,
+.billing-status-badge-canceled {
+    background: rgba(28, 42, 48, 0.08);
+    color: var(--slate, #1c2a30);
+}
+
+.billing-status-badge-active,
+.billing-status-badge-trialing {
+    background: rgba(14, 124, 123, 0.12);
+    color: var(--primary, #0e7c7b);
+}
+
+.billing-status-badge-past_due,
+.billing-status-badge-unpaid,
+.billing-status-badge-incomplete {
+    background: rgba(180, 35, 24, 0.12);
+    color: #b42318;
+}
+
+.billing-details-list dt {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: rgba(28, 42, 48, 0.7);
 }
