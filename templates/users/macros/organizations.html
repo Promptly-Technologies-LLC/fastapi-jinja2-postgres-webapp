@@ -11,8 +11,7 @@
         <!-- New Organization Form -->
         <div class="collapse mb-3" id="newOrgForm">
             <form action="{{ url_for('create_organization') }}" method="post" class="border rounded p-3 bg-light">
-        {% include 'base/partials/csrf_field.html' %}
-        {% include 'base/partials/csrf_field.html' %}
+                {% include 'base/partials/csrf_field.html' %}
                 <div class="mb-3">
                     <label for="name" class="form-label">Organization Name</label>
                     <input type="text" 

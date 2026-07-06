@@ -1114,3 +1114,82 @@ def test_flash_cookie_value_is_valid_json_decodable_by_js():
             return
 
     raise AssertionError("flash_message cookie not found in response headers")
+
+
+# ---------------------------------------------------------------------------
+# 8 - HTMX matrix gaps (dashboard, org CRUD, resend)
+# ---------------------------------------------------------------------------
+
+
+def _url(name: str, **path_params) -> str:
+    from main import app
+
+    return str(app.url_path_for(name, **path_params))
+
+
+def test_update_organization_htmx_returns_hx_redirect(
+    auth_client_owner, test_organization
+):
+    assert test_organization.id is not None
+    response = auth_client_owner.post(
+        _url("update_organization", org_id=test_organization.id),
+        data={"name": "HTMX Updated Org"},
+        headers=htmx_headers(),
+        follow_redirects=False,
+    )
+    assert response.status_code == 200
+    assert "HX-Redirect" in response.headers
+    assert str(test_organization.id) in response.headers["HX-Redirect"]
+
+
+def test_delete_organization_htmx_returns_hx_redirect(
+    auth_client_owner, test_organization
+):
+    assert test_organization.id is not None
+    response = auth_client_owner.post(
+        _url("delete_organization", org_id=test_organization.id),
+        headers=htmx_headers(),
+        follow_redirects=False,
+    )
+    assert response.status_code == 200
+    assert "HX-Redirect" in response.headers
+    assert "profile" in response.headers["HX-Redirect"]
+
+
+def test_resend_invitation_htmx_returns_members_partial(
+    auth_client_owner,
+    test_organization,
+    test_invitation,
+    mock_resend_send,
+):
+    assert test_organization.id is not None
+    assert test_invitation.id is not None
+    response = auth_client_owner.post(
+        _url("resend_invitation"),
+        data={
+            "invitation_id": str(test_invitation.id),
+            "organization_id": str(test_organization.id),
+        },
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 200
+    assert "<!DOCTYPE html>" not in response.text
+    assert 'id="invitations-list"' in response.text
+    assert "Invitation resent" in response.text
+
+
+def test_csrf_enabled_htmx_login_returns_toast(unauth_client, monkeypatch):
+    from utils.core.csrf import generate_csrf_token, CSRF_COOKIE_NAME
+
+    monkeypatch.setenv("CSRF_ENABLED", "1")
+    token = generate_csrf_token()
+    unauth_client.cookies.set(CSRF_COOKIE_NAME, token)
+
+    response = unauth_client.post(
+        "/account/login",
+        data={"email": "nobody@example.com", "password": "wrong"},
+        headers=htmx_headers(),
+    )
+    assert response.status_code == 403
+    assert "toast" in response.text
+    _assert_htmx_error_is_oob_only(response)

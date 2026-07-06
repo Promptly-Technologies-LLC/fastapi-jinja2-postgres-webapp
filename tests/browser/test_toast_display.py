@@ -13,48 +13,42 @@ import pytest
 from PIL import Image
 from playwright.sync_api import Page, expect
 
+from tests.browser.conftest import login_user, register_user
+
 
 @pytest.fixture(scope="session")
 def _register_toast_user(browser, live_server: str):
     """Register a dedicated user for toast tests."""
-    context = browser.new_context(viewport={"width": 1280, "height": 720})
-    p = context.new_page()
-    p.goto(f"{live_server}/account/register")
-    p.fill("#name", "Toast Test User")
-    p.fill("#email", "toast-tests@example.com")
-    p.fill("#password", "TestPass123!@#")
-    p.fill("#confirm_password", "TestPass123!@#")
-    p.click('button[type="submit"]')
-    p.wait_for_function(
-        "window.location.pathname.startsWith('/dashboard')", timeout=10_000
+    register_user(
+        browser,
+        live_server,
+        name="Toast Test User",
+        email="toast-tests@example.com",
+        password="TestPass123!@#",
     )
-    context.close()
 
 
 @pytest.fixture()
 def logged_in_page(browser, live_server: str, _register_toast_user):
     """Log in and return a page on the dashboard."""
-    context = browser.new_context(viewport={"width": 1280, "height": 720})
-    p = context.new_page()
-    p.goto(f"{live_server}/account/login")
-    p.fill("#email", "toast-tests@example.com")
-    p.fill("#password", "TestPass123!@#")
-    p.click('button[type="submit"]')
-    p.wait_for_function(
-        "window.location.pathname.startsWith('/dashboard')", timeout=10_000
+    page = login_user(
+        browser,
+        live_server,
+        email="toast-tests@example.com",
+        password="TestPass123!@#",
     )
-    yield p
-    context.close()
+    yield page
+    page.context.close()
 
 
 @pytest.fixture()
 def anon_page(browser, live_server: str, _register_toast_user):
     """Return a page that is NOT logged in."""
     context = browser.new_context(viewport={"width": 1280, "height": 720})
-    p = context.new_page()
-    p.goto(f"{live_server}/account/login")
-    p.wait_for_load_state("networkidle")
-    yield p
+    page = context.new_page()
+    page.goto(f"{live_server}/account/login")
+    page.wait_for_load_state("networkidle")
+    yield page
     context.close()
 
 

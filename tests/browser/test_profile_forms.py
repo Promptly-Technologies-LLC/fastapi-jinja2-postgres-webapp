@@ -8,40 +8,34 @@ Playwright tests for profile page HTMX form behaviors:
 import pytest
 from playwright.sync_api import Page, expect
 
+from tests.browser.conftest import login_user, register_user
+
 
 @pytest.fixture(scope="session")
 def _register_profile_user(browser, live_server: str):
     """Register a dedicated user for profile form tests."""
-    context = browser.new_context(viewport={"width": 1280, "height": 720})
-    p = context.new_page()
-    p.goto(f"{live_server}/account/register")
-    p.fill("#name", "Profile Test User")
-    p.fill("#email", "profile-tests@example.com")
-    p.fill("#password", "TestPass123!@#")
-    p.fill("#confirm_password", "TestPass123!@#")
-    p.click('button[type="submit"]')
-    p.wait_for_function(
-        "window.location.pathname.startsWith('/dashboard')", timeout=10_000
+    register_user(
+        browser,
+        live_server,
+        name="Profile Test User",
+        email="profile-tests@example.com",
+        password="TestPass123!@#",
     )
-    context.close()
 
 
 @pytest.fixture()
 def profile_page(browser, live_server: str, _register_profile_user):
     """Log in and navigate to the profile page."""
-    context = browser.new_context(viewport={"width": 1280, "height": 720})
-    p = context.new_page()
-    p.goto(f"{live_server}/account/login")
-    p.fill("#email", "profile-tests@example.com")
-    p.fill("#password", "TestPass123!@#")
-    p.click('button[type="submit"]')
-    p.wait_for_function(
-        "window.location.pathname.startsWith('/dashboard')", timeout=10_000
+    page = login_user(
+        browser,
+        live_server,
+        email="profile-tests@example.com",
+        password="TestPass123!@#",
     )
-    p.goto(f"{live_server}/user/profile")
-    p.wait_for_load_state("networkidle")
-    yield p
-    context.close()
+    page.goto(f"{live_server}/user/profile")
+    page.wait_for_load_state("networkidle")
+    yield page
+    page.context.close()
 
 
 # Generous bound for htmx round trips under CI load; the assertions below
