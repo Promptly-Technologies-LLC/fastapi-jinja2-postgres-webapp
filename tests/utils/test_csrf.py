@@ -12,14 +12,16 @@ from utils.core.csrf import (
 )
 
 
-def test_validate_csrf_token_accepts_matching_values():
+def test_validate_csrf_token_accepts_matching_values(monkeypatch):
+    monkeypatch.setenv("CSRF_ENABLED", "1")
     request = MagicMock()
     token = generate_csrf_token()
     request.state.csrf_token = token
     assert validate_csrf_token(request, token) is True
 
 
-def test_validate_csrf_token_rejects_mismatch():
+def test_validate_csrf_token_rejects_mismatch(monkeypatch):
+    monkeypatch.setenv("CSRF_ENABLED", "1")
     request = MagicMock()
     request.state.csrf_token = generate_csrf_token()
     assert validate_csrf_token(request, generate_csrf_token()) is False

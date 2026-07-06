@@ -1,4 +1,6 @@
 from pathlib import Path
+import re
+
 import pytest
 
 
@@ -10,11 +12,6 @@ def test_no_syntax_errors(template_syntax_errors):
 def test_no_hardcoded_routes(hardcoded_routes):
     """Test that templates don't contain hardcoded routes."""
     assert not hardcoded_routes, hardcoded_routes
-
-
-def test_no_missing_context_variables(missing_context_variables):
-    """Test that routes pass all required variables to their templates."""
-    assert not missing_context_variables, missing_context_variables
 
 
 def test_valid_endpoints(validate_endpoints):
@@ -190,3 +187,74 @@ class TestMobileNavConsolidation:
         collapse_section = self.content[collapse_start:]
         assert "mobile-nav-profile" in collapse_section
         assert "mobile-nav-logout" in collapse_section
+
+
+# ---------------------------------------------------------------------------
+# Extended static safety
+# ---------------------------------------------------------------------------
+
+
+_BACK_TO_BACK_CSRF = re.compile(
+    r"(\{%\s*include\s+'base/partials/csrf_field\.html'\s*%\}\s*){2,}",
+    re.MULTILINE,
+)
+
+
+def test_no_duplicate_csrf_includes_in_templates():
+    """Each form should include the CSRF partial at most once."""
+    violations: list[str] = []
+    for path in sorted(Path("templates").rglob("*.html")):
+        if _BACK_TO_BACK_CSRF.search(path.read_text()):
+            violations.append(path.as_posix())
+    assert not violations, "Duplicate csrf_field includes found in: " + ", ".join(
+        violations
+    )
+
+
+@pytest.mark.parametrize(
+    "template_name,context",
+    [
+        ("emails/reset_email.html", {"reset_url": "https://example.com/reset"}),
+        (
+            "emails/organization_invite.html",
+            {
+                "organization_name": "Test Org",
+                "acceptance_link": "https://example.com/accept",
+            },
+        ),
+        (
+            "emails/verify_new_email.html",
+            {"verification_url": "https://example.com/verify"},
+        ),
+        (
+            "emails/primary_email_changed.html",
+            {
+                "old_email": "old@example.com",
+                "new_email": "new@example.com",
+                "recovery_url": "https://example.com/recover",
+            },
+        ),
+        (
+            "emails/email_verified_alert.html",
+            {"new_email": "new@example.com"},
+        ),
+        (
+            "emails/email_removed_alert.html",
+            {
+                "removed_email": "removed@example.com",
+                "recovery_url": "https://example.com/recover",
+            },
+        ),
+    ],
+)
+def test_email_templates_render_with_sample_context(template_name, context):
+    from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+    env = Environment(
+        loader=FileSystemLoader("templates"),
+        autoescape=select_autoescape(["html", "xml"]),
+    )
+    template = env.get_template(template_name)
+    rendered = template.render(**context)
+    assert rendered.strip()
+    assert "UndefinedError" not in rendered

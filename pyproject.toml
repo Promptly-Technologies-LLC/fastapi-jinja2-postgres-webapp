@@ -1,6 +1,6 @@
 [project]
 name = "fastapi-jinja2-postgres-webapp"
-version = "1.1.5"
+version = "1.1.6"
 description = "A template webapp with a pure-Python FastAPI backend, frontend templating with Jinja2, and a Postgres database to power user auth"
 readme = "README.md"
 package-mode = false
@@ -39,6 +39,10 @@ dev = [
     "python-semantic-release>=10.5.3",
     "great-docs>=0.14.1",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# pytest_plugins must be declared before plugin imports in conftest.
+"tests/conftest.py" = ["E402"]
 
 [tool.ty.rules]
 # SQLModel/SQLAlchemy metaclass attributes (__table__) and constructor
@@ -122,3 +126,10 @@ insecure = false
 [tool.semantic_release.publish]
 dist_glob_patterns = []
 upload_to_vcs_release = false
+
+[tool.pytest-jinja-check]
+app = "main:app"
+python_dir = "."
+template_dir = "templates"
+route_file_patterns = ["main.py", "routers/**/*.py"]
+auto_check = false

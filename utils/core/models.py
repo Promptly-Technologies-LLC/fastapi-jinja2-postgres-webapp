@@ -20,6 +20,19 @@ def utc_now():
     return datetime.now(UTC)
 
 
+def utc_naive_now() -> datetime:
+    """Naive UTC timestamp for DB columns stored without tzinfo."""
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
+def _expires_at_passed(expires_at: datetime) -> bool:
+    """True when an expiry timestamp (naive UTC in DB) is in the past."""
+    now = utc_naive_now()
+    if expires_at.tzinfo is not None:
+        expires_at = expires_at.astimezone(UTC).replace(tzinfo=None)
+    return now > expires_at
+
+
 # --- Private database models ---
 
 
@@ -78,7 +91,7 @@ class PasswordResetToken(SQLModel, table=True):
         """
         Check if the token has expired
         """
-        return datetime.now(UTC) > self.expires_at.replace(tzinfo=UTC)
+        return _expires_at_passed(self.expires_at)
 
 
 class AccountEmail(SQLModel, table=True):
@@ -117,7 +130,7 @@ class EmailVerificationToken(SQLModel, table=True):
     )
 
     def is_expired(self) -> bool:
-        return datetime.now(UTC) > self.expires_at.replace(tzinfo=UTC)
+        return _expires_at_passed(self.expires_at)
 
 
 class AccountRecoveryToken(SQLModel, table=True):
@@ -137,7 +150,7 @@ class AccountRecoveryToken(SQLModel, table=True):
     )
 
     def is_expired(self) -> bool:
-        return datetime.now(UTC) > self.expires_at.replace(tzinfo=UTC)
+        return _expires_at_passed(self.expires_at)
 
 
 class RefreshToken(SQLModel, table=True):
@@ -153,7 +166,7 @@ class RefreshToken(SQLModel, table=True):
     account: Mapped[Optional[Account]] = Relationship(back_populates="refresh_tokens")
 
     def is_expired(self) -> bool:
-        return datetime.now(UTC) > self.expires_at.replace(tzinfo=UTC)
+        return _expires_at_passed(self.expires_at)
 
 
 class RateLimitAttempt(SQLModel, table=True):
@@ -373,12 +386,7 @@ class Invitation(SQLModel, table=True):
 
     def is_expired(self) -> bool:
         """Checks if the invitation has passed its expiry date."""
-        aware_expires_at = (
-            self.expires_at.replace(tzinfo=UTC)
-            if self.expires_at.tzinfo is None
-            else self.expires_at
-        )
-        return utc_now() > aware_expires_at
+        return _expires_at_passed(self.expires_at)
 
     def is_active(self) -> bool:
         """Checks if the invitation is currently valid (not used and not expired)."""

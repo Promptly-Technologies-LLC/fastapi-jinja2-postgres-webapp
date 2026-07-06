@@ -96,8 +96,7 @@
         <div class="card-body">
             {% if show_form %}
             <form action="{{ url_for('forgot_password') }}" method="post">
-        {% include 'base/partials/csrf_field.html' %}
-        {% include 'base/partials/csrf_field.html' %}
+                {% include 'base/partials/csrf_field.html' %}
                 <input type="hidden" name="email" value="{{ user.account.email }}">
                 <p>To change your password, please confirm your email. A password reset link will be sent to your email address.</p>
                 <button type="submit" class="btn btn-primary">Send Password Reset Email</button>
@@ -118,8 +117,7 @@
         </div>
         <div class="card-body">
             <form action="{{ url_for('delete_account') }}" method="post">
-        {% include 'base/partials/csrf_field.html' %}
-        {% include 'base/partials/csrf_field.html' %}
+                {% include 'base/partials/csrf_field.html' %}
                 <p class="text-danger">This action cannot be undone. Please confirm your email and password to delete your account.</p>
                 <div class="mb-3">
                     <label for="delete_email" class="form-label">Email</label>

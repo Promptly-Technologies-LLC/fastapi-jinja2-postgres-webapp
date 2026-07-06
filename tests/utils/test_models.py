@@ -17,6 +17,7 @@ from utils.core.models import (
     User,
     UserAvatar,
     UserRoleLink,
+    utc_naive_now,
 )
 from utils.core.enums import ValidPermissions
 from utils.app.enums import AppPermissions
@@ -227,13 +228,13 @@ def test_password_reset_token_is_expired(session: Session, test_account: Account
     """
     # Create an expired token
     expired_token = PasswordResetToken(
-        account_id=test_account.id, expires_at=datetime.now(UTC) - timedelta(hours=1)
+        account_id=test_account.id, expires_at=utc_naive_now() - timedelta(hours=1)
     )
     session.add(expired_token)
 
     # Create a valid token
     valid_token = PasswordResetToken(
-        account_id=test_account.id, expires_at=datetime.now(UTC) + timedelta(hours=1)
+        account_id=test_account.id, expires_at=utc_naive_now() + timedelta(hours=1)
     )
     session.add(valid_token)
     session.commit()
@@ -548,12 +549,12 @@ def test_email_verification_token_is_expired(session: Session, test_account: Acc
     expired_token = EmailVerificationToken(
         account_id=test_account.id,
         new_email="expired@example.com",
-        expires_at=datetime.now(UTC) - timedelta(hours=1),
+        expires_at=utc_naive_now() - timedelta(hours=1),
     )
     valid_token = EmailVerificationToken(
         account_id=test_account.id,
         new_email="valid@example.com",
-        expires_at=datetime.now(UTC) + timedelta(hours=1),
+        expires_at=utc_naive_now() + timedelta(hours=1),
     )
     session.add(expired_token)
     session.add(valid_token)
