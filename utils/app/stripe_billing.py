@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 class WebhookHandleResult(StrEnum):
     HANDLED = "handled"
     IGNORED = "ignored"
+    RETRYABLE = "retryable"
     FAILED = "failed"
 
 
@@ -252,17 +253,19 @@ def handle_stripe_webhook_event(
                 )
             subscription_id = getattr(data_object, "subscription", None)
             if org_id is None:
-                logger.warning(
-                    "Ignoring Stripe event %s: missing organization_id metadata",
+                logger.error(
+                    "Stripe event %s (%s) missing organization_id metadata; will retry",
                     event.id,
+                    event_type,
                 )
-                return WebhookHandleResult.IGNORED
+                return WebhookHandleResult.RETRYABLE
             if not subscription_id:
-                logger.warning(
-                    "Ignoring Stripe event %s: checkout session missing subscription",
+                logger.error(
+                    "Stripe event %s (%s) checkout session missing subscription; will retry",
                     event.id,
+                    event_type,
                 )
-                return WebhookHandleResult.IGNORED
+                return WebhookHandleResult.RETRYABLE
             subscription = stripe.Subscription.retrieve(subscription_id)
             _sync_from_stripe_subscription(session, subscription, org_id)
             return _log_webhook_handled(event.id, event_type, org_id)
@@ -274,11 +277,12 @@ def handle_stripe_webhook_event(
         }:
             org_id = _org_id_from_subscription(data_object)
             if org_id is None:
-                logger.warning(
-                    "Ignoring Stripe event %s: subscription missing organization_id metadata",
+                logger.error(
+                    "Stripe event %s (%s) subscription missing organization_id metadata; will retry",
                     event.id,
+                    event_type,
                 )
-                return WebhookHandleResult.IGNORED
+                return WebhookHandleResult.RETRYABLE
             if event_type == "customer.subscription.deleted":
                 sync_billing_from_subscription(
                     session,
@@ -302,11 +306,12 @@ def handle_stripe_webhook_event(
         if event_type == "invoice.paid":
             org_id = _org_id_from_invoice(data_object)
             if org_id is None:
-                logger.warning(
-                    "Ignoring Stripe event %s: invoice missing organization_id metadata",
+                logger.error(
+                    "Stripe event %s (%s) invoice missing organization_id metadata; will retry",
                     event.id,
+                    event_type,
                 )
-                return WebhookHandleResult.IGNORED
+                return WebhookHandleResult.RETRYABLE
             transitions = getattr(data_object, "status_transitions", None)
             paid_at = None
             if transitions is not None:
@@ -322,20 +327,22 @@ def handle_stripe_webhook_event(
             org_id = _org_id_from_invoice(data_object)
             subscription_id = getattr(data_object, "subscription", None)
             if org_id is None:
-                logger.warning(
-                    "Ignoring Stripe event %s: failed invoice missing organization_id metadata",
+                logger.error(
+                    "Stripe event %s (%s) failed invoice missing organization_id metadata; will retry",
                     event.id,
+                    event_type,
                 )
-                return WebhookHandleResult.IGNORED
+                return WebhookHandleResult.RETRYABLE
             if subscription_id:
                 subscription = stripe.Subscription.retrieve(subscription_id)
                 _sync_from_stripe_subscription(session, subscription, org_id)
                 return _log_webhook_handled(event.id, event_type, org_id)
-            logger.warning(
-                "Ignoring Stripe event %s: failed invoice missing subscription",
+            logger.error(
+                "Stripe event %s (%s) failed invoice missing subscription; will retry",
                 event.id,
+                event_type,
             )
-            return WebhookHandleResult.IGNORED
+            return WebhookHandleResult.RETRYABLE
 
         return WebhookHandleResult.IGNORED
     except Exception:

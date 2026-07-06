@@ -41,8 +41,7 @@ dev = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-# load_dotenv() must run before app imports that read environment variables
-"main.py" = ["E402"]
+# load_dotenv() runs before app import in tests/conftest.py
 "tests/conftest.py" = ["E402"]
 
 [tool.ty.rules]

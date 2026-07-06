@@ -32,9 +32,17 @@ Your custom Python backend code should go primarily in the `routers/app/` and `u
 
 For the frontend, you will also need to develop custom Jinja2 templates in the `templates/` folder and add custom static assets in `static/`.
 
-### Billing
+### Billing (optional)
 
-Organization-scoped Stripe billing lives in `routers/app/billing.py` and `utils/app/billing.py`. Set `BILLING_ENABLED=1` and configure Stripe env vars to turn it on. See the [billing guide](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/billing.html) for Dashboard setup, webhooks, fork helpers (`org_has_active_subscription`), and a manual end-to-end checklist.
+Organization-scoped Stripe billing is maintained on the [`stripe`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/tree/stripe) branch. See `user_guide/07-billing.qmd` on that branch for Dashboard setup, webhooks, fork helpers (`org_has_active_subscription`), and a manual end-to-end checklist.
+
+To add billing to an existing fork:
+
+```bash
+git remote add upstream https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp.git
+git fetch upstream stripe
+git merge upstream/stripe
+```
 
 ### Testing
 

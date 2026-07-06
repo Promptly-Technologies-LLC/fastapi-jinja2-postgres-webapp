@@ -1,35 +1,28 @@
-<footer class="site-footer bg-light py-4 mt-auto">
-  <div class="container-fluid site-footer-inner">
-    <div class="site-footer-row">
-      <div class="site-footer-copyright">
-        <p class="site-footer-body mb-0">
-          Created by <a href="https://promptlytechnologies.com/">Promptly Technologies, LLC</a><br>
-          and released under the
-          <a href="https://opensource.org/license/mit">MIT License</a>.
-        </p>
-      </div>
+<footer class="bg-light py-4 mt-auto">
+  <div class="container">
+      <div class="row">
+          <!-- Copyright Information -->
+          <div class="col-md-4 text-center text-md-start mb-3 mb-md-0 d-flex flex-column justify-content-end">
+            <p class="mb-0">Created by Promptly Technologies, LLC and released under the <a href="https://opensource.org/license/mit">MIT License</a>.</p>
+          </div>
 
-      <div class="site-footer-links">
-        <h5 class="site-footer-heading mb-2">Quick Links</h5>
-        <ul class="list-inline site-footer-body mb-0">
-          <li class="list-inline-item">
-            <a href="{{ url_for('read_static_page', page_name='about') }}">About</a>
-          </li>
-          <li class="list-inline-item">
-            <a href="{{ url_for('read_static_page', page_name='privacy-policy') }}">Privacy Policy</a>
-          </li>
-          <li class="list-inline-item">
-            <a href="{{ url_for('read_static_page', page_name='terms-of-service') }}">Terms of Service</a>
-          </li>
-        </ul>
-      </div>
+          <!-- Quick Links -->
+          <div class="col-md-4 text-center mb-3 mb-md-0">
+              <h5 class="text-muted mb-2">Quick Links</h5>
+              <ul class="list-inline mb-0">
+                  <li class="list-inline-item"><a href="{{ url_for('read_static_page', page_name='about') }}" class="text-muted">About</a></li>
+                  <li class="list-inline-item"><a href="{{ url_for('read_static_page', page_name='privacy-policy') }}" class="text-muted">Privacy Policy</a></li>
+                  <li class="list-inline-item"><a href="{{ url_for('read_static_page', page_name='terms-of-service') }}" class="text-muted">Terms of Service</a></li>
+              </ul>
+          </div>
 
-      <div class="site-footer-contact">
-        <h5 class="site-footer-heading mb-2">Contact Us</h5>
-        <p class="site-footer-body mb-0">
-          <a href="mailto:support@promptlytechnologies.com">support@promptlytechnologies.com</a>
-        </p>
+          <!-- Contact Information -->
+          <div class="col-md-4 text-center text-md-end">
+              <h5 class="text-muted mb-2">Contact Us</h5>
+              <p class="mb-0">
+                  <a href="mailto:support@promptlytechnologies.com" class="text-muted">support@promptlytechnologies.com</a>
+              </p>
+          </div>
       </div>
-    </div>
   </div>
 </footer>

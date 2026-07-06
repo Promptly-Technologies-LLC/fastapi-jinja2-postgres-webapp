@@ -6,18 +6,24 @@ import logging
 from datetime import UTC, datetime
 from typing import Optional
 
+from fastapi import Request
+from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
 from utils.app.enums import (
     ACTIVE_BILLING_STATUSES,
     CHECKOUT_ELIGIBLE_STATUSES,
     PORTAL_ELIGIBLE_STATUSES,
+    AppPermissions,
     BillingStatus,
 )
 from utils.app.models import OrganizationBilling
-from utils.core.models import utc_now
+from utils.core.auth import validate_token
+from utils.core.models import Account, Role, User, utc_now
 
 logger = logging.getLogger(__name__)
+
+_BILLING_NAV_SKIP_PREFIXES = ("/static", "/webhooks")
 
 
 class _UnsetType:
@@ -128,10 +134,6 @@ def record_last_payment(session: Session, org_id: int, paid_at: datetime) -> Non
 def cancel_org_stripe_subscription(session: Session, org_id: int) -> None:
     """Cancel the Stripe subscription before organization deletion."""
     from exceptions.http_exceptions import StripeSubscriptionCancelError
-    from utils.app.credentials import billing_enabled
-
-    if not billing_enabled():
-        return
 
     billing = get_org_billing(session, org_id)
     if billing is None or not billing.stripe_subscription_id:
@@ -198,12 +200,43 @@ def can_manage_billing_portal(
     return status in PORTAL_ELIGIBLE_STATUSES
 
 
-def billing_nav_href(request, user) -> str | None:
-    """Return billing page URL for the nav menu when the user may view billing."""
-    from utils.app.credentials import billing_enabled
-    from utils.app.enums import AppPermissions
+def should_resolve_billing_nav(request: Request) -> bool:
+    """Return True when the response may include the site navbar billing link."""
+    if request.method != "GET":
+        return False
+    return not request.url.path.startswith(_BILLING_NAV_SKIP_PREFIXES)
 
-    if not billing_enabled() or not user or not user.organizations:
+
+def resolve_billing_nav_href(request: Request, access_token: str) -> str | None:
+    """Resolve the billing nav URL from an access token (single DB round-trip)."""
+    from utils.core.db import get_engine
+
+    decoded = validate_token(access_token, token_type="access")
+    if not decoded:
+        return None
+    email = decoded.get("sub")
+    if not email:
+        return None
+
+    engine = get_engine()
+    with Session(engine) as session:
+        user = session.exec(
+            select(User)
+            .join(Account)
+            .where(Account.email == email)
+            .options(
+                selectinload(User.roles).selectinload(Role.organization),
+                selectinload(User.roles).selectinload(Role.permissions),
+            )
+        ).first()
+        if user is None:
+            return None
+        return billing_nav_href(request, user)
+
+
+def billing_nav_href(request: Request, user: User) -> str | None:
+    """Return billing page URL for the nav menu when the user may view billing."""
+    if not user.organizations:
         return None
 
     selected_org = None

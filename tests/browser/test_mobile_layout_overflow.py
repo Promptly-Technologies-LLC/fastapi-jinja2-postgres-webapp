@@ -501,12 +501,13 @@ def test_footer_columns_centered_on_mobile(
     html = _inject_static_css(auth_client_owner.get("/dashboard/").text)
 
     layout_check = """() => {
-        const copyrightCol = document.querySelector('.site-footer-copyright');
-        const quickLinksCol = document.querySelector('.site-footer-links');
-        const contactCol = document.querySelector('.site-footer-contact');
-        if (!copyrightCol || !quickLinksCol || !contactCol) {
-            return { ok: false, reason: 'missing footer sections' };
+        const cols = document.querySelectorAll('footer .row > [class*="col-md-4"]');
+        if (cols.length < 3) {
+            return { ok: false, reason: 'missing footer columns' };
         }
+        const copyrightCol = cols[0];
+        const quickLinksCol = cols[1];
+        const contactCol = cols[2];
         const ratio = document.documentElement.scrollWidth / window.innerWidth;
         const copyrightCentered = getComputedStyle(copyrightCol).textAlign === 'center';
         const quickLinksCentered = getComputedStyle(quickLinksCol).textAlign === 'center';
@@ -533,9 +534,9 @@ def test_footer_copyright_column_left_aligned_on_desktop(
     html = _inject_static_css(auth_client_owner.get("/dashboard/").text)
 
     layout_check = """() => {
-        const copyrightCol = document.querySelector('.site-footer-copyright');
+        const copyrightCol = document.querySelector('footer .row > [class*="col-md-4"]');
         if (!copyrightCol) {
-            return { ok: false, reason: 'missing copyright section' };
+            return { ok: false, reason: 'missing copyright column' };
         }
         return {
             ok: getComputedStyle(copyrightCol).textAlign === 'start'

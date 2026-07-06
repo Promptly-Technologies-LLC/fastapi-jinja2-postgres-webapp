@@ -28,7 +28,6 @@ def browser_env():
     env["RESEND_API_KEY"] = "test"
     env["EMAIL_FROM"] = "test@example.com"
     env["BASE_URL"] = "http://127.0.0.1:8113"
-    env["BILLING_ENABLED"] = "1"
     env["STRIPE_SECRET_KEY"] = "sk_test_dummy"
     env["STRIPE_WEBHOOK_SECRET"] = "whsec_test_dummy"
     env["STRIPE_PRICE_ID"] = "price_test_dummy"

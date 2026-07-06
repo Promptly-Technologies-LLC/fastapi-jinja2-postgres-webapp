@@ -23,7 +23,6 @@ The billing page lives at `/organizations/{id}/billing`. Owners also reach it fr
 Add these to `.env` (see `.env.example`):
 
 ```bash
-BILLING_ENABLED=1
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_PRICE_ID=price_...
@@ -32,7 +31,7 @@ STRIPE_TAX_ENABLED=1
 BASE_URL=http://localhost:8000
 ```
 
-Set `BILLING_ENABLED=0` to hide billing routes and UI entirely (useful when a fork does not need payments yet).
+All Stripe variables are required at startup on the **`stripe`** branch.
 
 `STRIPE_TAX_ENABLED=1` enables Stripe Tax automatic calculation at Checkout (configure tax in your Stripe Dashboard).
 
@@ -62,7 +61,7 @@ Use the signing secret printed by the Stripe CLI as `STRIPE_WEBHOOK_SECRET` duri
 
 Use this once to confirm billing works against Stripe test mode:
 
-1. Set `BILLING_ENABLED=1` and fill in `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, and `BASE_URL=http://localhost:8000` in `.env`.
+1. Fill in `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, and `BASE_URL=http://localhost:8000` in `.env`.
 2. Start the app and database (`docker compose up -d`, then `uv run uvicorn main:app --reload`).
 3. In a second terminal, run `stripe listen --forward-to localhost:8000/webhooks/stripe` and copy the printed `whsec_…` value into `STRIPE_WEBHOOK_SECRET`. Restart the app if it was already running.
 4. Register or log in, create an organization, and open **Billing** from the profile dropdown (or the organization settings page).
@@ -98,9 +97,10 @@ Card numbers are never stored in your database. Stripe Checkout and the Customer
 Stripe notifies your app at `POST /webhooks/stripe` when subscriptions change or payments succeed or fail. The handler:
 
 1. Verifies the `Stripe-Signature` header
-2. Claims the event ID (idempotent processing)
+2. Claims the event ID before processing (idempotent delivery)
 3. Updates `OrganizationBilling` for the matching `organization_id` metadata
-4. Returns `500` on handler failure so Stripe retries
+4. Releases the claim and returns `500` on handler failure or retryable parse errors so Stripe retries
+5. Keeps the claim and returns `200` for successfully handled events and unhandled event types
 
 Handled events include checkout completion, subscription lifecycle changes, successful invoices, and failed payments.
 

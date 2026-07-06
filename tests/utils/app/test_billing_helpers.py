@@ -9,6 +9,7 @@ from utils.app.billing import (
     get_or_create_org_billing,
     org_has_active_subscription,
     org_may_start_checkout,
+    should_resolve_billing_nav,
     sync_billing_from_subscription,
 )
 from utils.app.enums import BillingStatus
@@ -149,3 +150,20 @@ def test_active_subscription_may_not_start_checkout(session: Session) -> None:
 def test_billing_status_defaults_to_none() -> None:
     assert billing_status(None) == BillingStatus.NONE
     assert billing_status(OrganizationBilling(organization_id=1)) == BillingStatus.NONE
+
+
+def test_should_resolve_billing_nav() -> None:
+    from types import SimpleNamespace
+
+    assert should_resolve_billing_nav(
+        SimpleNamespace(method="GET", url=SimpleNamespace(path="/dashboard/"))
+    )
+    assert not should_resolve_billing_nav(
+        SimpleNamespace(method="POST", url=SimpleNamespace(path="/dashboard/"))
+    )
+    assert not should_resolve_billing_nav(
+        SimpleNamespace(method="GET", url=SimpleNamespace(path="/static/css/site.css"))
+    )
+    assert not should_resolve_billing_nav(
+        SimpleNamespace(method="GET", url=SimpleNamespace(path="/webhooks/stripe"))
+    )

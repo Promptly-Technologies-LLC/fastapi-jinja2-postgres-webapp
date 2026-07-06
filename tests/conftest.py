@@ -26,7 +26,6 @@ from utils.core.auth import (
 )
 
 load_dotenv()
-os.environ["BILLING_ENABLED"] = "1"
 os.environ.setdefault("STRIPE_SECRET_KEY", "sk_test_dummy")
 os.environ.setdefault("STRIPE_WEBHOOK_SECRET", "whsec_test_dummy")
 os.environ.setdefault("STRIPE_PRICE_ID", "price_test_dummy")
@@ -69,7 +68,6 @@ def env_vars(monkeypatch):
         m.setenv("RESEND_API_KEY", "test")
         m.setenv("EMAIL_FROM", "test@example.com")
         m.setenv("BASE_URL", "http://localhost:8000")
-        m.setenv("BILLING_ENABLED", "1")
         m.setenv("STRIPE_SECRET_KEY", "sk_test_dummy")
         m.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test_dummy")
         m.setenv("STRIPE_PRICE_ID", "price_test_dummy")

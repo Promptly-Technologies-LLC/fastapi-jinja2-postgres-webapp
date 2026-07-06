@@ -2,22 +2,11 @@
 
 from __future__ import annotations
 
-import logging
 import os
-
-logger = logging.getLogger(__name__)
-
-
-def billing_enabled() -> bool:
-    """Return True unless billing is explicitly disabled via BILLING_ENABLED=0."""
-    raw = os.getenv("BILLING_ENABLED", "1").lower()
-    return raw not in {"0", "false", "no"}
 
 
 def validate_billing_environment() -> None:
-    """Ensure Stripe billing env vars are present when billing is enabled."""
-    if not billing_enabled():
-        return
+    """Ensure required Stripe billing environment variables are set."""
     required = (
         "STRIPE_SECRET_KEY",
         "STRIPE_WEBHOOK_SECRET",

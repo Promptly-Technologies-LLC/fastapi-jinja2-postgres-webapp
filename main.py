@@ -2,9 +2,6 @@ import logging
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-
-load_dotenv()
-
 from fastapi import FastAPI, Request, Depends, status
 from fastapi.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -51,8 +48,8 @@ from exceptions.http_exceptions import (
 )
 from exceptions.exceptions import NeedsNewTokens
 from routers.app import billing as billing_router
-from utils.app.credentials import billing_enabled, validate_billing_environment
-from utils.app.billing import billing_nav_href
+from utils.app.credentials import validate_billing_environment
+from utils.app.billing import resolve_billing_nav_href, should_resolve_billing_nav
 from utils.core.db import set_up_db
 
 logger = logging.getLogger("uvicorn.error")
@@ -61,6 +58,7 @@ logger.setLevel(logging.DEBUG)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    load_dotenv()
     validate_billing_environment()
     set_up_db()
     yield
@@ -88,32 +86,12 @@ templates = Jinja2Templates(directory="templates")
 @app.middleware("http")
 async def nav_billing_middleware(request: Request, call_next):
     request.state.billing_nav_href = None
-    if billing_enabled():
+    if should_resolve_billing_nav(request):
         access_token = request.cookies.get("access_token")
         if access_token:
-            from sqlmodel import Session, select
-            from sqlalchemy.orm import selectinload
-
-            from utils.core.db import get_engine
-            from utils.core.dependencies import get_optional_user_from_access_token
-            from utils.core.models import Role, User
-
-            engine = get_engine()
-            with Session(engine) as session:
-                user = get_optional_user_from_access_token(access_token, session)
-                if user and user.id is not None:
-                    eager_user = session.exec(
-                        select(User)
-                        .where(User.id == user.id)
-                        .options(
-                            selectinload(User.roles).selectinload(Role.organization),
-                            selectinload(User.roles).selectinload(Role.permissions),
-                        )
-                    ).first()
-                    if eager_user is not None:
-                        request.state.billing_nav_href = billing_nav_href(
-                            request, eager_user
-                        )
+            request.state.billing_nav_href = resolve_billing_nav_href(
+                request, access_token
+            )
     return await call_next(request)
 
 
@@ -154,9 +132,8 @@ app.include_router(organization.router)
 app.include_router(role.router)
 app.include_router(static_pages.router)
 app.include_router(user.router)
-if billing_enabled():
-    app.include_router(billing_router.router)
-    app.include_router(billing_router.webhook_router)
+app.include_router(billing_router.router)
+app.include_router(billing_router.webhook_router)
 
 
 # --- Exception Handling Middlewares ---

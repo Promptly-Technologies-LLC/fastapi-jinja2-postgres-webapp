@@ -24,7 +24,6 @@ from exceptions.http_exceptions import (
     DataIntegrityError,
 )
 from utils.app.billing import cancel_org_stripe_subscription
-from utils.app.credentials import billing_enabled
 from pydantic import EmailStr
 from utils.core.htmx import is_htmx_request, set_flash_cookie
 
@@ -86,7 +85,6 @@ async def read_organization(
             "AppPermissions": AppPermissions,
             "all_permissions": list(ValidPermissions) + list(AppPermissions),
             "pending_invitations": pending_invitations,
-            "billing_enabled": billing_enabled(),
         },
     )
 

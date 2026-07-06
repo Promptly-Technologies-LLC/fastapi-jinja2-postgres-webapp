@@ -8,7 +8,7 @@ guide-section: "Getting Started"
 
 ## Quickstart
 
-This quickstart guide provides a high-level overview. See the full documentation for comprehensive information on [features](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/), [installation](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/installation.html), [architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/architecture.html), [conventions, code style, and customization](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/customization.html), [billing](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/billing.html), [deployment to cloud platforms](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/deployment.html), and [contributing](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/contributing.html).
+This quickstart guide provides a high-level overview. See the full documentation for comprehensive information on [features](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/), [installation](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/installation.html), [architecture](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/architecture.html), [conventions, code style, and customization](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/customization.html), [deployment to cloud platforms](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/deployment.html), and [contributing](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/contributing.html).
 
 ## Features
 
@@ -24,7 +24,7 @@ The template also includes full-featured secure auth with:
 - Password recovery flow
 - Role-based access control system
 
-Optional [organization-scoped Stripe billing](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/billing.html) (Checkout, Customer Portal, webhooks) is wired in when `BILLING_ENABLED=1`.
+Optional [organization-scoped Stripe billing](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/tree/stripe) (Checkout, Customer Portal, webhooks) lives on the **`stripe`** branch.
 
 ## Design Philosophy
 

@@ -6,14 +6,17 @@ import logging
 import uuid
 
 import stripe
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from fastapi import APIRouter, Depends, Query, Request, Response
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session
 
 from exceptions.http_exceptions import (
+    ActiveSubscriptionError,
     InsufficientPermissionsError,
     OrganizationNotFoundError,
+    StripeServiceUnavailableError,
+    StripeSessionError,
 )
 from utils.app.billing import (
     billing_status,
@@ -54,15 +57,6 @@ def _require_org_member(user: User, org_id: int):
     return org
 
 
-def _user_permissions_for_org(user: User, org_id: int) -> set:
-    permissions: set = set()
-    for role in user.roles:
-        if role.organization_id == org_id:
-            for permission in role.permissions:
-                permissions.add(permission.name)
-    return permissions
-
-
 @router.get("/{org_id}/billing")
 async def read_billing(
     org_id: int,
@@ -71,14 +65,13 @@ async def read_billing(
     session: Session = Depends(get_session),
 ):
     org = _require_org_member(user, org_id)
-    permissions = _user_permissions_for_org(user, org_id)
-    if AppPermissions.VIEW_BILLING not in permissions:
+    if not user.has_permission(AppPermissions.VIEW_BILLING, org_id):
         raise InsufficientPermissionsError()
 
     billing = get_org_billing(session, org_id)
     status = billing_status(billing)
     settings = stripe_settings()
-    can_manage = AppPermissions.MANAGE_BILLING in permissions
+    can_manage = user.has_permission(AppPermissions.MANAGE_BILLING, org_id)
 
     return templates.TemplateResponse(
         request,
@@ -140,9 +133,7 @@ async def start_checkout(
             "Checkout blocked for org_id=%s: organization already has an active subscription",
             org_id,
         )
-        raise InsufficientPermissionsError(
-            "This organization already has an active subscription."
-        )
+        raise ActiveSubscriptionError()
 
     assert user.account is not None
     billing = get_org_billing(session, org_id)
@@ -158,14 +149,11 @@ async def start_checkout(
         logger.exception(
             "Stripe Checkout session creation failed for org_id=%s", org_id
         )
-        raise HTTPException(
-            status_code=503,
-            detail="Unable to start checkout. Please try again later.",
-        ) from None
+        raise StripeServiceUnavailableError("start checkout") from None
 
     checkout_url = checkout.url
     if not checkout_url:
-        raise InsufficientPermissionsError("Stripe did not return a checkout URL.")
+        raise StripeSessionError("checkout")
     return _redirect_to_stripe(request, checkout_url)
 
 
@@ -193,14 +181,11 @@ async def start_customer_portal(
         )
     except stripe.StripeError:
         logger.exception("Stripe Customer Portal session failed for org_id=%s", org_id)
-        raise HTTPException(
-            status_code=503,
-            detail="Unable to open billing portal. Please try again later.",
-        ) from None
+        raise StripeServiceUnavailableError("open billing portal") from None
 
     portal_url = portal.url
     if not portal_url:
-        raise InsufficientPermissionsError("Stripe did not return a portal URL.")
+        raise StripeSessionError("portal")
     return _redirect_to_stripe(request, portal_url)
 
 
@@ -313,7 +298,7 @@ async def stripe_webhook(
         return Response(status_code=200, content='{"ok": true}')
 
     result = handle_stripe_webhook_event(session, event)
-    if result is WebhookHandleResult.FAILED:
+    if result in {WebhookHandleResult.FAILED, WebhookHandleResult.RETRYABLE}:
         release_webhook_event_claim(session, event.id)
         return Response(status_code=500, content="Webhook handler failed")
 

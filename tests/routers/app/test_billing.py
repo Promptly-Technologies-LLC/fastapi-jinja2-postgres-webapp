@@ -102,7 +102,7 @@ def test_checkout_rejects_active_subscription(
     response = auth_client_owner.post(
         app.url_path_for("start_checkout", org_id=test_organization.id)
     )
-    assert response.status_code == 403
+    assert response.status_code == 409
 
 
 def test_checkout_member_forbidden(
@@ -375,7 +375,7 @@ def test_webhook_payment_failed_syncs_past_due_status(
     assert billing.status == BillingStatus.PAST_DUE.value
 
 
-def test_webhook_missing_metadata_is_ignored_without_failure(
+def test_webhook_missing_metadata_is_retryable(
     session: Session,
 ) -> None:
     event = SimpleNamespace(
@@ -388,7 +388,44 @@ def test_webhook_missing_metadata_is_ignored_without_failure(
         ),
     )
     result = handle_stripe_webhook_event(session, event)
-    assert result is WebhookHandleResult.IGNORED
+    assert result is WebhookHandleResult.RETRYABLE
+
+
+def test_webhook_retryable_releases_claim(
+    unauth_client: TestClient,
+    session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    event = SimpleNamespace(
+        id="evt_retryable",
+        type="checkout.session.completed",
+        data=SimpleNamespace(
+            object=SimpleNamespace(
+                metadata={}, client_reference_id=None, subscription=None
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        "routers.app.billing.construct_webhook_event",
+        lambda payload, signature: event,
+    )
+
+    response = unauth_client.post(
+        "/webhooks/stripe",
+        content=b"{}",
+        headers={
+            "Content-Type": "application/json",
+            "Stripe-Signature": "test",
+        },
+    )
+    assert response.status_code == 500
+
+    stored = session.exec(
+        select(StripeWebhookEvent).where(
+            StripeWebhookEvent.stripe_event_id == "evt_retryable"
+        )
+    ).first()
+    assert stored is None
 
 
 def test_org_delete_cancels_subscription(
