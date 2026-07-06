@@ -22,14 +22,16 @@ STATIC_PAGES = ("about", "privacy-policy", "terms-of-service")
 class GetPageCase:
     id: str
     client_fixture: str
-    path_factory: Callable[[], str]
+    path_factory: Callable[[], str | None]
     marker: str | None = None
     jinja_route: str | None = None
     expected_status: int = 200
 
 
 GET_PAGE_CASES = [
-    GetPageCase("home", "unauth_client", lambda: _url("read_home"), jinja_route="read_home"),
+    GetPageCase(
+        "home", "unauth_client", lambda: _url("read_home"), jinja_route="read_home"
+    ),
     GetPageCase(
         "login", "unauth_client", lambda: _url("read_login"), jinja_route="read_login"
     ),
@@ -68,14 +70,14 @@ GET_PAGE_CASES = [
     GetPageCase(
         "organization_owner",
         "auth_client_owner",
-        lambda: _url("read_organization", org_id=0),
+        lambda: None,
         marker="Create Role",
         jinja_route="read_organization",
     ),
     GetPageCase(
         "organization_member",
         "auth_client_member",
-        lambda: _url("read_organization", org_id=0),
+        lambda: None,
         marker="Members",
         jinja_route="read_organization",
     ),
@@ -99,7 +101,8 @@ class TestJinjaCheckAndGetSmokeIntegration:
         test_organization,
         org_owner,
     ):
-        """Ensure org-scoped clients have a membership relationship loaded."""
+        # No setup body: autouse only so test_organization and org_owner run before
+        # org-scoped client fixtures (auth_client_owner, auth_client_member).
         del request, test_organization, org_owner
 
     def test_static_context_analysis_passes(self, missing_context_variables):
@@ -139,7 +142,7 @@ class TestJinjaCheckAndGetSmokeIntegration:
         assert not missing_context_variables
         client = request.getfixturevalue(case.client_fixture)
         path = case.path_factory()
-        if "organization" in case.id:
+        if path is None:
             assert test_organization.id is not None
             path = _url("read_organization", org_id=test_organization.id)
         response = client.get(path)
@@ -215,7 +218,7 @@ class TestGetPagesRequireAuth:
         [
             ("unauth_client", lambda: _url("read_dashboard")),
             ("unauth_client", lambda: _url("read_profile")),
-            ("unauth_client", lambda: _url("read_organization", org_id=1)),
+            ("unauth_client", lambda: None),
         ],
         ids=["dashboard", "profile", "organization"],
     )
@@ -228,7 +231,7 @@ class TestGetPagesRequireAuth:
     ):
         client = request.getfixturevalue(client_fixture)
         path = path_factory()
-        if "organization" in request.node.callspec.id:
+        if path is None:
             assert test_organization.id is not None
             path = _url("read_organization", org_id=test_organization.id)
         response = client.get(path)

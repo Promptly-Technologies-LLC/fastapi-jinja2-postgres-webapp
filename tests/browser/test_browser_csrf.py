@@ -72,7 +72,7 @@ def test_htmx_login_with_valid_csrf_succeeds(browser, live_server_csrf: str):
     context.close()
 
 
-def test_org_htmx_action_requires_csrf_header(browser, live_server_csrf: str):
+def test_forgot_password_without_csrf_shows_error_toast(browser, live_server_csrf: str):
     context = browser.new_context(viewport={"width": 1280, "height": 720})
     page = context.new_page()
     page.goto(f"{live_server_csrf}/account/forgot_password")

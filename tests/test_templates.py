@@ -14,11 +14,6 @@ def test_no_hardcoded_routes(hardcoded_routes):
     assert not hardcoded_routes, hardcoded_routes
 
 
-def test_no_missing_context_variables(missing_context_variables):
-    """Test that routes pass all required variables to their templates."""
-    assert not missing_context_variables, missing_context_variables
-
-
 def test_valid_endpoints(validate_endpoints):
     """Test that url_for() calls in templates reference valid FastAPI endpoints."""
     from main import app
