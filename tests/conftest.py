@@ -1,6 +1,8 @@
 import pytest
 import os
 from typing import Generator, cast
+
+pytest_plugins = ["tests.frontend.fixtures"]
 from sqlmodel import create_engine, Session, select
 from fastapi.testclient import TestClient
 from dotenv import load_dotenv

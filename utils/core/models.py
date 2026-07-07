@@ -21,18 +21,16 @@ def utc_now():
 
 
 def utc_naive_now() -> datetime:
-    """Return the current UTC time as a naive datetime for DB timestamp columns."""
+    """Naive UTC timestamp for DB columns stored without tzinfo."""
     return datetime.now(UTC).replace(tzinfo=None)
 
 
-def _coerce_utc_naive(value: datetime) -> datetime:
-    if value.tzinfo is None:
-        return value
-    return value.astimezone(UTC).replace(tzinfo=None)
-
-
 def _expires_at_passed(expires_at: datetime) -> bool:
-    return utc_naive_now() > _coerce_utc_naive(expires_at)
+    """True when an expiry timestamp (naive UTC in DB) is in the past."""
+    now = utc_naive_now()
+    if expires_at.tzinfo is not None:
+        expires_at = expires_at.astimezone(UTC).replace(tzinfo=None)
+    return now > expires_at
 
 
 # --- Private database models ---
