@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- version list -->
 
+## v1.1.7 (2026-07-06)
+
+### Bug Fixes
+
+- Address PR review nits for frontend test suite
+  ([`4659d3b`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/4659d3b427b6f865ea87046d080b97e3a63042dd))
+
+
 ## v1.1.6 (2026-07-02)
 
 ### Bug Fixes
