@@ -43,6 +43,10 @@ To contribute code to the project:
    - Provide a clear description of the changes
    - Link to any related issues
 
+### Optional branches
+
+Core template changes on `main` propagate automatically to `modal`, `hetzner`, and `stripe` via CI. Pull requests to `main` that touch shared files (`main.py`, `pyproject.toml`, `utils/core/db.py`, `routers/core/organization.py`, templates, `tests/conftest.py`, `.env.example`) may need manual conflict resolution when those changes are merged into `stripe`. See the [customization guide](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/customization.html) for the `git merge upstream/stripe` recipe.
+
 ### Rendering the documentation
 
 The documentation website is built with [Great Docs](https://posit-dev.github.io/great-docs/). If you make changes to the `.qmd` files in the `user_guide/` folder, you will need to rebuild the docs with Great Docs.

@@ -34,6 +34,25 @@ The template also includes full-featured secure auth with:
 - Password recovery flow
 - Role-based access control system
 
+## Optional branches
+
+Some capabilities are maintained on dedicated branches so `main` stays lean:
+
+| Branch | Purpose |
+|--------|---------|
+| `main` | Core template (auth, orgs, RBAC) |
+| [`stripe`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/tree/stripe) | Organization-scoped Stripe billing |
+| [`modal`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/tree/modal) | Modal.com deployment artifacts |
+| [`hetzner`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/tree/hetzner) | Hetzner Cloud deployment artifacts |
+
+New SaaS forks can start from `stripe`, or merge it later:
+
+```bash
+git remote add upstream https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp.git
+git fetch upstream stripe
+git merge upstream/stripe
+```
+
 ## Design Philosophy
 
 The design philosophy of the template is to prefer low-level,
