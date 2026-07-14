@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- version list -->
 
+## v1.1.8 (2026-07-14)
+
+### Bug Fixes
+
+- **ci**: Keep Test workflow push triggers unfiltered
+  ([#229](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/229),
+  [`2a88198`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/2a88198586079c45761afc69995a84586c76899d))
+
+### Code Style
+
+- **footer**: Improve site footer layout and typography
+  ([#226](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/226),
+  [`85b5fe9`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/85b5fe92b266ae7459631c336275c82eeba3a610))
+
+### Documentation
+
+- Document stripe branch and add propagate/CI support
+  ([#229](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/229),
+  [`2a88198`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/2a88198586079c45761afc69995a84586c76899d))
+
+
 ## v1.1.7 (2026-07-06)
 
 ### Bug Fixes
