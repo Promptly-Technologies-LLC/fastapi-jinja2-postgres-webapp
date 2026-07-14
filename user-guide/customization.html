@@ -159,7 +159,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
     <span class="nav-link">
-<div id="github-widget" data-owner="promptly-technologies-llc" data-repo="fastapi-jinja2-postgres-webapp" data-stars="9" data-forks="4"></div>
+<div id="github-widget" data-owner="promptly-technologies-llc" data-repo="fastapi-jinja2-postgres-webapp" data-stars="10" data-forks="4"></div>
     </span>
   </li>  
 </ul>
@@ -274,6 +274,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#dependency-management-with-uv" id="toc-dependency-management-with-uv" class="nav-link" data-scroll-target="#dependency-management-with-uv">Dependency management with <code>uv</code></a></li>
   <li><a href="#ide-configuration" id="toc-ide-configuration" class="nav-link" data-scroll-target="#ide-configuration">IDE configuration</a></li>
   <li><a href="#extending-the-template" id="toc-extending-the-template" class="nav-link" data-scroll-target="#extending-the-template">Extending the template</a></li>
+  <li><a href="#billing-optional" id="toc-billing-optional" class="nav-link" data-scroll-target="#billing-optional">Billing (optional)</a></li>
   <li><a href="#testing" id="toc-testing" class="nav-link" data-scroll-target="#testing">Testing</a></li>
   <li><a href="#type-checking-with-ty" id="toc-type-checking-with-ty" class="nav-link" data-scroll-target="#type-checking-with-ty">Type checking with ty</a></li>
   <li><a href="#developing-with-llms" id="toc-developing-with-llms" class="nav-link" data-scroll-target="#developing-with-llms">Developing with LLMs</a></li>
@@ -359,6 +360,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Your custom Python backend code should go primarily in the <code>routers/app/</code> and <code>utils/app/</code> directories.</p>
 <p>For the frontend, you will also need to develop custom Jinja2 templates in the <code>templates/</code> folder and add custom static assets in <code>static/</code>.</p>
 </section>
+<section id="billing-optional" class="level2">
+<h2 class="anchored" data-anchor-id="billing-optional">Billing (optional)</h2>
+<p>Organization-scoped Stripe billing is maintained on the <a href="https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/tree/stripe"><code>stripe</code></a> branch. See <code>user_guide/07-billing.qmd</code> on that branch for Dashboard setup, webhooks, fork helpers (<code>org_has_active_subscription</code>), and a manual end-to-end checklist.</p>
+<p>To add billing to an existing fork:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> remote add upstream https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp.git</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> fetch upstream stripe</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> merge upstream/stripe</span></code></pre></div>
+<p>When merging, expect conflicts in shared core files such as <code>main.py</code>, <code>pyproject.toml</code>, <code>utils/core/db.py</code>, <code>routers/core/organization.py</code>, header/organization templates, <code>tests/conftest.py</code>, and <code>.env.example</code>. Resolve by keeping billing additions from <code>stripe</code> while preserving your fork-specific changes.</p>
+</section>
 <section id="testing" class="level2">
 <h2 class="anchored" data-anchor-id="testing">Testing</h2>
 <p>The project uses Pytest for unit testing. It’s highly recommended to write and run tests before committing code to ensure nothing is broken!</p>
@@ -385,7 +395,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="type-checking-with-ty" class="level2">
 <h2 class="anchored" data-anchor-id="type-checking-with-ty">Type checking with ty</h2>
 <p>The project uses type annotations and <a href="https://docs.astral.sh/ty/">ty</a> for static type checking. To run ty, use this command from the root directory:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run ty check .</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run ty check .</span></code></pre></div>
 <p>We find that static type checking is an enormous time-saver, catching many errors early and greatly reducing time spent debugging unit tests. However, note that it requires you type annotate every variable, function, and method in your code base, so taking advantage of it requires a lifestyle change!</p>
 </section>
 <section id="developing-with-llms" class="level2">
@@ -467,13 +477,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="context-variables" class="level2">
 <h2 class="anchored" data-anchor-id="context-variables">Context variables</h2>
 <p>Context refers to Python variables passed to a template to populate the HTML. In a FastAPI GET route, we can pass context to a template using the <code>templates.TemplateResponse</code> method, which takes the request and any context data as arguments. For example:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.get</span>(<span class="st">"/welcome"</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> welcome(request: Request):</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> templates.TemplateResponse(</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        request,</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"welcome.html"</span>,</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"username"</span>: <span class="st">"Alice"</span>}</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    )</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.get</span>(<span class="st">"/welcome"</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> welcome(request: Request):</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> templates.TemplateResponse(</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        request,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"welcome.html"</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        {<span class="st">"username"</span>: <span class="st">"Alice"</span>}</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    )</span></code></pre></div>
 <p>In this example, the <code>welcome.html</code> template will receive two pieces of context: the user’s <code>request</code>, which is always passed automatically by FastAPI, and a <code>username</code> variable, which we specify as “Alice”. We can then use the <code>{{ username }}</code> syntax in the <code>welcome.html</code> template (or any of its parent or child templates) to insert the value into the HTML.</p>
 </section>
 <section id="email-templating" class="level2">
@@ -499,26 +509,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>This template uses middlewares exclusively for global exception handling; they only affect requests that raise an exception. This allows for consistent error responses and centralized error logging. Middleware can catch exceptions raised during request processing and return appropriate HTTP responses.</p>
 <p>Middleware functions are decorated with <code>@app.exception_handler(ExceptionType)</code> and are executed in the order they are defined in <code>main.py</code>, from most to least specific.</p>
 <p>Here’s a middleware for handling the <code>PasswordValidationError</code> exception, which returns a toast partial for HTMX requests or a full error page for non-HTMX requests:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils.core.htmx <span class="im">import</span> is_htmx_request</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="at">@app.exception_handler</span>(PasswordValidationError)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> password_validation_exception_handler(request: Request, exc: PasswordValidationError):</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> is_htmx_request(request):</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> templates.TemplateResponse(</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>            request,</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>            <span class="st">"base/partials/toast.html"</span>,</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>            {<span class="st">"message"</span>: exc.detail, <span class="st">"level"</span>: <span class="st">"danger"</span>},</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>            status_code<span class="op">=</span><span class="dv">422</span>,</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> templates.TemplateResponse(</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>        request,</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        <span class="st">"errors/validation_error.html"</span>,</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        {</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>            <span class="st">"status_code"</span>: <span class="dv">422</span>,</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>            <span class="st">"errors"</span>: {<span class="st">"error"</span>: exc.detail}</span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        },</span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>        status_code<span class="op">=</span><span class="dv">422</span>,</span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    )</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils.core.htmx <span class="im">import</span> is_htmx_request</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="at">@app.exception_handler</span>(PasswordValidationError)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> password_validation_exception_handler(request: Request, exc: PasswordValidationError):</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> is_htmx_request(request):</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> templates.TemplateResponse(</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>            request,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>            <span class="st">"base/partials/toast.html"</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>            {<span class="st">"message"</span>: exc.detail, <span class="st">"level"</span>: <span class="st">"danger"</span>},</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>            status_code<span class="op">=</span><span class="dv">422</span>,</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> templates.TemplateResponse(</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>        request,</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>        <span class="st">"errors/validation_error.html"</span>,</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>        {</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>            <span class="st">"status_code"</span>: <span class="dv">422</span>,</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>            <span class="st">"errors"</span>: {<span class="st">"error"</span>: exc.detail}</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>        },</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>        status_code<span class="op">=</span><span class="dv">422</span>,</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    )</span></code></pre></div>
 </section>
 </section>
 <section id="database-configuration-and-access-with-sqlmodel" class="level1">
@@ -570,34 +580,34 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><code>get_session()</code>: Provides a database session for performing operations</li>
 </ul>
 <p>To perform database operations in route handlers, inject the database session as a dependency (from <code>utils/core/db.py</code>):</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.get</span>(<span class="st">"/users"</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> get_users(session: Session <span class="op">=</span> Depends(get_session)):</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    users <span class="op">=</span> session.<span class="bu">exec</span>(select(User)).<span class="bu">all</span>()</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> users</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.get</span>(<span class="st">"/users"</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> get_users(session: Session <span class="op">=</span> Depends(get_session)):</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    users <span class="op">=</span> session.<span class="bu">exec</span>(select(User)).<span class="bu">all</span>()</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> users</span></code></pre></div>
 <p>The session automatically handles transaction management, ensuring that database operations are atomic and consistent.</p>
 <p>There is also a helper method on the <code>User</code> model that checks if a user has a specific permission for a given organization. Its first argument must be a <code>StrEnum</code> value (either from <code>ValidPermissions</code> in <code>utils/core/enums.py</code> or <code>AppPermissions</code> in <code>utils/app/enums.py</code>), and its second argument must be an <code>Organization</code> object or an <code>int</code> representing an organization ID:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils.core.enums <span class="im">import</span> ValidPermissions</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils.app.enums <span class="im">import</span> AppPermissions</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Check a core permission</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>user.has_permission(ValidPermissions.CREATE_ROLE, organization)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Check an app-specific permission</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>user.has_permission(AppPermissions.READ_ORGANIZATION_RESOURCES, organization)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils.core.enums <span class="im">import</span> ValidPermissions</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils.app.enums <span class="im">import</span> AppPermissions</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Check a core permission</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>user.has_permission(ValidPermissions.CREATE_ROLE, organization)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Check an app-specific permission</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>user.has_permission(AppPermissions.READ_ORGANIZATION_RESOURCES, organization)</span></code></pre></div>
 <p>Core permissions used by the template’s built-in features are defined in <code>ValidPermissions</code> (<code>utils/core/enums.py</code>). To add your own app-specific permissions, define them in <code>AppPermissions</code> (<code>utils/app/enums.py</code>). Both enum types are automatically registered in the database during setup and work interchangeably with <code>User.has_permission()</code>.</p>
 </section>
 <section id="cascade-deletes" class="level2">
 <h2 class="anchored" data-anchor-id="cascade-deletes">Cascade deletes</h2>
 <p>Cascade deletes (in which deleting a record from one table deletes related records from another table) can be handled at either the ORM level or the database level. This template handles cascade deletes at the ORM level, via SQLModel relationships. Inside a SQLModel <code>Relationship</code>, we set:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>sa_relationship_kwargs<span class="op">=</span>{</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"cascade"</span>: <span class="st">"all, delete-orphan"</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>sa_relationship_kwargs<span class="op">=</span>{</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"cascade"</span>: <span class="st">"all, delete-orphan"</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>This tells SQLAlchemy to cascade all operations (e.g., <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>) to the related table. Since this happens through the ORM, we need to be careful to do all our database operations through the ORM using supported syntax. That generally means loading database records into Python objects and then deleting those objects rather than deleting records in the database directly.</p>
 <p>For example,</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>session.<span class="bu">exec</span>(delete(Role))</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>session.<span class="bu">exec</span>(delete(Role))</span></code></pre></div>
 <p>will not trigger the cascade delete. Instead, we need to select the role objects and then delete them:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> role <span class="kw">in</span> session.<span class="bu">exec</span>(select(Role)).<span class="bu">all</span>():</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    session.delete(role)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> role <span class="kw">in</span> session.<span class="bu">exec</span>(select(Role)).<span class="bu">all</span>():</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    session.delete(role)</span></code></pre></div>
 <p>This is slower than deleting the records directly, but it makes <a href="https://sqlmodel.tiangolo.com/tutorial/many-to-many/create-models-with-link/#create-the-tables">many-to-many relationships</a> much easier to manage.</p>
 </section>
 </section>
@@ -620,25 +630,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="re-theming" class="level3">
 <h3 class="anchored" data-anchor-id="re-theming">Re-theming</h3>
 <p>To change the look of the whole app, edit the design tokens at the top of <code>static/css/styles.css</code>:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode css"><code class="sourceCode css"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="in">:root</span> {</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">/* Type */</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">--font-display</span><span class="ch">:</span> <span class="st">"Space Grotesk"</span><span class="op">,</span> <span class="dv">system-ui</span><span class="op">,</span> <span class="dv">sans-serif</span><span class="op">;</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">--font-body</span><span class="ch">:</span> <span class="st">"IBM Plex Sans"</span><span class="op">,</span> <span class="dv">system-ui</span><span class="op">,</span> <span class="dv">sans-serif</span><span class="op">;</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="va">--font-mono</span><span class="ch">:</span> <span class="st">"IBM Plex Mono"</span><span class="op">,</span> <span class="dv">ui-monospace</span><span class="op">,</span> <span class="dv">monospace</span><span class="op">;</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">/* Palette */</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="va">--primary</span><span class="ch">:</span> <span class="cn">#0e7c7b</span><span class="op">;</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="va">--primary-strong</span><span class="ch">:</span> <span class="cn">#0a5f5e</span><span class="op">;</span></span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="va">--slate</span><span class="ch">:</span> <span class="cn">#1c2a30</span><span class="op">;</span></span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <span class="va">--success</span><span class="ch">:</span> <span class="cn">#0f7a52</span><span class="op">;</span></span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="va">--danger</span><span class="ch">:</span> <span class="cn">#b42318</span><span class="op">;</span></span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    <span class="va">--warning</span><span class="ch">:</span> <span class="cn">#b45309</span><span class="op">;</span></span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    <span class="co">/* Shape */</span></span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>    <span class="va">--radius</span><span class="ch">:</span> <span class="dv">0.55</span><span class="dt">rem</span><span class="op">;</span></span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    <span class="va">--shadow</span><span class="ch">:</span> <span class="dv">0</span> <span class="dv">12</span><span class="dt">px</span> <span class="dv">30</span><span class="dt">px</span> <span class="dv">-20</span><span class="dt">px</span> <span class="fu">rgba(</span><span class="dv">16</span><span class="op">,</span> <span class="dv">24</span><span class="op">,</span> <span class="dv">28</span><span class="op">,</span> <span class="dv">0.35</span><span class="fu">)</span><span class="op">;</span></span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    <span class="co">/* ... */</span></span>
-<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode css"><code class="sourceCode css"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="in">:root</span> {</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">/* Type */</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">--font-display</span><span class="ch">:</span> <span class="st">"Space Grotesk"</span><span class="op">,</span> <span class="dv">system-ui</span><span class="op">,</span> <span class="dv">sans-serif</span><span class="op">;</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">--font-body</span><span class="ch">:</span> <span class="st">"IBM Plex Sans"</span><span class="op">,</span> <span class="dv">system-ui</span><span class="op">,</span> <span class="dv">sans-serif</span><span class="op">;</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="va">--font-mono</span><span class="ch">:</span> <span class="st">"IBM Plex Mono"</span><span class="op">,</span> <span class="dv">ui-monospace</span><span class="op">,</span> <span class="dv">monospace</span><span class="op">;</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">/* Palette */</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="va">--primary</span><span class="ch">:</span> <span class="cn">#0e7c7b</span><span class="op">;</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="va">--primary-strong</span><span class="ch">:</span> <span class="cn">#0a5f5e</span><span class="op">;</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="va">--slate</span><span class="ch">:</span> <span class="cn">#1c2a30</span><span class="op">;</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    <span class="va">--success</span><span class="ch">:</span> <span class="cn">#0f7a52</span><span class="op">;</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    <span class="va">--danger</span><span class="ch">:</span> <span class="cn">#b42318</span><span class="op">;</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    <span class="va">--warning</span><span class="ch">:</span> <span class="cn">#b45309</span><span class="op">;</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="co">/* Shape */</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    <span class="va">--radius</span><span class="ch">:</span> <span class="dv">0.55</span><span class="dt">rem</span><span class="op">;</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    <span class="va">--shadow</span><span class="ch">:</span> <span class="dv">0</span> <span class="dv">12</span><span class="dt">px</span> <span class="dv">30</span><span class="dt">px</span> <span class="dv">-20</span><span class="dt">px</span> <span class="fu">rgba(</span><span class="dv">16</span><span class="op">,</span> <span class="dv">24</span><span class="op">,</span> <span class="dv">28</span><span class="op">,</span> <span class="dv">0.35</span><span class="fu">)</span><span class="op">;</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>    <span class="co">/* ... */</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>Because every component derives its colors, fonts, radii, and shadows from these variables, changing them re-themes the entire interface.</p>
 <p>Typefaces are loaded from Google Fonts in <code>templates/base.html</code>. To swap fonts, update the <code>&lt;link&gt;</code> to Google Fonts (or self-host the files under <code>static/</code>) and point the <code>--font-*</code> tokens at the new families.</p>
 </section>

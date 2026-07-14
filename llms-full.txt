@@ -38,6 +38,8 @@ The template also includes full-featured secure auth with:
 - Password recovery flow
 - Role-based access control system
 
+Optional [organization-scoped Stripe billing](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/tree/stripe) (Checkout, Customer Portal, webhooks) lives on the **`stripe`** branch.
+
 ## Design Philosophy
 
 The design philosophy of the template is to prefer low-level, best-in-class open-source frameworks that offer flexibility, scalability, and performance without vendor-lock-in. You'll find the template amazingly easy not only to understand and customize, but also to deploy to any major cloud hosting platform.
@@ -649,6 +651,20 @@ Your custom Python backend code should go primarily in the `routers/app/` and `u
 
 For the frontend, you will also need to develop custom Jinja2 templates in the `templates/` folder and add custom static assets in `static/`.
 
+### Billing (optional)
+
+Organization-scoped Stripe billing is maintained on the [`stripe`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/tree/stripe) branch. See `user_guide/07-billing.qmd` on that branch for Dashboard setup, webhooks, fork helpers (`org_has_active_subscription`), and a manual end-to-end checklist.
+
+To add billing to an existing fork:
+
+```bash
+git remote add upstream https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp.git
+git fetch upstream stripe
+git merge upstream/stripe
+```
+
+When merging, expect conflicts in shared core files such as `main.py`, `pyproject.toml`, `utils/core/db.py`, `routers/core/organization.py`, header/organization templates, `tests/conftest.py`, and `.env.example`. Resolve by keeping billing additions from `stripe` while preserving your fork-specific changes.
+
 ### Testing
 
 The project uses Pytest for unit testing. It's highly recommended to write and run tests before committing code to ensure nothing is broken!
@@ -1021,6 +1037,8 @@ There are *many* hosting options available for each of these services; this guid
 
 ::: {.callout-note}
 Deployment artifacts (Dockerfiles, deploy scripts, compose files, etc.) are kept on separate git branches — one per deployment target — to avoid cluttering the main branch. See the `modal` branch for Modal deployment files and the `hetzner` branch for Hetzner Cloud deployment files. The documentation below describes how to use them.
+
+Optional organization-scoped Stripe billing (Checkout, Customer Portal, webhooks) lives on the [`stripe`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/tree/stripe) branch — not on `main`. Deploy billing-enabled apps from `stripe` (or after merging it into your fork); see `user_guide/07-billing.qmd` on that branch for setup.
 :::
 
 ## Deploying and Configuring the FastAPI App
@@ -1416,6 +1434,10 @@ To contribute code to the project:
 6. Submit your pull request:
    - Provide a clear description of the changes
    - Link to any related issues
+
+### Optional branches
+
+Core template changes on `main` propagate automatically to `modal`, `hetzner`, and `stripe` via CI. Pull requests to `main` that touch shared files (`main.py`, `pyproject.toml`, `utils/core/db.py`, `routers/core/organization.py`, templates, `tests/conftest.py`, `.env.example`) may need manual conflict resolution when those changes are merged into `stripe`. See the [customization guide](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/customization.html) for the `git merge upstream/stripe` recipe.
 
 ### Rendering the documentation
 

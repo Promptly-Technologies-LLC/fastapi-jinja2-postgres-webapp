@@ -1,70 +1,70 @@
 {
-  "build_time": "2026-07-07T00:33:16Z",
-  "total_seconds": 23.638,
+  "build_time": "2026-07-14T21:35:34Z",
+  "total_seconds": 25.688,
   "pages": [
     {
       "page": "user-guide/customization.qmd",
-      "seconds": 6.568,
+      "seconds": 7.234,
       "frozen": false
     },
     {
       "page": "skill.md",
-      "seconds": 4.028,
+      "seconds": 4.151,
       "frozen": false
     },
     {
       "page": "changelog.qmd",
-      "seconds": 3.271,
-      "frozen": false
-    },
-    {
-      "page": "user-guide/authentication.qmd",
-      "seconds": 2.992,
+      "seconds": 3.463,
       "frozen": false
     },
     {
       "page": "user-guide/architecture.qmd",
-      "seconds": 2.957,
+      "seconds": 3.403,
+      "frozen": false
+    },
+    {
+      "page": "user-guide/authentication.qmd",
+      "seconds": 3.28,
       "frozen": false
     },
     {
       "page": "user-guide/deployment.qmd",
-      "seconds": 0.677,
-      "frozen": false
-    },
-    {
-      "page": "user-guide/contributing.qmd",
-      "seconds": 0.524,
-      "frozen": false
-    },
-    {
-      "page": "user-guide/installation.qmd",
-      "seconds": 0.52,
+      "seconds": 0.724,
       "frozen": false
     },
     {
       "page": "index.qmd",
-      "seconds": 0.514,
+      "seconds": 0.596,
+      "frozen": false
+    },
+    {
+      "page": "user-guide/installation.qmd",
+      "seconds": 0.588,
+      "frozen": false
+    },
+    {
+      "page": "user-guide/contributing.qmd",
+      "seconds": 0.498,
       "frozen": false
     },
     {
       "page": "skills.qmd",
-      "seconds": 0.415,
+      "seconds": 0.45,
       "frozen": false
     },
     {
       "page": "reference/index.qmd",
-      "seconds": 0.394,
-      "frozen": false
-    },
-    {
-      "page": "reference/app.qmd",
-      "seconds": 0.39,
+      "seconds": 0.446,
       "frozen": false
     },
     {
       "page": "license.qmd",
-      "seconds": 0.388,
+      "seconds": 0.43,
+      "frozen": false
+    },
+    {
+      "page": "reference/app.qmd",
+      "seconds": 0.425,
       "frozen": false
     }
   ]

@@ -26,6 +26,8 @@ The template also includes full-featured secure auth with:
 - Password recovery flow
 - Role-based access control system
 
+Optional [organization-scoped Stripe billing](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/tree/stripe) (Checkout, Customer Portal, webhooks) lives on the **`stripe`** branch.
+
 
 # Design Philosophy
 

@@ -159,7 +159,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
     <span class="nav-link">
-<div id="github-widget" data-owner="promptly-technologies-llc" data-repo="fastapi-jinja2-postgres-webapp" data-stars="9" data-forks="4"></div>
+<div id="github-widget" data-owner="promptly-technologies-llc" data-repo="fastapi-jinja2-postgres-webapp" data-stars="10" data-forks="4"></div>
     </span>
   </li>  
 </ul>
@@ -327,6 +327,7 @@ Note
 </div>
 <div class="callout-body-container callout-body">
 <p>Deployment artifacts (Dockerfiles, deploy scripts, compose files, etc.) are kept on separate git branches — one per deployment target — to avoid cluttering the main branch. See the <code>modal</code> branch for Modal deployment files and the <code>hetzner</code> branch for Hetzner Cloud deployment files. The documentation below describes how to use them.</p>
+<p>Optional organization-scoped Stripe billing (Checkout, Customer Portal, webhooks) lives on the <a href="https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/tree/stripe"><code>stripe</code></a> branch — not on <code>main</code>. Deploy billing-enabled apps from <code>stripe</code> (or after merging it into your fork); see <code>user_guide/07-billing.qmd</code> on that branch for setup.</p>
 </div>
 </div>
 <section id="deploying-and-configuring-the-fastapi-app" class="level1">

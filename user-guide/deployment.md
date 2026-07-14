@@ -10,6 +10,8 @@ There are *many* hosting options available for each of these services; this guid
 > **Note: Note**
 >
 > Deployment artifacts (Dockerfiles, deploy scripts, compose files, etc.) are kept on separate git branches -- one per deployment target -- to avoid cluttering the main branch. See the `modal` branch for Modal deployment files and the `hetzner` branch for Hetzner Cloud deployment files. The documentation below describes how to use them.
+>
+> Optional organization-scoped Stripe billing (Checkout, Customer Portal, webhooks) lives on the [`stripe`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/tree/stripe) branch -- not on `main`. Deploy billing-enabled apps from `stripe` (or after merging it into your fork); see `user_guide/07-billing.qmd` on that branch for setup.
 
 
 # Deploying and Configuring the FastAPI App
