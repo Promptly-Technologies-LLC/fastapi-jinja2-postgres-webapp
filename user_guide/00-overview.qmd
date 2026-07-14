@@ -24,6 +24,8 @@ The template also includes full-featured secure auth with:
 - Password recovery flow
 - Role-based access control system
 
+Optional [organization-scoped Stripe billing](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/tree/stripe) (Checkout, Customer Portal, webhooks) lives on the **`stripe`** branch.
+
 ## Design Philosophy
 
 The design philosophy of the template is to prefer low-level, best-in-class open-source frameworks that offer flexibility, scalability, and performance without vendor-lock-in. You'll find the template amazingly easy not only to understand and customize, but also to deploy to any major cloud hosting platform.

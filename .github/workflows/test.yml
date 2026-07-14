@@ -3,7 +3,7 @@ name: Test
 on:
   push:
   pull_request:
-    branches: [main]
+    branches: [main, stripe]
   workflow_dispatch:
   workflow_call:
 
@@ -62,4 +62,10 @@ jobs:
           DB_NAME: db
           DB_USER: postgres
           DB_PASSWORD: postgres
+          SECRET_KEY: test-secret-key-that-is-at-least-32-bytes-long
+          BASE_URL: http://localhost:8000
+          # Required on the stripe branch (billing always on); harmless on main.
+          STRIPE_SECRET_KEY: sk_test_dummy
+          STRIPE_WEBHOOK_SECRET: whsec_test_dummy
+          STRIPE_PRICE_ID: price_test_dummy
         run: uv run pytest tests/

@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        branch: [modal, hetzner]
+        branch: [modal, hetzner, stripe]
     runs-on: ubuntu-latest
     steps:
       - name: Generate token
@@ -162,6 +162,101 @@ jobs:
             git push origin "$BRANCH"
           }
 
+          conflicts_are_stripe_overlay() {
+            [ "$BRANCH" = "stripe" ] || return 1
+
+            conflicts="$(unresolved_conflicts)"
+            [ -n "$conflicts" ] || return 1
+
+            while IFS= read -r file; do
+              case "$file" in
+                pyproject.toml|uv.lock) ;;
+                *) return 1 ;;
+              esac
+            done <<< "$conflicts"
+          }
+
+          add_stripe_dependency() {
+            python3 <<'PY'
+          from pathlib import Path
+          import subprocess
+          import tomllib
+
+          def is_stripe_dependency(dependency: str) -> bool:
+              return dependency.split(";", 1)[0].strip().lower().startswith("stripe")
+
+
+          def stripe_dependency_from_branch() -> str:
+              try:
+                  result = subprocess.run(
+                      ["git", "show", ":2:pyproject.toml"],
+                      check=True,
+                      capture_output=True,
+                      text=True,
+                  )
+              except subprocess.CalledProcessError:
+                  return "stripe>=15.3.0"
+
+              dependencies = tomllib.loads(result.stdout).get("project", {}).get("dependencies", [])
+              return next(
+                  (dependency for dependency in dependencies if is_stripe_dependency(dependency)),
+                  "stripe>=15.3.0",
+              )
+
+
+          path = Path("pyproject.toml")
+          text = path.read_text()
+          data = tomllib.loads(text)
+
+          dependencies = data.get("project", {}).get("dependencies", [])
+          if any(is_stripe_dependency(dependency) for dependency in dependencies):
+              raise SystemExit(0)
+
+          lines = text.splitlines()
+          start = next(
+              (index for index, line in enumerate(lines) if line.strip() == "dependencies = ["),
+              None,
+          )
+          if start is None:
+              raise SystemExit("Could not find project dependencies in pyproject.toml")
+
+          end = next(
+              (index for index in range(start + 1, len(lines)) if lines[index].strip() == "]"),
+              None,
+          )
+          if end is None:
+              raise SystemExit("Could not find end of project dependencies in pyproject.toml")
+
+          lines.insert(end, f'    "{stripe_dependency_from_branch()}",')
+          path.write_text("\n".join(lines) + "\n")
+          PY
+          }
+
+          resolve_stripe_overlay() {
+            if unresolved_conflicts | grep -qx "pyproject.toml"; then
+              git checkout --theirs pyproject.toml
+            fi
+
+            add_stripe_dependency
+
+            if unresolved_conflicts | grep -qx "uv.lock"; then
+              git checkout --ours uv.lock
+            fi
+
+            uv lock
+            git add pyproject.toml uv.lock
+
+            remaining_conflicts="$(unresolved_conflicts)"
+            if [ -n "$remaining_conflicts" ]; then
+              echo "Conflicts remain after stripe overlay resolution:"
+              echo "$remaining_conflicts"
+              return 1
+            fi
+
+            git commit --no-edit
+            git push origin "$BRANCH"
+          }
+
           git checkout "$BRANCH"
 
           if git merge origin/main --no-edit; then
@@ -170,6 +265,9 @@ jobs:
           elif conflicts_are_modal_overlay; then
             echo "Merge conflict only affects the modal dependency overlay; resolving automatically"
             resolve_modal_overlay
+          elif conflicts_are_stripe_overlay; then
+            echo "Merge conflict only affects the stripe dependency overlay; resolving automatically"
+            resolve_stripe_overlay
           else
             echo "Merge conflict detected, opening PR"
             git merge --abort
