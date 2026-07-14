@@ -44,6 +44,8 @@ git fetch upstream stripe
 git merge upstream/stripe
 ```
 
+When merging, expect conflicts in shared core files such as `main.py`, `pyproject.toml`, `utils/core/db.py`, `routers/core/organization.py`, header/organization templates, `tests/conftest.py`, and `.env.example`. Resolve by keeping billing additions from `stripe` while preserving your fork-specific changes.
+
 ### Testing
 
 The project uses Pytest for unit testing. It's highly recommended to write and run tests before committing code to ensure nothing is broken!
