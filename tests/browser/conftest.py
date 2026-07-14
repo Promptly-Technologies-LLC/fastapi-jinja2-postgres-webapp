@@ -119,11 +119,21 @@ def _start_live_server(env: dict[str, str], port: int) -> subprocess.Popen:
     return proc
 
 
+_STRIPE_BROWSER_ENV = {
+    "STRIPE_SECRET_KEY": "sk_test_dummy",
+    "STRIPE_WEBHOOK_SECRET": "whsec_test_dummy",
+    "STRIPE_PRICE_ID": "price_test_dummy",
+    "STRIPE_PLAN_NAME": "Pro",
+    "STRIPE_TAX_ENABLED": "0",
+}
+
+
 @pytest.fixture(scope="session")
 def browser_env():
     """Build an environment dict for the live server subprocess."""
     env = _apply_rate_limit_env(browser_db_env())
     env["BASE_URL"] = "http://127.0.0.1:8113"
+    env.update(_STRIPE_BROWSER_ENV)
     env["CSRF_ENABLED"] = "0"
     return env
 
@@ -134,6 +144,7 @@ def browser_csrf_env():
     env = _apply_rate_limit_env(browser_db_env())
     env["DB_NAME"] = "webapp-browser-csrf-test-db"
     env["BASE_URL"] = "http://127.0.0.1:8114"
+    env.update(_STRIPE_BROWSER_ENV)
     env["CSRF_ENABLED"] = "1"
     return env
 

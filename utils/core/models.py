@@ -79,7 +79,7 @@ class PasswordResetToken(SQLModel, table=True):
     account_id: Optional[int] = Field(foreign_key="private.account.id")
     token: str = Field(default_factory=lambda: str(uuid4()), index=True, unique=True)
     expires_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC) + timedelta(hours=1)
+        default_factory=lambda: utc_naive_now() + timedelta(hours=1)
     )
     used: bool = Field(default=False)
 
@@ -121,7 +121,7 @@ class EmailVerificationToken(SQLModel, table=True):
     token: str = Field(default_factory=lambda: str(uuid4()), index=True, unique=True)
     new_email: str
     expires_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC) + timedelta(hours=1)
+        default_factory=lambda: utc_naive_now() + timedelta(hours=1)
     )
     used: bool = Field(default=False)
 
@@ -141,7 +141,7 @@ class AccountRecoveryToken(SQLModel, table=True):
     token: str = Field(default_factory=lambda: str(uuid4()), index=True, unique=True)
     email: str  # the email address to restore
     expires_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC) + timedelta(days=7)
+        default_factory=lambda: utc_naive_now() + timedelta(days=7)
     )
     used: bool = Field(default=False)
 

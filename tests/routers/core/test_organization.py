@@ -1,5 +1,6 @@
 from utils.core.models import Organization, Role, Permission, User
 from utils.core.enums import ValidPermissions
+from utils.app.enums import AppPermissions
 from utils.core.db import create_default_roles
 from main import app
 from sqlmodel import select
@@ -55,14 +56,19 @@ def test_create_organization_success(auth_client, session, test_user):
     expected_admin_permissions = {
         p.name
         for p in all_permissions
-        if p.name != ValidPermissions.DELETE_ORGANIZATION
+        if p.name
+        not in (
+            ValidPermissions.DELETE_ORGANIZATION,
+            AppPermissions.MANAGE_BILLING,
+        )
     }
     assert admin_permission_names == expected_admin_permissions
 
-    # Verify permissions for Member role (should have none)
+    # Verify permissions for Member role (view billing only)
     member_role = next((role for role in roles if role.name == "Member"), None)
     assert member_role is not None
-    assert len(member_role.permissions) == 0
+    member_permission_names = {p.name for p in member_role.permissions}
+    assert member_permission_names == {AppPermissions.VIEW_BILLING}
 
 
 def test_create_organization_empty_name(auth_client):
