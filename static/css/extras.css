@@ -580,3 +580,48 @@ input:invalid:not(:placeholder-shown) + .invalid-feedback {
         width: 100%;
     }
 }
+
+/* --- Billing page --- */
+
+.billing-page-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.billing-status-card .card-header {
+    background: var(--surface-elevated, #f8fafb);
+}
+
+.billing-status-badge {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.billing-status-badge-none,
+.billing-status-badge-canceled {
+    background: rgba(28, 42, 48, 0.08);
+    color: var(--slate, #1c2a30);
+}
+
+.billing-status-badge-active,
+.billing-status-badge-trialing {
+    background: rgba(14, 124, 123, 0.12);
+    color: var(--primary, #0e7c7b);
+}
+
+.billing-status-badge-past_due,
+.billing-status-badge-unpaid,
+.billing-status-badge-incomplete {
+    background: rgba(180, 35, 24, 0.12);
+    color: #b42318;
+}
+
+.billing-details-list dt {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: rgba(28, 42, 48, 0.7);
+}

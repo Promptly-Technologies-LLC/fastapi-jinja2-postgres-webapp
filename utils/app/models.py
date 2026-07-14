@@ -1,29 +1,22 @@
 """
-Example application data model.
+Application data models.
 
-Replace this module with your own application-specific SQLModel classes.
-Any SQLModel table classes defined here will be automatically created in the
-database on startup, as long as this module is imported in utils/core/db.py.
+SQLModel table classes defined here are automatically created in the
+database on startup when this module is imported in utils/core/db.py.
 """
 
-from typing import Optional
 from datetime import datetime
-from sqlmodel import SQLModel, Field
+from typing import Optional
+
+from sqlmodel import Field, SQLModel
+
 from utils.core.models import utc_now
-
-
-# --- Replace the example model below with your own application models ---
 
 
 class OrganizationResource(SQLModel, table=True):
     """
     Example application data model representing a resource owned by an
-    organization. Replace this with your own application-specific models.
-
-    Each resource belongs to a single organization (via organization_id foreign
-    key). Users with the READ_ORGANIZATION_RESOURCES permission can view these
-    resources, users with WRITE_ORGANIZATION_RESOURCES can create/edit them, and
-    users with DELETE_ORGANIZATION_RESOURCES can delete them.
+    organization. Replace or extend with your own application-specific models.
     """
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -34,3 +27,33 @@ class OrganizationResource(SQLModel, table=True):
     description: Optional[str] = None
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
+
+
+class OrganizationBilling(SQLModel, table=True):
+    """Stripe subscription state for one organization (1:1 with Organization)."""
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    organization_id: int = Field(
+        foreign_key="organization.id",
+        unique=True,
+        ondelete="CASCADE",
+        index=True,
+    )
+    stripe_customer_id: Optional[str] = Field(default=None, index=True)
+    stripe_subscription_id: Optional[str] = Field(default=None, index=True)
+    status: str = Field(default="none", index=True)
+    price_id: Optional[str] = None
+    current_period_start: Optional[datetime] = None
+    current_period_end: Optional[datetime] = None
+    last_payment_at: Optional[datetime] = None
+    cancel_at_period_end: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
+
+
+class StripeWebhookEvent(SQLModel, table=True):
+    """Processed Stripe webhook event IDs for idempotent handling."""
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    stripe_event_id: str = Field(unique=True, index=True)
+    processed_at: datetime = Field(default_factory=utc_now)

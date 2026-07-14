@@ -18,11 +18,16 @@
             {% include 'base/partials/nav.html' %}
 
             {% if user %}
-            <!-- Mobile-only nav items: Profile and Logout as plain links -->
+            <!-- Mobile-only nav items: Profile, Billing, and Logout as plain links -->
             <ul class="navbar-nav d-lg-none">
                 <li class="nav-item" id="mobile-nav-profile">
                     <a class="nav-link" href="{{ url_for('read_profile') }}">Profile</a>
                 </li>
+                {% if request.state.billing_nav_href %}
+                <li class="nav-item" id="mobile-nav-billing">
+                    <a class="nav-link" href="{{ request.state.billing_nav_href }}">Billing</a>
+                </li>
+                {% endif %}
                 <li class="nav-item" id="mobile-nav-logout">
                     <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
                 </li>
@@ -38,6 +43,9 @@
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                         <li><a class="dropdown-item" href="{{ url_for('read_profile') }}">Profile</a></li>
+                        {% if request.state.billing_nav_href %}
+                        <li><a class="dropdown-item" href="{{ request.state.billing_nav_href }}">Billing</a></li>
+                        {% endif %}
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
                     </ul>

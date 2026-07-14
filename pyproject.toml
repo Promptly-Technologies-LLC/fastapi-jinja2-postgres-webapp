@@ -21,6 +21,7 @@ dependencies = [
     "fastapi<1.0.0,>=0.115.5",
     "pillow>=11.0.0",
     "psycopg2-binary>=2.9.10",
+    "stripe>=15.3.0",
 ]
 
 [dependency-groups]

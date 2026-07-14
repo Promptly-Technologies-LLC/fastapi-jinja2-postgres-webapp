@@ -24,6 +24,16 @@ logger = logging.getLogger("uvicorn.error")
 
 default_roles = ["Owner", "Administrator", "Member"]
 
+_app_engine = None
+
+
+def get_engine():
+    """Return a shared SQLAlchemy engine for the application database."""
+    global _app_engine
+    if _app_engine is None:
+        _app_engine = create_engine(get_connection_url())
+    return _app_engine
+
 
 # --- Database connection functions ---
 
@@ -188,12 +198,17 @@ def create_default_roles(
     admin_permissions = [
         permission
         for permission in owner_permissions
-        if permission.name != ValidPermissions.DELETE_ORGANIZATION
+        if permission.name
+        not in (
+            ValidPermissions.DELETE_ORGANIZATION,
+            AppPermissions.MANAGE_BILLING,
+        )
     ]
 
-    # Get Owner and Administrator roles by name
+    # Get Owner, Administrator, and Member roles by name
     owner_role = next(role for role in roles_in_db if role.name == "Owner")
     admin_role = next(role for role in roles_in_db if role.name == "Administrator")
+    member_role = next(role for role in roles_in_db if role.name == "Member")
 
     # Assign all permissions to Owner
     assign_permissions_to_role(
@@ -205,8 +220,35 @@ def create_default_roles(
         session, admin_role, admin_permissions, check_first=check_first
     )
 
+    view_billing_permission = session.exec(
+        select(Permission).where(Permission.name == AppPermissions.VIEW_BILLING)
+    ).first()
+    if view_billing_permission is not None:
+        assign_permissions_to_role(
+            session,
+            member_role,
+            [view_billing_permission],
+            check_first=check_first,
+        )
+
     session.commit()
     return roles_in_db
+
+
+def sync_default_role_permissions(session: Session) -> None:
+    """
+    Backfill default role permission links for every organization.
+
+    Call after create_permissions() so roles pick up newly added AppPermissions
+    on existing databases (not only when an org is first created).
+    """
+    from utils.core.models import Organization
+
+    organizations = session.exec(select(Organization)).all()
+    for organization in organizations:
+        if organization.id is None:
+            continue
+        create_default_roles(session, organization.id, check_first=True)
 
 
 def create_permissions(session: Session) -> None:
@@ -270,6 +312,7 @@ def set_up_db(drop: bool = False) -> None:
     with Session(engine) as session:
         create_permissions(session)
         session.commit()
+        sync_default_role_permissions(session)
         seed_account_emails(session)
     engine.dispose()
 
