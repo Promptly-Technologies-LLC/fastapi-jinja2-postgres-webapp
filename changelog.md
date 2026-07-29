@@ -3,6 +3,19 @@
 This changelog is generated automatically from [GitHub Releases](https://github.com/promptly-technologies-llc/fastapi-jinja2-postgres-webapp/releases).
 
 
+# v1.1.8
+
+*2026-07-14* · [GitHub](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/releases/tag/v1.1.8)
+
+
+## What's Changed
+
+- style(footer): improve site footer layout and typography by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/226
+- docs: document stripe branch and add propagate/CI support by [<span class="citation" data-cites="rafizamankhan">@rafizamankhan</span>](https://github.com/rafizamankhan) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/229
+
+**Full Changelog**: https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/compare/v1.1.7…v1.1.8
+
+
 # v1.1.7
 
 *2026-07-06* · [GitHub](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/releases/tag/v1.1.7)
@@ -10,7 +23,7 @@ This changelog is generated automatically from [GitHub Releases](https://github.
 
 ## What's Changed
 
-- add frontend tests by [<span class="citation" cites="rafizamankhan">@rafizamankhan</span>](https://github.com/rafizamankhan) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/225
+- add frontend tests by [<span class="citation" data-cites="rafizamankhan">@rafizamankhan</span>](https://github.com/rafizamankhan) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/225
 
 **Full Changelog**: https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/compare/v1.1.6…v1.1.7
 
@@ -22,7 +35,7 @@ This changelog is generated automatically from [GitHub Releases](https://github.
 
 ## What's Changed
 
-- fix: add Postgres-backed rate limiter for multi-worker deployments by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/222
+- fix: add Postgres-backed rate limiter for multi-worker deployments by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/222
 
 **Full Changelog**: https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/compare/v1.1.5…v1.1.6
 
@@ -34,7 +47,7 @@ This changelog is generated automatically from [GitHub Releases](https://github.
 
 ## What's Changed
 
-- fix: enforce avatar upload size limit before buffering body by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/220
+- fix: enforce avatar upload size limit before buffering body by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/220
 
 **Full Changelog**: https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/compare/v1.1.4…v1.1.5
 
@@ -46,7 +59,7 @@ This changelog is generated automatically from [GitHub Releases](https://github.
 
 ## What's Changed
 
-- fix: honor X-Forwarded-For for rate limits behind trusted proxies by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/221
+- fix: honor X-Forwarded-For for rate limits behind trusted proxies by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/221
 
 **Full Changelog**: https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/compare/v1.1.3…v1.1.4
 
@@ -58,7 +71,7 @@ This changelog is generated automatically from [GitHub Releases](https://github.
 
 ## What's Changed
 
-- fix: add CSRF tokens and convert account recovery to POST by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/223
+- fix: add CSRF tokens and convert account recovery to POST by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/223
 
 **Full Changelog**: https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/compare/v1.1.2…v1.1.3
 
@@ -70,7 +83,7 @@ This changelog is generated automatically from [GitHub Releases](https://github.
 
 ## What's Changed
 
-- fix: revoke sessions on password reset by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/215
+- fix: revoke sessions on password reset by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/215
 
 **Full Changelog**: https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/compare/v1.1.1…v1.1.2
 
@@ -82,7 +95,7 @@ This changelog is generated automatically from [GitHub Releases](https://github.
 
 ## What's Changed
 
-- Fix broken screenshot link in docs by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/213
+- Fix broken screenshot link in docs by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/213
 
 **Full Changelog**: https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/compare/v1.1.0…v1.1.1
 
@@ -94,8 +107,8 @@ This changelog is generated automatically from [GitHub Releases](https://github.
 
 ## What's Changed
 
-- docs: migrate documentation from raw Quarto to Great Docs by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/211
-- New frontend theme by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/212
+- docs: migrate documentation from raw Quarto to Great Docs by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/211
+- New frontend theme by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/212
 
 **Full Changelog**: https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/compare/v1.0.2…v1.1.0
 
@@ -107,7 +120,7 @@ This changelog is generated automatically from [GitHub Releases](https://github.
 
 ## What's Changed
 
-- Fix ownership cascades during account deletion by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/210
+- Fix ownership cascades during account deletion by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/210
 
 **Full Changelog**: https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/compare/v1.0.1…v1.0.2
 
@@ -119,8 +132,8 @@ This changelog is generated automatically from [GitHub Releases](https://github.
 
 ## What's Changed
 
-- Fix mobile layout by [<span class="citation" cites="rafizamankhan">@rafizamankhan</span>](https://github.com/rafizamankhan) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/207
-- Fix invalid token for logged-in users by [<span class="citation" cites="rafizamankhan">@rafizamankhan</span>](https://github.com/rafizamankhan) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/208
+- Fix mobile layout by [<span class="citation" data-cites="rafizamankhan">@rafizamankhan</span>](https://github.com/rafizamankhan) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/207
+- Fix invalid token for logged-in users by [<span class="citation" data-cites="rafizamankhan">@rafizamankhan</span>](https://github.com/rafizamankhan) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/208
 
 **Full Changelog**: https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/compare/v1.0.0…v1.0.1
 
@@ -132,7 +145,7 @@ This changelog is generated automatically from [GitHub Releases](https://github.
 
 ## What's Changed
 
-- ci: add semantic-release workflow and conventional commit enforcement by [<span class="citation" cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/203
+- ci: add semantic-release workflow and conventional commit enforcement by [<span class="citation" data-cites="chriscarrollsmith">@chriscarrollsmith</span>](https://github.com/chriscarrollsmith) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/203
 
 **Full Changelog**: https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/compare/v0.1.30…v1.0.0
 
@@ -626,7 +639,7 @@ Resequenced deployment documentation to clarify that Modal requires separate Pos
 
 Template changes (templates/base/partials/header.html): 1. Added a mobile-only
 
-- with plain Profile and Logout links inside the collapsible  
+- with plain Profile and Logout links inside the collapsible\
   section (only for authenticated users) 2. Wrapped the desktop avatar dropdown in d-none d-lg-flex so it's hidden on mobile 3. Kept Login/Register links visible on all screen sizes (not wrapped in d-none)
 
   The result: on mobile, authenticated users see Profile and Logout as regular nav items in the hamburger menu (no dropdown, no avatar thumbnail). On desktop, the avatar dropdown works as before.
