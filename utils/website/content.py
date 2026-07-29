@@ -54,6 +54,7 @@ DEMO_TRADES = [
     "Other",
 ]
 
+
 def _labeled_options(
     labels: list[str],
     *,
@@ -276,7 +277,6 @@ FAQ_ITEMS: list[FaqItem] = [
         "answer": (
             "Our agents don't guess beyond the information provided for them. They take the details, tell the customer the office will follow up and logs it as a lead in your dashboard. "
         ),
-        
     },
     {
         "question": "Can the agents quote prices?",
@@ -309,7 +309,6 @@ FAQ_ITEMS: list[FaqItem] = [
         "question": "What's the setup and cost?",
         "answer": (
             "Our team trains the AI agents on your business and service logic alongside you and mostly deliver within 2 days depending on the complexity. "
-        
         ),
     },
 ]

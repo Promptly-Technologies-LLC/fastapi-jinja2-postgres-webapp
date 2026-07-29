@@ -54,7 +54,9 @@ async def submit_call_me(
 
     submission, form_errors = CallMeSubmission.from_form(**form_values)
     if submission is None:
-        first_error = next(iter(form_errors.values()), "Please check the form and try again.")
+        first_error = next(
+            iter(form_errors.values()), "Please check the form and try again."
+        )
         response = RedirectResponse(
             url=str(request.url_for("read_home")) + "#call-me",
             status_code=303,

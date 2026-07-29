@@ -60,7 +60,9 @@ def notify_book_demo(submission: BookDemoSubmission) -> bool:
     technicians = _option_label(DEMO_TECHNICIAN_COUNTS, submission.technicians)
     phone_answerer = _option_label(DEMO_PHONE_ANSWERERS, submission.phone_answerer)
     if technicians:
-        optional_rows += f"<tr><td><strong>Technicians</strong></td><td>{technicians}</td></tr>"
+        optional_rows += (
+            f"<tr><td><strong>Technicians</strong></td><td>{technicians}</td></tr>"
+        )
     if phone_answerer:
         optional_rows += (
             f"<tr><td><strong>Who answers phones</strong></td>"
