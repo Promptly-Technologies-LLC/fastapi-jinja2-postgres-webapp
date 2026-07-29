@@ -13,7 +13,7 @@ from jinja2.environment import Template
 from fastapi.templating import Jinja2Templates
 from fastapi import Cookie
 from starlette.responses import Response
-from utils.core.db import create_engine, get_connection_url
+from utils.core.db import get_engine
 from utils.core.models import (
     AccountRecoveryToken,
     EmailVerificationToken,
@@ -339,8 +339,7 @@ def send_reset_email_task(email: str) -> None:
     FastAPI background tasks should not reuse request-scoped resources from
     `yield` dependencies, because cleanup may run before the task executes.
     """
-    engine = create_engine(get_connection_url())
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         send_reset_email(email, session)
 
 

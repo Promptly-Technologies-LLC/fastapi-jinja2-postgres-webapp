@@ -8,6 +8,7 @@ import pytest
 from playwright.sync_api import Browser, Page
 from tests.browser.db_helpers import browser_db_env
 from utils.core.db import (
+    clear_engine_cache,
     ensure_database_exists,
     get_connection_url,
     set_up_db,
@@ -149,6 +150,7 @@ def live_server(browser_env):
         proc.wait(timeout=5)
         with _temporary_env(browser_env):
             tear_down_db()
+        clear_engine_cache()
 
 
 @pytest.fixture(scope="session")
@@ -162,3 +164,4 @@ def live_server_csrf(browser_csrf_env):
         proc.wait(timeout=5)
         with _temporary_env(browser_csrf_env):
             tear_down_db()
+        clear_engine_cache()

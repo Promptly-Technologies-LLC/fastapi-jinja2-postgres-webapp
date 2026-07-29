@@ -13,7 +13,7 @@ from utils.core.auth import (
     oauth2_scheme_cookie,
     verify_password,
 )
-from utils.core.db import create_engine, get_connection_url
+from utils.core.db import get_engine
 from utils.core.models import (
     User,
     Role,
@@ -43,8 +43,7 @@ def get_session() -> Generator[Session, None, None]:
     Yields:
         Session: A SQLModel session object for database operations.
     """
-    engine = create_engine(get_connection_url())
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         yield session
 
 
@@ -434,8 +433,7 @@ async def get_user_from_request(request: Request) -> Optional[User]:
     tokens = (access_token, refresh_token)
 
     # Get a database session
-    engine = create_engine(get_connection_url())
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         user, new_access_token, new_refresh_token = get_user_from_tokens(
             tokens, session
         )

@@ -46,7 +46,7 @@ from exceptions.http_exceptions import (
     RateLimitError,
 )
 from exceptions.exceptions import NeedsNewTokens
-from utils.core.db import set_up_db
+from utils.core.db import set_up_db, clear_engine_cache
 
 logger = logging.getLogger("uvicorn.error")
 logger.setLevel(logging.DEBUG)
@@ -58,7 +58,7 @@ async def lifespan(app: FastAPI):
     load_dotenv()
     set_up_db()
     yield
-    # Optional shutdown logic
+    clear_engine_cache()
 
 
 # Initialize the FastAPI app

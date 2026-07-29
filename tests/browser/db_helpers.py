@@ -8,10 +8,10 @@ from contextlib import contextmanager
 from datetime import timedelta
 
 from dotenv import load_dotenv
-from sqlmodel import Session, create_engine, select
+from sqlmodel import Session, select
 
 from utils.core.auth import get_password_hash
-from utils.core.db import create_default_roles, get_connection_url
+from utils.core.db import create_default_roles, get_engine
 from utils.core.models import (
     Account,
     Invitation,
@@ -39,8 +39,7 @@ def browser_db_session():
     saved = {key: os.environ.get(key) for key in env}
     os.environ.update(env)
     try:
-        engine = create_engine(get_connection_url())
-        with Session(engine) as session:
+        with Session(get_engine()) as session:
             yield session
     finally:
         for key, value in saved.items():
@@ -168,8 +167,7 @@ def browser_csrf_db_session():
     saved = {key: os.environ.get(key) for key in env}
     os.environ.update(env)
     try:
-        engine = create_engine(get_connection_url())
-        with Session(engine) as session:
+        with Session(get_engine()) as session:
             yield session
     finally:
         for key, value in saved.items():
