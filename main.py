@@ -50,7 +50,7 @@ from exceptions.exceptions import NeedsNewTokens
 from routers.app import billing as billing_router
 from utils.app.credentials import validate_billing_environment
 from utils.app.billing import resolve_billing_nav_href, should_resolve_billing_nav
-from utils.core.db import set_up_db
+from utils.core.db import set_up_db, clear_engine_cache
 
 logger = logging.getLogger("uvicorn.error")
 logger.setLevel(logging.DEBUG)
@@ -62,6 +62,7 @@ async def lifespan(app: FastAPI):
     validate_billing_environment()
     set_up_db()
     yield
+    clear_engine_cache()
 
 
 # Initialize the FastAPI app

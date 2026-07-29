@@ -10,22 +10,13 @@ from typing import Protocol, Tuple, runtime_checkable
 from fastapi import Request, Form
 from pydantic import EmailStr
 from dotenv import load_dotenv
-from sqlmodel import Session, col, create_engine, delete, select
+from sqlmodel import Session, col, delete, select
 
-from utils.core.db import get_connection_url
+from utils.core.db import get_engine
 from utils.core.models import RateLimitAttempt
 
 logger = getLogger("uvicorn.error")
 load_dotenv()
-
-_rate_limit_engine = None
-
-
-def _get_rate_limit_engine():
-    global _rate_limit_engine
-    if _rate_limit_engine is None:
-        _rate_limit_engine = create_engine(get_connection_url())
-    return _rate_limit_engine
 
 
 @runtime_checkable
@@ -235,7 +226,7 @@ class PostgresRateLimitWindow:
 
     def check(self, key: str) -> Tuple[bool, int]:
         now = datetime.now(UTC)
-        with Session(_get_rate_limit_engine()) as session:
+        with Session(get_engine()) as session:
             attempts = self._recent_attempts(session, key, now)
             if len(attempts) >= self.max_attempts:
                 oldest = attempts[0].attempted_at
@@ -250,7 +241,7 @@ class PostgresRateLimitWindow:
             return False, 0
 
     def record(self, key: str) -> None:
-        with Session(_get_rate_limit_engine()) as session:
+        with Session(get_engine()) as session:
             session.add(
                 RateLimitAttempt(
                     scope=self.scope, key=key, attempted_at=datetime.now(UTC)
@@ -260,12 +251,12 @@ class PostgresRateLimitWindow:
 
     def remaining(self, key: str) -> int:
         now = datetime.now(UTC)
-        with Session(_get_rate_limit_engine()) as session:
+        with Session(get_engine()) as session:
             attempts = self._recent_attempts(session, key, now)
             return max(0, self.max_attempts - len(attempts))
 
     def reset(self, key: str) -> None:
-        with Session(_get_rate_limit_engine()) as session:
+        with Session(get_engine()) as session:
             session.exec(
                 delete(RateLimitAttempt).where(
                     col(RateLimitAttempt.scope) == self.scope,
@@ -276,7 +267,7 @@ class PostgresRateLimitWindow:
 
     def prune(self) -> None:
         cutoff = self._cutoff(datetime.now(UTC))
-        with Session(_get_rate_limit_engine()) as session:
+        with Session(get_engine()) as session:
             session.exec(
                 delete(RateLimitAttempt).where(
                     col(RateLimitAttempt.scope) == self.scope,
@@ -286,7 +277,7 @@ class PostgresRateLimitWindow:
             session.commit()
 
     def clear(self) -> None:
-        with Session(_get_rate_limit_engine()) as session:
+        with Session(get_engine()) as session:
             session.exec(
                 delete(RateLimitAttempt).where(
                     col(RateLimitAttempt.scope) == self.scope
