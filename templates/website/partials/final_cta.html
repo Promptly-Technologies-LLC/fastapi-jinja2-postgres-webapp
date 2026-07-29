@@ -1,0 +1,28 @@
+{% from 'website/macros/buttons.html' import render_button %}
+
+<section id="cta" class="website-final-cta" aria-labelledby="final-cta-title">
+    <div class="website-final-cta__panel">
+        <div class="website-final-cta__copy">
+            <h2 id="final-cta-title" class="website-final-cta__title">
+                Stop losing jobs to voicemail.
+            </h2>
+            <p class="website-final-cta__lead">
+                Fifteen minutes with a founder.<br> Hear our agents take a real call and then decide.
+            </p>
+            <div class="website-final-cta__actions">
+                {{ render_button("Talk to Us", href=url_for('read_demo'), variant="primary", size="cta") }}
+            </div>
+        </div>
+        <div class="website-final-cta__media">
+            <img
+                class="website-final-cta__phone"
+                src="{{ url_for('static', path='img/website/footer/footer-cta-shorter.png') }}"
+                alt="Calliflowr mobile calls view — live emergency call on Summit Air dashboard"
+                width="372"
+                height="361"
+                loading="lazy"
+                decoding="async"
+            >
+        </div>
+    </div>
+</section>

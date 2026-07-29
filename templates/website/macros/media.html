@@ -1,0 +1,19 @@
+{#
+  Renders an image or a styled placeholder until assets are ready.
+
+  src — path under /static/ (e.g. img/website/screenshots/shot-dashboard.png)
+#}
+{% macro render_media(src=None, alt="", placeholder="Image coming soon", classes="") %}
+{% if src %}
+<img
+    src="{{ url_for('static', path=src) }}"
+    alt="{{ alt }}"
+    class="website-media {{ classes }}"
+    loading="lazy"
+>
+{% else %}
+<div class="website-media-placeholder {{ classes }}" role="img" aria-label="{{ alt or placeholder }}">
+    <span class="website-media-placeholder__label">{{ placeholder }}</span>
+</div>
+{% endif %}
+{% endmacro %}

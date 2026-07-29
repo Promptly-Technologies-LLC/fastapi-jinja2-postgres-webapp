@@ -1,0 +1,18 @@
+{% from 'website/macros/badges.html' import render_section_eyebrow %}
+{% from 'website/macros/agent_card.html' import render_agent_card %}
+
+<section id="agents" class="website-agents" aria-labelledby="agents-title">
+    <div class="website-agents__intro">
+        {{ render_section_eyebrow("All-in-one lead management agents") }}
+        <h2 id="agents-title" class="website-agents__title">Your AI CSR Workforce</h2>
+        <p class="website-agents__lead">
+            Trained on your services, pricing, and policies.
+        </p>
+    </div>
+
+    <div class="website-agents__grid">
+        {% for agent in agents %}
+        {{ render_agent_card(agent) }}
+        {% endfor %}
+    </div>
+</section>

@@ -1,0 +1,400 @@
+/*
+ * Calliflowr branded login (email + password).
+ */
+
+.cf-login-body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Instrument Sans", var(--font-body);
+    color: var(--color-ink);
+    background: var(--color-page);
+    -webkit-font-smoothing: antialiased;
+}
+
+.cf-login {
+    display: grid;
+    grid-template-columns: 480px minmax(0, 1fr);
+    min-height: 100vh;
+    background: var(--color-page);
+}
+
+.cf-login__brand {
+    position: relative;
+    background: var(--color-deep-fir);
+    padding: 48px 52px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.cf-login-body a.cf-login__brand-mark {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.cf-login-body a.cf-login__brand-mark:hover {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.cf-login__brand-copy {
+    margin-top: auto;
+    position: relative;
+    z-index: 2;
+}
+
+.cf-login__live {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-deep-fir);
+    border: 1px solid rgba(159, 232, 112, 0.35);
+    color: var(--color-sulu);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: var(--radius-pill);
+}
+
+.cf-login__live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-sulu);
+    animation: website-live-pulse 1.6s infinite;
+}
+
+.cf-login__brand-title {
+    font-family: var(--font-display);
+    font-size: 34px;
+    line-height: 1.14;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    color: #ffffff;
+    margin: 20px 0 0;
+}
+
+.cf-login__brand-highlight {
+    background: var(--color-sulu);
+    color: var(--color-deep-fir);
+    padding: 0 10px 3px;
+    border-radius: 10px;
+    display: inline-block;
+    line-height: 1.2;
+    vertical-align: bottom;
+}
+
+.cf-login__brand-lead {
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--color-on-dark-muted);
+    margin: 16px 0 0;
+    max-width: 320px;
+}
+
+.cf-login__stats {
+    display: flex;
+    gap: 22px;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.cf-login__stat-value {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--color-sulu);
+}
+
+.cf-login__stat-label {
+    font-size: 12.5px;
+    font-weight: 550;
+    color: var(--color-on-dark-accent);
+    margin-top: 2px;
+}
+
+.cf-login__glow {
+    position: absolute;
+    right: -120px;
+    bottom: -140px;
+    width: 340px;
+    height: 340px;
+    border-radius: 50%;
+    background: rgba(159, 232, 112, 0.08);
+    pointer-events: none;
+}
+
+.cf-login__glow--soft {
+    right: -40px;
+    bottom: -200px;
+    background: rgba(159, 232, 112, 0.06);
+}
+
+.cf-login__panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 40px;
+}
+
+.cf-login__card {
+    width: min(400px, 100%);
+}
+
+.cf-login__title {
+    font-family: var(--font-display);
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    color: var(--color-deep-fir);
+    margin: 0;
+}
+
+.cf-login__lead {
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--color-body);
+    margin: 10px 0 0;
+}
+
+.cf-login__error {
+    margin-top: 20px;
+    padding: 12px 16px;
+    border-radius: 11px;
+    background: #fdf0ee;
+    border: 1px solid #f0cfc8;
+    color: #8c3a2b;
+    font-size: 13.5px;
+    font-weight: 550;
+}
+
+.cf-login__warning {
+    margin-top: 20px;
+    padding: 12px 16px;
+    border-radius: 11px;
+    background: #fff8e8;
+    border: 1px solid #edd9a8;
+    color: #7a5a12;
+    font-size: 13.5px;
+    font-weight: 550;
+}
+
+.cf-login__form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 28px;
+}
+
+.cf-login__field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.cf-login__label {
+    font-size: 13px;
+    font-weight: 650;
+    color: var(--color-deep-fir);
+}
+
+.cf-login__input {
+    padding: 13px 16px;
+    border-radius: 11px;
+    border: 1px solid var(--color-border);
+    background: #ffffff;
+    font-family: inherit;
+    font-size: 14.5px;
+    color: var(--color-deep-fir);
+    outline: none;
+}
+
+.cf-login__input::placeholder {
+    color: #a3ac9f;
+}
+
+.cf-login__input:focus {
+    border-color: var(--color-deep-fir);
+    box-shadow: 0 0 0 3px rgba(159, 232, 112, 0.35);
+}
+
+.cf-login__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.cf-login__remember {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 550;
+    color: var(--color-body);
+    cursor: pointer;
+}
+
+.cf-login__remember input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-deep-fir);
+}
+
+.cf-login-body a.cf-login__forgot {
+    font-size: 13.5px;
+    font-weight: 650;
+    color: var(--color-deep-fir);
+}
+
+.cf-login-body a.cf-login__forgot:hover {
+    color: #2f5c14;
+}
+
+.cf-login__back {
+    margin: 24px 0 0;
+    font-size: 13.5px;
+    font-weight: 550;
+    color: var(--color-body);
+    text-align: center;
+}
+
+.cf-login__submit {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    padding: 14px;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    background: var(--color-deep-fir);
+    color: #ffffff;
+    transition: transform var(--ease-hover);
+}
+
+.cf-login__submit:hover:not(:disabled) {
+    transform: translateY(-1px);
+    color: #ffffff;
+}
+
+.cf-login__submit:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.cf-login__note {
+    margin-top: 28px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    background: #eef4e6;
+    border: 1px solid #dfe7d6;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #3a4a38;
+}
+
+.cf-login__note strong {
+    color: var(--color-deep-fir);
+}
+
+.cf-login-body a.cf-login__note-link {
+    font-weight: 700;
+    color: var(--color-deep-fir);
+}
+
+.cf-login-body a.cf-login__note-link:hover {
+    color: #2f5c14;
+}
+
+.cf-login__dashboard-link {
+    display: block;
+    margin-top: 24px;
+    text-align: center;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    background: var(--color-deep-fir);
+    color: #ffffff;
+}
+
+.cf-login-body a.cf-login__dashboard-link:hover {
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+/* Toast feedback for failed login (HTMX OOB) */
+.cf-login-body .toast-container {
+    position: fixed;
+    z-index: 1100;
+    max-width: 24rem;
+}
+
+.cf-login-body .toast-container.bottom-0 { bottom: 0; }
+.cf-login-body .toast-container.end-0 { right: 0; }
+.cf-login-body .toast-container.p-3 { padding: 1rem; }
+
+.cf-login-body .toast {
+    width: 100%;
+    border-radius: 12px;
+    color: #fff;
+    box-shadow: 0 12px 28px -16px rgba(10, 31, 10, 0.45);
+    animation: fjp-toast-in 0.2s ease;
+}
+
+.cf-login-body .toast:not(.show) { display: none; }
+.cf-login-body .toast .d-flex { display: flex; align-items: stretch; }
+.cf-login-body .toast-body { flex: 1 1 auto; padding: 0.75rem 0.9rem; font-size: 14px; font-weight: 550; }
+.cf-login-body .toast.text-bg-danger { background: #9b1c1c; }
+.cf-login-body .toast.text-bg-success { background: #245a12; }
+.cf-login-body .toast.text-bg-warning { background: #a16207; color: #fff; }
+.cf-login-body .btn-close {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 0.75rem;
+    cursor: pointer;
+    opacity: 0.85;
+}
+.cf-login-body .btn-close::before { content: "×"; }
+
+@media (max-width: 900px) {
+    .cf-login {
+        grid-template-columns: 1fr;
+    }
+
+    .cf-login__brand {
+        min-height: auto;
+        padding: 28px 24px 36px;
+    }
+
+    .cf-login__brand-copy {
+        margin-top: 36px;
+    }
+
+    .cf-login__brand-title {
+        font-size: 28px;
+    }
+
+    .cf-login__glow,
+    .cf-login__glow--soft {
+        display: none;
+    }
+
+    .cf-login__panel {
+        padding: 36px 22px 48px;
+        align-items: flex-start;
+    }
+}

@@ -1,0 +1,29 @@
+{#
+  Website button macros.
+
+  Usage:
+    {% from 'website/macros/buttons.html' import render_button %}
+    {{ render_button('Book a Demo', href='#cta', variant='primary') }}
+#}
+
+{% macro render_button(label, href="#", variant="primary", size="default", extra_classes="") %}
+{% set size_class = '' %}
+{% if size == 'nav' %}
+{% set size_class = ' website-btn--nav' %}
+{% elif size == 'compact' %}
+{% set size_class = ' website-btn--compact' %}
+{% elif size == 'cta' %}
+{% set size_class = ' website-btn--cta' %}
+{% endif %}
+{% set variant_class = ' website-btn--secondary' if variant == 'secondary' else '' %}
+{% if variant == 'primary' %}
+{% set variant_class = ' website-btn--primary' %}
+{% elif variant == 'lime' %}
+{% set variant_class = ' website-btn--lime' %}
+{% elif variant == 'cta-light' %}
+{% set variant_class = ' website-btn--cta-light' %}
+{% elif variant == 'ghost-on-dark' %}
+{% set variant_class = ' website-btn--ghost-on-dark' %}
+{% endif %}
+<a href="{{ href }}" class="website-btn{{ variant_class }}{{ size_class }}{{ ' ' ~ extra_classes if extra_classes else '' }}">{{ label }}</a>
+{% endmacro %}

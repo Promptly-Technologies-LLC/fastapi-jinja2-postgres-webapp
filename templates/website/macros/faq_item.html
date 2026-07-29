@@ -1,0 +1,6 @@
+{% macro render_faq_item(item, is_last=false) %}
+<div class="website-faq__item{% if is_last %} website-faq__item--last{% endif %}">
+    <h3 class="website-faq__question">{{ item.question }}</h3>
+    <p class="website-faq__answer">{{ item.answer }}</p>
+</div>
+{% endmacro %}

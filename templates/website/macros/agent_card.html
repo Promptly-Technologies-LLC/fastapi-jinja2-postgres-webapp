@@ -1,0 +1,37 @@
+{% from 'website/macros/buttons.html' import render_button %}
+
+{% macro render_agent_card(agent) %}
+<article class="website-agent-card website-agent-card--{{ agent.variant }}" aria-labelledby="agent-{{ agent.id }}-name">
+    <span class="website-agent-card__watermark" aria-hidden="true">{{ agent.letter }}</span>
+
+    <div class="website-agent-card__header">
+        <span class="website-agent-card__avatar{% if agent.variant == 'live' %} website-agent-card__avatar--live{% endif %}" aria-hidden="true">{{ agent.letter }}</span>
+        <div class="website-agent-card__titles">
+            <h3 id="agent-{{ agent.id }}-name" class="website-agent-card__name">{{ agent.name }}</h3>
+            <p class="website-agent-card__channels">{{ agent.channels }}</p>
+        </div>
+        {% if agent.status_label %}
+        <span class="website-agent-card__status website-agent-card__status--{{ agent.variant }}">{{ agent.status_label }}</span>
+        {% endif %}
+    </div>
+
+    <p class="website-agent-card__description">{{ agent.description }}</p>
+
+    <ul class="website-agent-card__features">
+        {% for feature in agent.features %}
+        <li class="website-agent-card__feature">
+            <span class="website-agent-card__feature-symbol" aria-hidden="true">{{ feature.symbol }}</span>
+            <span><strong>{{ feature.bold }}</strong>{{ feature.text }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+
+    {% if agent.cta_label %}
+    {% if agent.variant == "live" %}
+    {{ render_button(agent.cta_label, href=agent.cta_href, variant="lime", size="compact", extra_classes="website-agent-card__cta") }}
+    {% else %}
+    {{ render_button(agent.cta_label, href=agent.cta_href, variant="secondary", size="compact", extra_classes="website-agent-card__cta") }}
+    {% endif %}
+    {% endif %}
+</article>
+{% endmacro %}

@@ -1,0 +1,119 @@
+{% from 'website/macros/form_fields.html' import render_input, render_select %}
+
+<section class="website-demo__form-panel" aria-labelledby="demo-form-title">
+    <p class="website-demo__support">
+        Questions? Text <a href="sms:{{ contact_phone_tel }}">{{ contact_phone }}</a>
+    </p>
+
+    <div class="website-demo__form-wrap">
+        <div class="website-demo__form-header">
+            <h2 id="demo-form-title" class="website-demo__form-title">Book a demo</h2>
+        </div>
+
+        <p class="website-demo__form-status">
+            <span class="website-demo__form-status-icon" aria-hidden="true">✓</span>
+            Now onboarding founding shops across Upstate NY
+        </p>
+
+        {% if form_error %}
+        <div class="website-form__banner website-form__banner--error" role="alert">
+            {{ form_error }}
+        </div>
+        {% endif %}
+
+        {% if request.state.flash and not form_errors %}
+        <div class="website-form__banner website-form__banner--success" role="status">
+            {{ request.state.flash.message }}
+        </div>
+        {% else %}
+        <div class="website-demo__form-card">
+            <form
+                class="website-form"
+                method="post"
+                action="{{ url_for('submit_book_demo') }}"
+                novalidate
+            >
+                {% include 'base/partials/csrf_field.html' %}
+
+                {{ render_input(
+                    "work_email",
+                    "Work email",
+                    type="email",
+                    required=true,
+                    value=form_values.get("work_email", ""),
+                    error=form_errors.get("work_email", ""),
+                    autocomplete="email"
+                ) }}
+
+                <div class="website-form__row">
+                    {{ render_input(
+                        "first_name",
+                        "First name",
+                        required=true,
+                        value=form_values.get("first_name", ""),
+                        error=form_errors.get("first_name", ""),
+                        autocomplete="given-name"
+                    ) }}
+                    {{ render_input(
+                        "last_name",
+                        "Last name",
+                        required=true,
+                        value=form_values.get("last_name", ""),
+                        error=form_errors.get("last_name", ""),
+                        autocomplete="family-name"
+                    ) }}
+                </div>
+
+                <div class="website-form__row">
+                    {{ render_input(
+                        "company",
+                        "Company",
+                        required=true,
+                        value=form_values.get("company", ""),
+                        error=form_errors.get("company", "")
+                    ) }}
+                    {{ render_select(
+                        "trade",
+                        "Trade",
+                        demo_trade_options,
+                        required=true,
+                        value=form_values.get("trade", ""),
+                        error=form_errors.get("trade", "")
+                    ) }}
+                </div>
+
+                <div class="website-form__row">
+                    {{ render_input(
+                        "phone",
+                        "Phone",
+                        type="tel",
+                        required=true,
+                        value=form_values.get("phone", ""),
+                        error=form_errors.get("phone", ""),
+                        autocomplete="tel"
+                    ) }}
+                    {{ render_select(
+                        "technicians",
+                        "Technicians",
+                        demo_technician_counts,
+                        value=form_values.get("technicians", ""),
+                        error=form_errors.get("technicians", "")
+                    ) }}
+                </div>
+
+                {{ render_select(
+                    "phone_answerer",
+                    "Who answers your phones today?",
+                    demo_phone_answerers,
+                    value=form_values.get("phone_answerer", ""),
+                    error=form_errors.get("phone_answerer", "")
+                ) }}
+
+                <button type="submit" class="website-btn website-btn--lime website-btn--demo-submit">
+                    Book my demo
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</section>

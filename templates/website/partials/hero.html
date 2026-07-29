@@ -1,0 +1,73 @@
+{% from 'website/macros/buttons.html' import render_button %}
+{% from 'website/macros/media.html' import render_media with context %}
+
+<section class="website-hero" aria-labelledby="website-hero-title">
+    <div class="website-hero__copy">
+        <p class="website-eyebrow website-eyebrow--on-dark">
+            <span class="website-live-dot website-live-dot--sulu" aria-hidden="true"></span>
+            Answering live across the Capital Region
+        </p>
+        <h1 id="website-hero-title" class="website-hero__title">
+            Every call answered.<br>
+            Every job <span class="website-hero__highlight">booked.</span>
+        </h1>
+
+        <p class="website-hero__lead">
+            Fill your board with our AI CSR agents that answer every call, book the jobs, and briefs your team &mdash; 24/7.
+        </p>
+
+        <div class="website-hero__actions">
+            {{ render_button('Book a Demo', href=url_for('read_demo'), variant='lime', size='nav') }}
+            <a href="#call-me" class="website-hero__text-link">Talk to our AI</a>
+        </div>
+
+        {# <p class="website-hero__trust">
+            Answers in one ring&nbsp;&nbsp;·&nbsp;&nbsp;Keeps your number&nbsp;&nbsp;·&nbsp;&nbsp;Live in 2 days
+        </p> #}
+    </div>
+
+    <div class="website-hero__showcase" data-hero-showcase aria-label="Trades Calli supports">
+        <div class="website-hero__stage">
+            <div class="website-hero__plate website-hero__plate--lime" aria-hidden="true"></div>
+            <div class="website-hero__plate website-hero__plate--glass" aria-hidden="true"></div>
+
+            {# <span class="website-hero__live">
+                <span class="website-hero__live-dot" aria-hidden="true"></span>
+                Calli is answering
+            </span> #}
+            <span class="website-hero__bubble">
+                <span class="website-hero__trust-icon" aria-hidden="true"></span>
+                Built for Service Businesses
+            </span>
+
+            {% for card in crew_cards %}
+            <figure
+                class="website-hero__card{% if loop.first %} is-active{% endif %}"
+                data-slide-index="{{ loop.index0 }}"
+                {% if not loop.first %}aria-hidden="true"{% endif %}
+            >
+                {{ render_media(
+                    src=card.image_src,
+                    alt=card.placeholder,
+                    placeholder=card.placeholder,
+                    classes="website-hero__card-image"
+                ) }}
+            </figure>
+            {% endfor %}
+        </div>
+
+        <div class="website-hero__genres" role="tablist" aria-label="Trade categories">
+            {% for card in crew_cards %}
+            <button
+                type="button"
+                class="website-hero__genre{% if loop.first %} is-active{% endif %}"
+                role="tab"
+                aria-selected="{{ 'true' if loop.first else 'false' }}"
+                data-slide-index="{{ loop.index0 }}"
+            >
+                {{ card.genre }}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+</section>

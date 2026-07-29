@@ -1,0 +1,15 @@
+{% from 'website/macros/badges.html' import render_section_eyebrow %}
+
+<section id="how" class="website-how" aria-labelledby="how-title">
+    {{ render_section_eyebrow("How it works") }}
+    <h2 id="how-title" class="website-how__title">From first ring to booked job</h2>
+
+    <div class="website-how__grid">
+        {% include "website/partials/how_step_pickup.html" %}
+        {% include "website/partials/how_step_dashboard.html" %}
+    </div>
+
+    <div class="website-how__grid website-how__grid--follow website-how__grid--single">
+        {% include "website/partials/how_step_booked.html" %}
+    </div>
+</section>

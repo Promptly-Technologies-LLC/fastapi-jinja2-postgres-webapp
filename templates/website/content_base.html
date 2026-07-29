@@ -1,0 +1,22 @@
+{% extends "website/base.html" %}
+
+{% block title %}{% block page_title %}Calliflowr{% endblock %} · Calliflowr AI{% endblock %}
+
+{% block body_class %}website-body website-body--content{% endblock %}
+
+{% block content %}
+    {% include "website/partials/content_nav.html" %}
+
+    <main class="website-content-page{% block page_main_class %}{% endblock %}" id="main">
+        <h1 class="website-content-page__title">{% block page_heading %}{% endblock %}</h1>
+        {% block page_effective_date %}{% endblock %}
+        <div class="website-content-page__body">
+            {% block page_body %}{% endblock %}
+        </div>
+    </main>
+
+    {% if footer_industries is defined %}
+    {% include "website/partials/brand_strip.html" %}
+    {% include "website/partials/footer.html" %}
+    {% endif %}
+{% endblock %}

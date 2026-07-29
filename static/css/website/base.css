@@ -1,0 +1,53 @@
+/*
+ * Website base styles — reset and page shell.
+ */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-font-smoothing: antialiased;
+}
+
+body.website-body {
+    margin: 0;
+    font-family: var(--font-body);
+    color: var(--color-ink);
+    background: var(--color-page);
+}
+
+.website-body a {
+    text-decoration: none;
+    color: var(--color-link);
+}
+
+.website-body a:hover {
+    color: var(--color-deep-fir);
+}
+
+.website-site {
+    width: 100%;
+    min-height: 100vh;
+    background: var(--color-page);
+}
+
+.website-display {
+    font-family: var(--font-display);
+}
+
+@keyframes website-live-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(159, 232, 112, 0.55);
+    }
+
+    70% {
+        box-shadow: 0 0 0 8px rgba(159, 232, 112, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(159, 232, 112, 0);
+    }
+}

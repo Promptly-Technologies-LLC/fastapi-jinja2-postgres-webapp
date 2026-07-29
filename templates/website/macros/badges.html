@@ -1,0 +1,16 @@
+{% macro render_step_badge(number) %}
+<span class="website-step-badge" aria-hidden="true">Step {{ number }}</span>
+{% endmacro %}
+
+{% macro render_section_eyebrow(label, on_dark=false) %}
+<span class="website-section-eyebrow{% if on_dark %} website-section-eyebrow--on-dark{% endif %}">{{ label }}</span>
+{% endmacro %}
+
+{% macro render_status_pill(label, variant="live", tilt=false) %}
+<span class="website-status-pill website-status-pill--{{ variant }}{% if tilt %} website-status-pill--tilt{% endif %}">
+    {% if variant == "live" %}
+    <span class="website-status-pill__dot" aria-hidden="true"></span>
+    {% endif %}
+    {{ label }}
+</span>
+{% endmacro %}

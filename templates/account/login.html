@@ -1,71 +1,110 @@
-{% extends "account/auth_base.html" %}
-
+{% extends "account/calliflowr_auth_base.html" %}
 
 {% set show_warning_only = user and invitation_token_warning %}
 {% set warning_heading = "Invitation link expired" if invitation_token_warning == 'expired' else "Invitation link invalid" %}
 
-{% block title %}{% if show_warning_only %}{{ warning_heading }}{% else %}Login{% endif %}{% endblock %}
+{% block title %}{% if show_warning_only %}{{ warning_heading }}{% else %}Sign in{% endif %}{% endblock %}
 
-{% block auth_header %}{% if show_warning_only %}{{ warning_heading }}{% else %}Login{% endif %}{% endblock %}
+{% block content %}
+<div class="cf-login">
+    {% include "account/partials/auth_brand_panel.html" %}
 
-{% block auth_content %}
-<div class="login-form">
-    {% if invitation_token_warning == 'expired' %}
-    <div class="alert alert-warning" role="alert">
-        This invitation link has expired. Ask your organization administrator to send a new invitation, then use the link in the latest email.
+    <div class="cf-login__panel">
+        <div class="cf-login__card">
+            {% if show_warning_only %}
+            <h1 class="cf-login__title">{{ warning_heading }}</h1>
+            {% if invitation_token_warning == 'expired' %}
+            <p class="cf-login__lead">
+                This invitation link has expired. Ask your organization administrator to send a new invitation, then use the link in the latest email.
+            </p>
+            {% else %}
+            <p class="cf-login__lead">
+                This invitation link is no longer valid. If you were invited again recently, use the link from the most recent invitation email.
+            </p>
+            {% endif %}
+            <a href="{{ url_for('read_dashboard') }}" class="cf-login__dashboard-link">Return to dashboard</a>
+            {% else %}
+            <h1 class="cf-login__title">Sign in</h1>
+            <p class="cf-login__lead">
+                Enter the email and password for your Calliflowr account.
+            </p>
+
+            {% if invitation_token_warning == 'expired' %}
+            <div class="cf-login__warning" role="alert">
+                This invitation link has expired. Ask your organization administrator to send a new invitation, then use the link in the latest email.
+            </div>
+            {% elif invitation_token_warning == 'invalid' %}
+            <div class="cf-login__warning" role="alert">
+                This invitation link is no longer valid. If you were invited again recently, use the link from the most recent invitation email.
+            </div>
+            {% endif %}
+
+            {% if request.state.flash and request.state.flash.level == 'danger' %}
+            <div class="cf-login__error" role="alert">
+                {{ request.state.flash.message }}
+            </div>
+            {% endif %}
+
+            <form
+                class="cf-login__form"
+                method="POST"
+                action="{{ url_for('login') }}"
+                hx-post="{{ url_for('login') }}"
+                hx-swap="none"
+                novalidate
+            >
+                {% include 'base/partials/csrf_field.html' %}
+
+                {% if invitation_token %}
+                <input type="hidden" name="invitation_token" value="{{ invitation_token }}">
+                {% endif %}
+
+                <label class="cf-login__field" for="email">
+                    <span class="cf-login__label">Email</span>
+                    <input
+                        class="cf-login__input"
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="you@yourcompany.com"
+                        autocomplete="email"
+                        required
+                        {% if invitation_token_warning %}disabled{% endif %}
+                    >
+                </label>
+
+                <label class="cf-login__field" for="password">
+                    <span class="cf-login__label">Password</span>
+                    <input
+                        class="cf-login__input"
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                        required
+                        {% if invitation_token_warning %}disabled{% endif %}
+                    >
+                </label>
+
+                <div class="cf-login__row">
+                    <label class="cf-login__remember" for="remember">
+                        <input type="checkbox" id="remember" name="remember" {% if invitation_token_warning %}disabled{% endif %}>
+                        Remember me
+                    </label>
+                    <a href="{{ url_for('read_forgot_password') }}" class="cf-login__forgot">Forgot password?</a>
+                </div>
+
+                <button
+                    type="submit"
+                    class="cf-login__submit"
+                    {% if invitation_token_warning %}disabled aria-disabled="true"{% endif %}
+                >
+                    Sign in
+                </button>
+            </form>
+            {% endif %}
+        </div>
     </div>
-    {% elif invitation_token_warning == 'invalid' %}
-    <div class="alert alert-warning" role="alert">
-        This invitation link is no longer valid. If you were invited again recently, use the link from the most recent invitation email.
-    </div>
-    {% endif %}
-
-    {% if show_warning_only %}
-    <div class="d-grid">
-        <a href="{{ url_for('read_dashboard') }}" class="btn btn-primary">Return to dashboard</a>
-    </div>
-    {% else %}
-    <form method="POST" action="{{ url_for('login') }}"
-          hx-post="{{ url_for('login') }}" hx-swap="none"
-          class="needs-validation" novalidate>
-          {% include 'base/partials/csrf_field.html' %}
-        {# Add hidden input for invitation token if present #}
-        {% if invitation_token %}
-        <input type="hidden" name="invitation_token" value="{{ invitation_token }}">
-        {% endif %}
-
-        <!-- Email Input -->
-        <div class="mb-3">
-            <label for="email" class="form-label">Email</label>
-            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
-        </div>
-
-        <!-- Password Input -->
-        <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
-            <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
-        </div>
-
-        <!-- "Remember Me" Checkbox -->
-        <div class="mb-3 form-check">
-            <input type="checkbox" class="form-check-input" id="remember" name="remember">
-            <label class="form-check-label" for="remember">Remember Me</label>
-        </div>
-
-        <!-- Submit Button -->
-        <div class="d-grid mb-3">
-            <button type="submit" class="btn btn-primary"
-                    {% if invitation_token_warning %}disabled aria-disabled="true"{% endif %}>
-                Login
-            </button>
-        </div>
-    </form>
-
-    <!-- Forgot Password Link -->
-    <p class="text-center"><a href="{{ url_for('read_forgot_password') }}">Forgot Password?</a></p>
-
-    <!-- Register Link -->
-    <p class="text-center">Don't have an account? <a href="{{ url_for('read_register') }}">Register here</a></p>
-    {% endif %}
 </div>
 {% endblock %}

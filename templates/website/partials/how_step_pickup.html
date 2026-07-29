@@ -1,0 +1,28 @@
+{% from 'website/macros/badges.html' import render_step_badge %}
+
+<article class="website-how-step website-how-step--lime">
+    <header class="website-how-step__header">
+        {{ render_step_badge(1) }}
+        <h3 class="website-how-step__title">AI Agent takes the call</h3>
+    </header>
+    <p class="website-how-step__lead website-how-step__lead--on-lime">
+        One ring, any hour, even when the whole crew is out. The agent asks what your best CSR would, and knows a 2 AM no-heat call from a tune-up.
+    </p>
+    <div class="website-how-step__media website-how-step__media--chat">
+        <div class="website-chat-mock" aria-label="Sample live call transcript">
+            <div class="website-chat-mock__toolbar">
+                <span class="website-chat-mock__live">
+                    <span class="website-live-dot website-live-dot--small" aria-hidden="true"></span>
+                    Live call
+                </span>
+                <span class="website-chat-mock__timer">0:42</span>
+            </div>
+            <div class="website-chat-mock__messages">
+                <p class="website-chat-bubble website-chat-bubble--caller">"No heat since last night. Can somebody come out today?"</p>
+                <p class="website-chat-bubble website-chat-bubble--agent">"I've got a 2 to 4 PM window today. Will you be available?"</p>
+                <p class="website-chat-bubble website-chat-bubble--caller">"That works. Thank you!"</p>
+                <p class="website-chat-bubble website-chat-bubble--agent">"I'll text you the confirmation."</p>
+            </div>
+        </div>
+    </div>
+</article>

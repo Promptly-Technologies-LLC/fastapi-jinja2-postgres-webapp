@@ -1,0 +1,111 @@
+{% from 'website/macros/badges.html' import render_section_eyebrow %}
+{% from 'website/macros/form_fields.html' import render_input, render_select %}
+
+<section id="call-me" class="website-call-me" aria-labelledby="call-me-title">
+    <div class="website-call-me__grid">
+        <div class="website-call-me__copy">
+            {{ render_section_eyebrow("Hear it yourself", on_dark=true) }}
+            <h2 id="call-me-title" class="website-call-me__title">
+                Don't take our word for it.<br>
+            </h2>
+            <p class="website-call-me__lead">
+                Our AI CSR will give you a call within a minute, so you can have a conversation and experience what your customer's hear. 
+                <br><br>
+                Keep in mind, this is just a demo and your AI agent will be fully customized to fit your services logic and needs.
+            </p>
+            {# <ul class="website-call-me__bullets" aria-label="What to expect">
+                <li>✓ A real call</li>
+                <li>✓ 2 minutes</li>
+                <li>✓ No signup</li>
+            </ul> #}
+        </div>
+
+        <div class="website-call-me__card">
+            <h3 class="website-call-me__card-title">Talk to our AI Agent!</h3>
+            <form
+                class="website-form website-form--on-dark"
+                method="post"
+                action="{{ url_for('submit_call_me') }}"
+                novalidate
+            >
+                {% include 'base/partials/csrf_field.html' %}
+
+                {{ render_input(
+                    "name",
+                    "Name",
+                    required=true,
+                    autocomplete="name",
+                    placeholder="Jordan Diaz"
+                ) }}
+                {{ render_input(
+                    "business",
+                    "Company Name",
+                    required=true,
+                    autocomplete="organization",
+                    placeholder="Albany Heating & Cooling"
+                ) }}
+                {{ render_input(
+                    "email",
+                    "Email",
+                    type="email",
+                    required=true,
+                    autocomplete="email",
+                    placeholder="john@yourcompany.com"
+                ) }}
+
+                <div class="website-form__field">
+                    <label class="website-form__label" for="phone">
+                        Mobile number
+                        <span class="website-form__required" aria-hidden="true">*</span>
+                    </label>
+                    <div class="website-form__phone">
+                        <span class="website-form__phone-prefix" aria-hidden="true">+1</span>
+                        <input
+                            class="website-form__input website-form__phone-input"
+                            type="tel"
+                            id="phone"
+                            name="phone"
+                            placeholder="(123) 456 - 7890"
+                            autocomplete="tel-national"
+                            inputmode="numeric"
+                            maxlength="16"
+                            required
+                        >
+                    </div>
+                </div>
+
+                {{ render_select(
+                    "industry",
+                    "Industry",
+                    call_me_industry_options,
+                    required=true
+                ) }}
+                {{ render_select(
+                    "crm",
+                    "CRM",
+                    call_me_crm_options,
+                    required=false
+                ) }}
+                <div class="website-form__field website-form__field--crm-other is-hidden" id="crm-other-field" hidden>
+                    <label class="website-form__label" for="crm_other">
+                        Custom CRM name
+                        <span class="website-form__required" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                        class="website-form__input"
+                        type="text"
+                        id="crm_other"
+                        name="crm_other"
+                        placeholder="What CRM do you use?"
+                        maxlength="120"
+                        autocomplete="off"
+                    >
+                </div>
+
+                <button type="submit" class="website-btn website-btn--lime website-btn--compact website-form-mock__submit">
+                    Call me now!
+                </button>
+            </form>
+        </div>
+    </div>
+</section>

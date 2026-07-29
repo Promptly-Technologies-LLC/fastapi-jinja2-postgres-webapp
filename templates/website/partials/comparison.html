@@ -1,0 +1,76 @@
+{% from 'website/macros/badges.html' import render_section_eyebrow %}
+{% from 'website/macros/logo.html' import render_flower %}
+
+<section id="compare" class="website-comparison" aria-labelledby="comparison-title">
+    <div class="website-comparison__intro">
+        {{ render_section_eyebrow("The honest comparison") }}
+        <h2 id="comparison-title" class="website-comparison__title">Calliflowr vs. Rest</h2>
+        <p class="website-comparison__lead"></p>
+    </div>
+
+    <div class="website-comparison__scroll" tabindex="0" aria-label="Scrollable service comparison">
+        <table class="website-comparison__table">
+            <thead>
+                <tr>
+                    <th scope="col"><span class="sr-only">Feature</span></th>
+                    <th scope="col" class="website-comparison__calliflowr">
+                        <span class="website-comparison__brand">
+                            {{ render_flower(width=17, height=17, petal_fill="#9FE870", center_fill="#0a1f0a") }}
+                            Calliflowr
+                        </span>
+                    </th>
+                    <th scope="col">Answering Service</th>
+                    <th scope="col">Voicemail</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="website-comparison__lead-row">
+                    <th scope="row">Out of 10 after-hours callers</th>
+                    <td class="website-comparison__calliflowr">All 10 reach a CSR who books</td>
+                    <td>All 10 reach a message-taker</td>
+                    <td>~2 leave a message¹</td>
+                </tr>
+                <tr>
+                    <th scope="row">Books the job</th>
+                    <td class="website-comparison__calliflowr">Yes, with text confirmation & availability check</td>
+                    <td>Yes</td>
+                    <td>No</td>
+                </tr>
+                <tr>
+                    <th scope="row">After hours &amp; surges</th>
+                    <td class="website-comparison__calliflowr">20 calls at once, same at 2 AM as 2 PM</td>
+                    <td>Hold queues, night fees</td>
+                    <td>The beep</td>
+                </tr>
+                <tr>
+                    <th scope="row">Emergencies</th>
+                    <td class="website-comparison__calliflowr">Tech called + texted under a minute</td>
+                    <td>A page, eventually</td>
+                    <td>Waits till morning</td>
+                </tr>
+                <tr>
+                    <th scope="row">Spam</th>
+                    <td class="website-comparison__calliflowr">Filtered and tagged</td>
+                    <td>You pay per call, spam included</td>
+                    <td>A full mailbox</td>
+                </tr>
+                <tr>
+                    <th scope="row">Every call recorded</th>
+                    <td class="website-comparison__calliflowr">Recording + summary + outcome</td>
+                    <td>A slip, if they stayed on</td>
+                    <td>Nothing</td>
+                </tr>
+                <tr>
+                    <th scope="row">Cost</th>
+                    <td class="website-comparison__calliflowr">One flat monthly rate</td>
+                    <td>Per minute, spikes when busy</td>
+                    <td>Free, and the priciest column here</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p class="website-comparison__footnote">
+        ¹ ~8 in 10 voicemail callers hang up without a message (Hiya; Forbes: 86%).
+    </p>
+</section>

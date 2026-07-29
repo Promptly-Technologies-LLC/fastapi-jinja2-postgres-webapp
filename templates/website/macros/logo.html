@@ -1,0 +1,47 @@
+{#
+  Calliflowr hex-flower logo mark.
+
+  Params:
+    width, height — SVG dimensions
+    petal_fill — outer circle color (default Deep Fir)
+    center_fill — inner center color (default page bg)
+    classes — extra CSS classes on svg
+#}
+{% macro render_flower(
+    width=27,
+    height=27,
+    petal_fill="#0a1f0a",
+    center_fill="#f4f7f0",
+    classes=""
+) %}
+<svg
+    width="{{ width }}"
+    height="{{ height }}"
+    viewBox="0 0 48 48"
+    class="{{ classes }}"
+    aria-hidden="true"
+    focusable="false"
+>
+    <circle cx="36" cy="24" r="6.8" fill="{{ petal_fill }}"></circle>
+    <circle cx="30" cy="13.6" r="6.8" fill="{{ petal_fill }}"></circle>
+    <circle cx="18" cy="13.6" r="6.8" fill="{{ petal_fill }}"></circle>
+    <circle cx="12" cy="24" r="6.8" fill="{{ petal_fill }}"></circle>
+    <circle cx="18" cy="34.4" r="6.8" fill="{{ petal_fill }}"></circle>
+    <circle cx="30" cy="34.4" r="6.8" fill="{{ petal_fill }}"></circle>
+    <circle cx="24" cy="24" r="6" fill="{{ center_fill }}"></circle>
+</svg>
+{% endmacro %}
+
+{# Nav / header lockup: text wordmark only #}
+{% macro render_brand_link(href="#") %}
+<a href="{{ href }}" class="website-nav__brand">Calliflowr</a>
+{% endmacro %}
+
+{# Footer wordmark with inline flower (v3 style) #}
+{% macro render_footer_wordmark() %}
+<div class="website-footer__wordmark" aria-label="Calliflowr">
+    <span>callifl</span>
+    {{ render_flower(width=34, height=34, petal_fill="#9FE870", center_fill="#0a1f0a", classes="website-footer__wordmark-flower") }}
+    <span>wr</span>
+</div>
+{% endmacro %}

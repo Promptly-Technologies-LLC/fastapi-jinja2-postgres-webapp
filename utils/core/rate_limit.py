@@ -349,6 +349,11 @@ forgot_password_email_limiter = _make_rate_limiter(
     max_attempts=_int_env("FORGOT_PASSWORD_EMAIL_LIMIT", 3),
     window_seconds=_int_env("FORGOT_PASSWORD_EMAIL_WINDOW_SECONDS", 60),
 )
+website_lead_ip_limiter = _make_rate_limiter(
+    "website_lead_ip",
+    max_attempts=_int_env("WEBSITE_LEAD_IP_LIMIT", 8),
+    window_seconds=_int_env("WEBSITE_LEAD_IP_WINDOW_SECONDS", 3600),
+)
 
 _ALL_LIMITERS = (
     login_ip_limiter,
@@ -356,6 +361,7 @@ _ALL_LIMITERS = (
     register_ip_limiter,
     forgot_password_ip_limiter,
     forgot_password_email_limiter,
+    website_lead_ip_limiter,
 )
 
 
@@ -415,3 +421,8 @@ def check_forgot_password_email_rate_limit(email: EmailStr = Form(...)) -> Email
         forgot_password_email_limiter, f"email:{normalized}", "forgot_password_email"
     )
     return email
+
+
+def check_website_lead_ip_rate_limit(request: Request) -> None:
+    ip = get_client_ip(request)
+    _enforce_rate_limit(website_lead_ip_limiter, f"ip:{ip}", "website_lead_ip")

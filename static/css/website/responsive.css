@@ -1,0 +1,806 @@
+/*
+ * Website responsive layout — tablet + mobile (v3-mobile.dc.html parity).
+ */
+
+/* --- Tablet: collapse multi-column sections --- */
+
+@media (max-width: 1100px) {
+    .website-hero {
+        grid-template-columns: 1fr;
+        gap: 48px;
+        padding: 48px 40px 64px;
+    }
+
+    .website-hero__showcase {
+        width: 100%;
+        max-width: 520px;
+        justify-self: center;
+    }
+
+    .website-hero__live {
+        right: 0;
+    }
+
+    .website-hero__bubble {
+        left: 8px;
+    }
+
+    .website-nav {
+        grid-template-columns: auto 1fr auto;
+        padding: 16px 40px;
+    }
+
+    .website-nav__links {
+        margin-left: 12px;
+        gap: 18px;
+    }
+
+    .website-footer__main {
+        grid-template-columns: 1fr 1fr;
+        gap: 36px;
+    }
+
+    .website-call-me {
+        margin: 0;
+        padding: 64px 40px;
+        border-radius: 0;
+    }
+
+    .website-how__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .website-agents__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .website-faq__grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+
+    .website-call-me__grid {
+        grid-template-columns: 1fr;
+        gap: 36px;
+    }
+
+    .website-math__grid {
+        grid-template-columns: 1fr;
+        gap: 72px;
+    }
+
+    .website-math__copy {
+        max-width: 660px;
+    }
+
+    .website-comparison__scroll {
+        border-radius: 20px;
+    }
+
+    .website-demo {
+        grid-template-columns: 1fr;
+        flex: none;
+        height: auto;
+        min-height: 0;
+        overflow: visible;
+    }
+
+    .website-body--demo,
+    .website-site--demo {
+        height: auto;
+        overflow: visible;
+        display: block;
+    }
+
+    .website-demo__brand-panel {
+        height: auto;
+        overflow: visible;
+        padding: 28px var(--site-gutter) 36px;
+    }
+
+    .website-demo__form-panel {
+        height: auto;
+        overflow: visible;
+        padding: 28px var(--site-gutter) 36px;
+    }
+
+    .website-demo__metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .website-demo__title {
+        font-size: 38px;
+    }
+}
+
+/* --- Mobile: 390px artboard parity --- */
+
+@media (max-width: 768px) {
+    :root {
+        --site-gutter: 22px;
+        --section-gutter: 22px;
+    }
+
+    /* Nav — logo + Book a Demo only */
+    .website-nav {
+        display: flex;
+        min-height: 65px;
+        height: auto;
+        gap: 12px;
+        padding: 14px 20px;
+    }
+
+    .website-body a.website-nav__brand {
+        font-size: 20px;
+    }
+
+    .website-nav__links,
+    .website-nav__actions .website-nav-link {
+        display: none;
+    }
+
+    .website-nav__actions {
+        margin-left: auto;
+        justify-self: unset;
+        gap: 0;
+    }
+
+    .website-btn--nav {
+        padding: 11px 16px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 700;
+        min-height: 40px;
+        height: 40px;
+    }
+
+    /* Content pages */
+    .website-body--content .website-nav--simple {
+        min-height: 52px;
+        padding: 8px 22px;
+    }
+
+    .website-content-page {
+        padding: 36px 22px 48px;
+    }
+
+    .website-content-page__title {
+        font-size: 36px;
+    }
+
+    .website-content-page__body {
+        font-size: 15px;
+        margin-top: 20px;
+    }
+
+    /* Hero */
+    .website-hero {
+        padding: 36px 22px 48px;
+        gap: 36px;
+        min-height: 0;
+    }
+
+    .website-eyebrow {
+        gap: 8px;
+        padding: 6px 13px;
+        font-size: 11.5px;
+    }
+
+    .website-live-dot {
+        width: 7px;
+        height: 7px;
+    }
+
+    .website-hero__title {
+        font-size: 40px;
+        line-height: 1.06;
+        letter-spacing: -0.03em;
+        margin-top: 0;
+        max-width: none;
+    }
+
+    .website-hero__highlight {
+        padding: 0 10px 5px;
+        border-radius: 11px;
+    }
+
+    .website-hero__lead {
+        font-size: 15px;
+        margin-top: 16px;
+        max-width: 320px;
+    }
+
+    .website-hero__actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        margin-top: 24px;
+    }
+
+    .website-hero__actions .website-btn {
+        width: auto;
+        max-width: none;
+        height: 40px;
+        min-height: 40px;
+        padding: 11px 16px;
+        justify-content: center;
+        font-size: 14px;
+        border-radius: 10px;
+    }
+
+    .website-body a.website-hero__text-link {
+        align-self: center;
+        font-size: 15px;
+        padding: 8px 2px;
+    }
+
+    .website-hero__trust {
+        font-size: 12px;
+        margin-top: 18px;
+    }
+
+    .website-hero__showcase {
+        width: 100%;
+        max-width: none;
+    }
+
+    .website-hero__stage {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 560 / 512;
+        margin: 8px 0 0;
+    }
+
+    .website-hero__plate--lime,
+    .website-hero__plate--glass {
+        display: none;
+    }
+
+    .website-hero__live {
+        right: 4px;
+        top: 18px;
+        font-size: 11px;
+        padding: 8px 12px;
+    }
+
+    .website-hero__bubble {
+        left: 4px;
+        bottom: 72px;
+        font-size: 11.5px;
+        padding: 9px 12px;
+        border-radius: 10px;
+        white-space: normal;
+        max-width: 200px;
+        gap: 7px;
+    }
+
+    .website-hero__trust-icon {
+        width: 14px;
+        height: 18px;
+    }
+
+    .website-hero__card-image,
+    .website-hero__card-image.website-media-placeholder {
+        height: 100%;
+        min-height: 0;
+    }
+
+    .website-hero__genres {
+        margin-top: 32px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .website-hero__genres::-webkit-scrollbar {
+        display: none;
+    }
+
+    .website-hero__genre {
+        flex: none;
+        padding: 9px 14px;
+        font-size: 12px;
+    }
+
+    /* How it works */
+    .website-how {
+        margin-top: 0;
+        padding: 64px 18px 56px;
+        border-radius: 0;
+    }
+
+    .website-how__title {
+        font-size: 31px;
+        line-height: 1.1;
+        margin-top: 12px;
+        max-width: 300px;
+    }
+
+    .website-how__grid {
+        margin-top: 34px;
+        gap: 14px;
+    }
+
+    .website-how-step {
+        border-radius: 22px;
+    }
+
+    .website-how-step--lime,
+    .website-how-step--panel {
+        padding: 24px 22px;
+    }
+
+    .website-how-step--panel {
+        padding-bottom: 0;
+    }
+
+    .website-how-step--dashboard {
+        padding: 24px 16px 28px;
+    }
+
+    .website-how-step__media--dashboard {
+        transform: none;
+    }
+
+    .website-how-step--booked-card {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 18px;
+        padding: 20px 18px 20px;
+    }
+
+    .website-how-step--booked-card .website-how-step__copy {
+        max-width: none;
+        padding-top: 4px;
+        padding-right: 0;
+    }
+
+    .website-how-step--booked-card .website-how-step__title {
+        white-space: normal;
+        font-size: 22px;
+    }
+
+    .website-how-step--booked-card .website-booking-visual {
+        justify-content: flex-end;
+    }
+
+    .website-how__grid--follow {
+        margin-top: 14px;
+    }
+
+    .website-step-badge {
+        height: 24px;
+        padding: 0 10px;
+        font-size: 11.5px;
+    }
+
+    .website-how-step__header {
+        gap: 11px;
+    }
+
+    .website-how-step__title {
+        font-size: 22px;
+        white-space: normal;
+    }
+
+    .website-how-step__lead {
+        font-size: 14px;
+        margin-top: 12px;
+        max-width: none;
+    }
+
+    .website-how-step__lead--on-lime {
+        max-width: none;
+    }
+
+    .website-how-step__lead {
+        min-height: 0;
+    }
+
+    .website-how-step--lime .website-chat-mock {
+        margin-top: 0;
+        padding-top: 0;
+        border-radius: 16px;
+        padding: 16px;
+    }
+
+    .website-how-step__media--chat {
+        margin-top: 22px;
+        padding-top: 0;
+    }
+
+    .website-how-step__screenshot,
+    .website-how-step__media--dashboard .website-media-placeholder {
+        width: 100%;
+        margin-top: 0;
+        border-radius: 12px;
+    }
+
+    .website-booking-visual {
+        margin-bottom: 0;
+    }
+
+    .website-booking-visual__email,
+    .website-booking-visual .website-media-placeholder {
+        width: min(320px, 100%);
+        min-height: 0;
+        height: auto;
+        border-radius: 14px;
+        border: 1px solid var(--color-border-soft);
+    }
+
+    /* Agents */
+    .website-agents {
+        padding: 44px 18px 50px;
+    }
+
+    .website-agents__title {
+        font-size: 29px;
+        margin-top: 10px;
+        max-width: none;
+    }
+
+    .website-agents__grid {
+        margin-top: 26px;
+        gap: 14px;
+    }
+
+    .website-agent-card {
+        border-radius: 20px;
+        padding: 24px 22px;
+    }
+
+    .website-agent-card__watermark {
+        font-size: 180px;
+        right: -24px;
+        bottom: -52px;
+    }
+
+    .website-agent-card--coming_soon .website-agent-card__watermark {
+        right: -18px;
+    }
+
+    .website-agent-card__header {
+        gap: 11px;
+    }
+
+    .website-agent-card__avatar {
+        width: 44px;
+        height: 44px;
+        font-size: 19px;
+    }
+
+    .website-agent-card__name {
+        font-size: 20px;
+    }
+
+    .website-agent-card__role {
+        font-size: 12px;
+    }
+
+    .website-agent-card__status {
+        padding: 5px 11px;
+        font-size: 10.5px;
+    }
+
+    .website-agent-card__status--coming_soon {
+        font-size: 10px;
+    }
+
+    .website-agent-card__description {
+        font-size: 13.5px;
+        margin: 14px 0;
+    }
+
+    .website-agent-card__feature {
+        font-size: 13.5px;
+        gap: 10px;
+    }
+
+    .website-agent-card__cta {
+        margin-top: 20px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Call me */
+    .website-call-me {
+        margin: 0;
+        padding: 48px 22px 52px;
+        border-radius: 0;
+    }
+
+    .website-call-me__grid {
+        gap: 0;
+    }
+
+    .website-call-me__title {
+        font-size: 29px;
+        line-height: 1.12;
+        margin-top: 12px;
+        max-width: none;
+    }
+
+    .website-call-me__lead {
+        font-size: 14.5px;
+        margin-top: 14px;
+        max-width: none;
+    }
+
+    .website-call-me__bullets {
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 18px;
+        font-size: 12.5px;
+    }
+
+    .website-call-me__card {
+        margin-top: 26px;
+        border-radius: 16px;
+        padding: 22px 20px;
+    }
+
+    .website-call-me__card-title {
+        font-size: 16px;
+        margin-bottom: 16px;
+    }
+
+    /* FAQ */
+    .website-faq {
+        padding: 48px 22px;
+    }
+
+    .website-faq__grid {
+        gap: 0;
+    }
+
+    .website-faq__title {
+        font-size: 29px;
+        line-height: 1.1;
+        margin-top: 12px;
+    }
+
+    .website-faq__aside--desktop {
+        display: none;
+    }
+
+    .website-faq__aside--mobile {
+        display: block;
+    }
+
+    .website-faq__list {
+        margin-top: 10px;
+    }
+
+    .website-faq__item {
+        padding: 18px 0;
+    }
+
+    .website-faq__question {
+        font-size: 15.5px;
+    }
+
+    .website-faq__answer {
+        font-size: 13.5px;
+        margin-top: 8px;
+        max-width: none;
+    }
+
+    /* Final CTA */
+    .website-final-cta {
+        padding: 40px 22px 48px;
+    }
+
+    .website-final-cta__panel {
+        flex-direction: column;
+        align-items: stretch;
+        border-radius: 28px;
+        padding: 24px 24px 24px;
+        gap: 28px;
+    }
+
+    .website-final-cta__copy {
+        padding-bottom: 0;
+    }
+
+    .website-final-cta__title {
+        font-size: 33px;
+        line-height: 1.08;
+        max-width: none;
+    }
+
+    .website-final-cta__lead {
+        font-size: 14.5px;
+        margin-top: 14px;
+        max-width: none;
+    }
+
+    .website-final-cta__actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        margin-top: 24px;
+    }
+
+    .website-final-cta__actions .website-btn {
+        justify-content: center;
+        padding: 15px;
+        font-size: 15px;
+        font-weight: 750;
+        border-radius: var(--radius-lg);
+    }
+
+    .website-final-cta__media {
+        justify-content: center;
+        padding-top: 0;
+        padding-right: 0;
+    }
+
+    .website-final-cta__phone {
+        width: min(280px, 72vw);
+        border-radius: 24px;
+        padding: 8px;
+    }
+
+    /* Brand strip */
+    .website-brand-strip {
+        padding: 22px 22px;
+    }
+
+    .website-brand-strip__inner {
+        gap: 12px;
+    }
+
+    .website-body a.website-brand-strip__wordmark {
+        font-size: 22px;
+    }
+
+    .website-brand-strip__tagline {
+        font-size: 14.5px;
+    }
+
+    /* Footer */
+    .website-footer {
+        padding: 44px 22px 22px;
+    }
+
+    .website-footer__main {
+        grid-template-columns: 1fr;
+        gap: 28px;
+    }
+
+    .website-footer__column-title {
+        font-size: 15px;
+        margin-bottom: 16px;
+    }
+
+    .website-footer__nav {
+        gap: 14px;
+        font-size: 15.5px;
+    }
+
+    .website-footer__industries {
+        gap: 14px;
+        font-size: 15.5px;
+    }
+
+    .website-footer__legal {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        margin-top: 48px;
+        padding-top: 22px;
+        font-size: 15.5px;
+    }
+
+    /* Demo page */
+    .website-form__row {
+        grid-template-columns: 1fr;
+    }
+
+    .website-demo__brand-copy {
+        margin-top: 36px;
+    }
+
+    .website-demo__form-wrap {
+        margin-top: 28px;
+    }
+
+    .website-demo__form-title {
+        font-size: 28px;
+    }
+
+    /* Flash banner */
+    .website-flash {
+        padding: 12px 20px;
+        font-size: 13px;
+    }
+
+    /* Missed-call calculator */
+    .website-math {
+        padding: 64px 22px 48px;
+    }
+
+    .website-math__grid {
+        gap: 58px;
+    }
+
+    .website-math__title {
+        font-size: 32px;
+    }
+
+    .website-math__lead {
+        font-size: 14.5px;
+    }
+
+    .website-math__controls {
+        gap: 24px;
+        margin-top: 34px;
+    }
+
+    .website-math__control + .website-math__control {
+        padding-top: 24px;
+    }
+
+    .website-math__control-heading {
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .website-math__hint {
+        max-width: 190px;
+    }
+
+    .website-math__value {
+        font-size: 28px;
+    }
+
+    .website-math-receipt {
+        width: min(340px, 94%);
+    }
+
+    .website-math-receipt__paper {
+        padding: 36px 24px 26px;
+    }
+
+    .website-math-receipt__total output {
+        font-size: 38px;
+    }
+
+    .website-math__sources {
+        margin-top: 54px;
+        text-align: left;
+    }
+
+    /* Honest comparison */
+    .website-comparison {
+        padding: 64px 22px 72px;
+    }
+
+    .website-comparison__title {
+        font-size: 32px;
+    }
+
+    .website-comparison__lead {
+        margin-top: 16px;
+        font-size: 14.5px;
+    }
+
+    .website-comparison__scroll {
+        margin-top: 40px;
+        border-radius: 18px;
+    }
+
+    .website-comparison__table {
+        min-width: 920px;
+    }
+
+    .website-comparison__table th,
+    .website-comparison__table td {
+        padding: 16px 18px;
+    }
+
+    .website-comparison__footnote {
+        margin-top: 38px;
+        text-align: left;
+    }
+}

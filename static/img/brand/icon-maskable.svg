@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="Calliflowr">
+  <rect width="48" height="48" fill="#0A1F0A"></rect>
+  <g transform="translate(24 24) scale(0.60) translate(-24 -24)">
+    <g fill="#9FE870">
+      <circle cx="36" cy="24" r="6.8"></circle><circle cx="30" cy="13.6" r="6.8"></circle><circle cx="18" cy="13.6" r="6.8"></circle><circle cx="12" cy="24" r="6.8"></circle><circle cx="18" cy="34.4" r="6.8"></circle><circle cx="30" cy="34.4" r="6.8"></circle>
+    </g>
+    <circle cx="24" cy="24" r="6" fill="#0A1F0A"></circle>
+  </g>
+</svg>

@@ -1,0 +1,9 @@
+{% if request.state.flash %}
+<div
+    class="website-flash website-flash--{{ request.state.flash.level|default('success') }}"
+    role="status"
+    aria-live="polite"
+>
+    {{ request.state.flash.message }}
+</div>
+{% endif %}

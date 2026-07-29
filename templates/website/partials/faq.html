@@ -1,0 +1,24 @@
+{% from 'website/macros/badges.html' import render_section_eyebrow %}
+{% from 'website/macros/faq_item.html' import render_faq_item %}
+
+<section id="faq" class="website-faq" aria-labelledby="faq-title">
+    <div class="website-faq__grid">
+        <div class="website-faq__intro">
+            {{ render_section_eyebrow("FAQ") }}
+            <h2 id="faq-title" class="website-faq__title">Fair questions.</h2>
+            <p class="website-faq__aside website-faq__aside--desktop">
+                Something else?
+                <a href="#cta" class="website-faq__link">Talk to a human →</a>
+            </p>
+        </div>
+        <div class="website-faq__list">
+            {% for item in faq_items %}
+            {{ render_faq_item(item, loop.last) }}
+            {% endfor %}
+            <p class="website-faq__aside website-faq__aside--mobile">
+                Something else?
+                <a href="#cta" class="website-faq__link">Talk to a human →</a>
+            </p>
+        </div>
+    </div>
+</section>

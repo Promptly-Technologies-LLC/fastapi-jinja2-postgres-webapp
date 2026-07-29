@@ -1,0 +1,93 @@
+{% from 'website/macros/badges.html' import render_section_eyebrow %}
+{% from 'website/macros/logo.html' import render_flower %}
+
+<section id="math" class="website-math" aria-labelledby="math-title" data-revenue-calculator>
+    <div class="website-math__grid">
+        <div class="website-math__copy">
+            {{ render_section_eyebrow("The math", on_dark=true) }}
+            <h2 id="math-title" class="website-math__title">What is a missed call costing you?</h2>
+            <p class="website-math__lead">
+                8 in 10 callers who hit voicemail hang up without a word, and most never call back. They call the next shop on the list. Move the sliders.
+            </p>
+
+            <div class="website-math__controls">
+                <div class="website-math__control">
+                    <div class="website-math__control-heading">
+                        <div>
+                            <label for="average-ticket" class="website-math__label">Your average ticket</label>
+                            <p class="website-math__hint">Repair, service call, or install deposit</p>
+                        </div>
+                        <output class="website-math__value" for="average-ticket" data-ticket-label>$350</output>
+                    </div>
+                    <input
+                        id="average-ticket"
+                        class="website-math__range"
+                        type="range"
+                        min="150"
+                        max="1500"
+                        step="25"
+                        value="350"
+                        data-ticket
+                    >
+                    <div class="website-math__scale"><span>$150</span><span>$1,500</span></div>
+                </div>
+
+                <div class="website-math__control">
+                    <div class="website-math__control-heading">
+                        <div>
+                            <label for="missed-calls" class="website-math__label">Missed calls per week</label>
+                            <p class="website-math__hint">After hours + overflow while you're on a job</p>
+                        </div>
+                        <output class="website-math__value" for="missed-calls" data-missed-label>8</output>
+                    </div>
+                    <input
+                        id="missed-calls"
+                        class="website-math__range"
+                        type="range"
+                        min="0"
+                        max="25"
+                        step="1"
+                        value="8"
+                        data-missed
+                    >
+                    <div class="website-math__scale"><span>0</span><span>25</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="website-math__result">
+            <div class="website-math-receipt">
+                <span class="website-math-receipt__tape" aria-hidden="true"></span>
+                <div class="website-math-receipt__paper">
+                    <div class="website-math-receipt__header">
+                        <div class="website-math-receipt__brand">
+                            {{ render_flower(width=15, height=15, petal_fill="#0a1f0a", center_fill="#fffef9") }}
+                            CALLIFLOWR
+                        </div>
+                        <p>MISSED-CALL RECEIPT</p>
+                        <div class="website-math-receipt__meta"><span>YOUR SHOP</span><span>AFTER HOURS</span></div>
+                    </div>
+
+                    <dl class="website-math-receipt__lines">
+                        <div><dt>Missed calls / wk</dt><dd data-receipt-missed>8</dd></div>
+                        <div><dt>Avg ticket</dt><dd data-receipt-ticket>$350</dd></div>
+                        <div><dt>Lost / week</dt><dd data-weekly-loss>$2,800</dd></div>
+                        <div><dt>Weeks / month</dt><dd>× 4.33</dd></div>
+                    </dl>
+
+                    <div class="website-math-receipt__total">
+                        <p>ON THE TABLE EACH MONTH</p>
+                        <output data-monthly-loss>$12,124</output>
+                        <span>One booked job typically covers<br>Calliflowr for the month.</span>
+                    </div>
+                    <div class="website-math-receipt__barcode" aria-hidden="true"></div>
+                    <p class="website-math-receipt__disclaimer">Estimates use industry averages. Your ticket sizes and call volume will vary.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p class="website-math__sources">
+        Voicemail abandonment ~80% (Hiya; Forbes places it at 86%). ~85% who don't get through never call back (InsideSales/MIT). Small businesses miss 20-35% of business-hours calls, nearly all after hours. Ticket ranges: Angi/HomeAdvisor ($150-650 typical HVAC repair, ~$293-320 national average; plumbing $175-450).
+    </p>
+</section>

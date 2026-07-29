@@ -1,0 +1,45 @@
+{% macro render_input(name, label, type="text", required=false, value="", placeholder="", error="", autocomplete="") %}
+<div class="website-form__field">
+    <label class="website-form__label" for="{{ name }}">
+        {{ label }}
+        {% if required %}<span class="website-form__required" aria-hidden="true">*</span>{% endif %}
+    </label>
+    <input
+        class="website-form__input{% if error %} website-form__input--error{% endif %}"
+        type="{{ type }}"
+        id="{{ name }}"
+        name="{{ name }}"
+        value="{{ value }}"
+        {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+        {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %}
+        {% if required %}required{% endif %}
+    >
+    {% if error %}
+    <p class="website-form__error" id="{{ name }}-error">{{ error }}</p>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro render_select(name, label, options, required=false, value="", error="") %}
+<div class="website-form__field">
+    <label class="website-form__label" for="{{ name }}">
+        {{ label }}
+        {% if required %}<span class="website-form__required" aria-hidden="true">*</span>{% endif %}
+    </label>
+    <select
+        class="website-form__select{% if error %} website-form__input--error{% endif %}"
+        id="{{ name }}"
+        name="{{ name }}"
+        {% if required %}required{% endif %}
+    >
+        {% for option_value, option_label in options %}
+        <option value="{{ option_value }}"{% if option_value == value %} selected{% endif %}>
+            {{ option_label }}
+        </option>
+        {% endfor %}
+    </select>
+    {% if error %}
+    <p class="website-form__error" id="{{ name }}-error">{{ error }}</p>
+    {% endif %}
+</div>
+{% endmacro %}

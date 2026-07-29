@@ -1,0 +1,21 @@
+{% extends "website/base.html" %}
+
+{% block content %}
+    {% include "website/partials/nav.html" %}
+    {% include "website/partials/hero.html" %}
+    {% include "website/partials/agents.html" %}
+    {% include "website/partials/call_me.html" %}
+    {% include "website/partials/how_it_works.html" %}
+    {% include "website/partials/math.html" %}
+    {% include "website/partials/comparison.html" %}
+    {# {% include "website/partials/faq.html" %} #}
+    {% include "website/partials/final_cta.html" %}
+    {% include "website/partials/brand_strip.html" %}
+    {% include "website/partials/footer.html" %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', path='js/website-hero.js') }}" defer></script>
+<script src="{{ url_for('static', path='js/website-calculator.js') }}" defer></script>
+<script src="{{ url_for('static', path='js/website-call-me.js') }}?v=5" defer></script>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% from 'website/macros/badges.html' import render_step_badge %}
+{% from 'website/macros/media.html' import render_media with context %}
+
+<article class="website-how-step website-how-step--panel website-how-step--dashboard">
+    <header class="website-how-step__header">
+        {{ render_step_badge(2) }}
+        <h3 class="website-how-step__title">AI Agent books the job</h3>
+    </header>
+    <p class="website-how-step__lead">
+        The agent locks the window based on technician availability and texts the customer confirmation. No callbacks, no sticky notes, no lead lost to voicemail overnight.
+        Every call logged with a recording, summary, and outcome. Review the after hours call over coffee.
+        
+    </p>
+    <div class="website-how-step__media website-how-step__media--dashboard">
+        {{ render_media(
+            src=dashboard_screenshot,
+            alt="Calliflowr dashboard calls view — every call with recording, summary, and outcome tag",
+            placeholder="Calls view screenshot coming soon",
+            classes="website-how-step__screenshot"
+        ) }}
+    </div>
+</article>

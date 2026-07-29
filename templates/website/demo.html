@@ -1,0 +1,14 @@
+{% extends "website/base.html" %}
+
+{% block title %}Book a demo{% endblock %}
+
+{% block body_class %}website-body website-body--demo{% endblock %}
+
+{% block site_class %} website-site--demo{% endblock %}
+
+{% block content %}
+<div class="website-demo">
+    {% include "website/partials/demo_brand_panel.html" %}
+    {% include "website/partials/demo_form.html" %}
+</div>
+{% endblock %}

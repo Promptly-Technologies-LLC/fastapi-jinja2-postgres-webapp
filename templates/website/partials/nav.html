@@ -1,0 +1,22 @@
+{% from 'website/macros/logo.html' import render_brand_link %}
+{% from 'website/macros/buttons.html' import render_button %}
+
+<nav class="website-nav" aria-label="Primary">
+    {{ render_brand_link(href=url_for('read_home')) }}
+
+    <div class="website-nav__links">
+        <a href="#agents" class="website-nav-anchor">AI Agents</a>
+        <a href="#call-me" class="website-nav-anchor">Live Demo</a>
+        <a href="#how" class="website-nav-anchor">How it works</a>
+        {# <a href="#faq" class="website-nav-anchor">FAQ</a> #}
+    </div>
+
+    <div class="website-nav__actions">
+        {% if user %}
+        <a href="{{ url_for('read_dashboard') }}" class="website-nav-link">Dashboard</a>
+        {% else %}
+        <a href="{{ url_for('read_login') }}" class="website-nav-link">Login</a>
+        {% endif %}
+        {{ render_button('Book a Demo', href=url_for('read_demo'), variant='lime', size='nav') }}
+    </div>
+</nav>

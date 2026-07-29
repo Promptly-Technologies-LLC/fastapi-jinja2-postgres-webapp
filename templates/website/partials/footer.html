@@ -1,0 +1,63 @@
+<footer class="website-footer">
+    <div class="website-footer__main">
+        <div class="website-footer__column">
+            <p class="website-footer__column-title">Contact Us</p>
+            <div class="website-footer__contact">
+                <div class="website-footer__contact-item">
+                    <span class="website-footer__contact-label">Email</span>
+                    <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>
+                </div>
+                <div class="website-footer__contact-item">
+                    <span class="website-footer__contact-label">Phone</span>
+                    <a href="tel:{{ contact_phone_tel }}">{{ contact_phone }}</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="website-footer__column">
+            <p class="website-footer__column-title">Industries</p>
+            <div class="website-footer__industries" aria-label="Industries">
+                {% for industry in footer_industries %}
+                <span>{{ industry }}</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="website-footer__column">
+            <p class="website-footer__column-title">Mailing</p>
+            <div class="website-footer__address">
+                {% for line in footer_address_lines %}
+                {{ line }}{% if not loop.last %}<br>{% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="website-footer__column">
+            <p class="website-footer__column-title">Company</p>
+            <nav class="website-footer__nav" aria-label="Footer company">
+                <a href="{{ url_for('read_static_page', page_name='blog') }}">Blog</a>
+                <a href="{{ url_for('read_static_page', page_name='about') }}">About Us</a>
+                {# <a href="{{ url_for('read_static_page', page_name='customers') }}">Customers</a> #}
+                <a href="{{ url_for('read_demo') }}">Book a Demo</a>
+                <a href="{{ url_for('read_home') }}#call-me">Talk to our AI</a>
+            </nav>
+        </div>
+
+        <div class="website-footer__column">
+            <p class="website-footer__column-title">Legal</p>
+            <nav class="website-footer__nav" aria-label="Footer legal">
+                <a href="{{ url_for('read_static_page', page_name='privacy-policy') }}">Privacy Policy</a>
+                <a href="{{ url_for('read_static_page', page_name='terms-and-conditions') }}">Terms &amp; Conditions</a>
+                <a href="{{ url_for('read_static_page', page_name='website-fulfillment-policy') }}">Website Fulfillment Policy</a>
+            </nav>
+        </div>
+    </div>
+
+    <div class="website-footer__legal">
+        <span class="website-footer__made">
+            Made with
+            <span class="website-footer__heart" aria-hidden="true"></span>
+            in Upstate New York
+        </span>
+    </div>
+</footer>

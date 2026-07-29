@@ -15,7 +15,14 @@ def _url(name: str, **path_params) -> str:
     return str(app.url_path_for(name, **path_params))
 
 
-STATIC_PAGES = ("about", "privacy-policy", "terms-of-service")
+STATIC_PAGES = (
+    "about",
+    "blog",
+    "customers",
+    "privacy-policy",
+    "terms-and-conditions",
+    "website-fulfillment-policy",
+)
 
 
 @dataclass(frozen=True)
@@ -30,7 +37,18 @@ class GetPageCase:
 
 GET_PAGE_CASES = [
     GetPageCase(
-        "home", "unauth_client", lambda: _url("read_home"), jinja_route="read_home"
+        "home",
+        "unauth_client",
+        lambda: _url("read_home"),
+        marker="Every call answered.",
+        jinja_route="read_home",
+    ),
+    GetPageCase(
+        "demo",
+        "unauth_client",
+        lambda: _url("read_demo"),
+        marker="Book a Demo",
+        jinja_route="read_demo",
     ),
     GetPageCase(
         "login", "unauth_client", lambda: _url("read_login"), jinja_route="read_login"
@@ -238,7 +256,8 @@ class TestGetPagesRequireAuth:
         assert response.status_code in {303, 307}
         assert "login" in response.headers.get("location", "")
 
-    def test_authenticated_home_redirects_to_dashboard(self, auth_client_owner):
+    def test_authenticated_home_renders_website(self, auth_client_owner):
         response = auth_client_owner.get(_url("read_home"))
-        assert response.status_code == 302
-        assert "dashboard" in response.headers.get("location", "")
+        assert response.status_code == 200
+        assert "Every call answered." in response.text
+        assert "Dashboard" in response.text

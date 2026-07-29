@@ -1,7 +1,8 @@
 import logging
+import os
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request, Depends, status
+from fastapi import FastAPI, Request, status
 from fastapi.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -16,9 +17,9 @@ from routers.core import (
     static_pages,
     invitation,
 )
+from routers.website import home, demo, leads
 from utils.core.dependencies import (
     get_user_from_request,
-    require_unauthenticated_client,
 )
 from utils.core.auth import refresh_token_is_persistent, set_auth_cookies
 from utils.core.rate_limit import get_trusted_proxy_hosts
@@ -109,6 +110,9 @@ async def csrf_middleware(request: Request, call_next):
 # --- Include Routers ---
 
 
+app.include_router(home.router)
+app.include_router(demo.router)
+app.include_router(leads.router)
 app.include_router(account.router)
 app.include_router(dashboard.router)
 app.include_router(invitation.router)
@@ -389,17 +393,8 @@ async def general_exception_handler(request: Request, exc: Exception):
     )
 
 
-# --- Home Page ---
-
-
-@app.get("/")
-async def read_home(
-    request: Request, _: None = Depends(require_unauthenticated_client)
-):
-    return templates.TemplateResponse(request, "index.html", {"user": None})
-
-
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("APP_PORT", "8001"))
+    uvicorn.run(app, host="0.0.0.0", port=port)

@@ -1,0 +1,48 @@
+{% from 'website/macros/media.html' import render_media with context %}
+
+<aside class="website-demo__brand-panel" aria-label="About Calliflowr">
+    <div class="website-demo__brand-top">
+        <a href="{{ url_for('read_home') }}" class="website-demo__back-link">← Back to Calliflowr</a>
+    </div>
+
+    <div class="website-demo__brand-copy">
+        <h1 class="website-demo__title">
+            Your next job is calling.<br>
+            <span class="website-demo__title-accent">Calli picks up.</span>
+        </h1>
+        <p class="website-demo__lead">
+            The AI receptionist for trades. She answers, books the job on your calendar,
+            and keeps your office in the loop — so the crew stays on the tools.
+        </p>
+    </div>
+
+    <div class="website-demo__metrics" aria-label="Key benefits">
+        {% for metric in demo_metrics %}
+        <div class="website-demo__metric">
+            <div class="website-demo__metric-value">{{ metric.value }}</div>
+            <div class="website-demo__metric-label">{{ metric.label }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="website-demo__on-demo">
+        <p class="website-demo__on-demo-label">On the demo</p>
+        <ul class="website-demo__on-demo-list">
+            {% for point in demo_on_points %}
+            <li><span aria-hidden="true">✓</span> {{ point }}</li>
+            {% endfor %}
+        </ul>
+        <div class="website-demo__founder">
+            {{ render_media(
+                src=None,
+                alt="Calliflowr founder",
+                placeholder="Founder",
+                classes="website-demo__founder-photo"
+            ) }}
+            <p class="website-demo__founder-copy">
+                <strong>Hosted by a Calliflowr founder</strong><br>
+                Direct answers, no sales script.
+            </p>
+        </div>
+    </div>
+</aside>

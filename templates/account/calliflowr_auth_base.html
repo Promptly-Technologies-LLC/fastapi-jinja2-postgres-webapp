@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Sign in{% endblock %} | Calliflowr</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <link href="{{ url_for('static', path='css/website/website.css') }}" rel="stylesheet">
+
+    <link rel="icon" href="{{ url_for('static', path='favicon.svg') }}" type="image/svg+xml">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='favicon-16x16.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', path='apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ url_for('static', path='site.webmanifest') }}">
+    <meta name="theme-color" content="#0a1f0a">
+    <meta name="csrf-token" content="{{ request.state.csrf_token }}">
+
+    <script defer src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/htmx-ext-remove-me@2.0.0/remove-me.js"></script>
+    <script defer src="{{ url_for('static', path='js/ui.js') }}"></script>
+    <script defer src="{{ url_for('static', path='js/app.js') }}"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="cf-login-body">
+    <div id="toast-container"
+         class="toast-container position-fixed bottom-0 end-0 p-3"
+         hx-ext="remove-me"
+         aria-live="polite">
+      {% set flash = request.state.flash %}
+      {% if flash %}
+        {% with message=flash.message, level=flash.level %}
+          {% include "base/partials/toast.html" %}
+        {% endwith %}
+      {% endif %}
+    </div>
+
+    {% block content %}{% endblock %}
+</body>
+</html>

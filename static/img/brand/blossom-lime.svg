@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="Calliflowr">
+  <defs><mask id="hole"><rect width="48" height="48" fill="#fff"></rect><circle cx="24" cy="24" r="6" fill="#000"></circle></mask></defs>
+  <g mask="url(#hole)" fill="#9FE870">
+    <circle cx="36" cy="24" r="6.8"></circle><circle cx="30" cy="13.6" r="6.8"></circle><circle cx="18" cy="13.6" r="6.8"></circle><circle cx="12" cy="24" r="6.8"></circle><circle cx="18" cy="34.4" r="6.8"></circle><circle cx="30" cy="34.4" r="6.8"></circle>
+  </g>
+</svg>

@@ -1,0 +1,20 @@
+{% from 'website/macros/logo.html' import render_flower %}
+
+<div class="website-brand-strip" aria-label="Calliflowr">
+    <div class="website-brand-strip__inner">
+        <a href="{{ url_for('read_home') }}" class="website-brand-strip__wordmark">
+            <span>callifl</span>
+            {{ render_flower(
+                width=28,
+                height=28,
+                petal_fill="#0a1f0a",
+                center_fill="#9FE870",
+                classes="website-brand-strip__flower"
+            ) }}
+            <span>wr</span>
+        </a>
+        <p class="website-brand-strip__tagline">
+            The AI CSR for trade businesses
+        </p>
+    </div>
+</div>

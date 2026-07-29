@@ -1,0 +1,25 @@
+{% from 'website/macros/badges.html' import render_step_badge %}
+{% from 'website/macros/media.html' import render_media with context %}
+
+<article class="website-how-step website-how-step--lime website-how-step--booked-card">
+    <div class="website-how-step__copy">
+        <header class="website-how-step__header">
+            {{ render_step_badge(3) }}
+            <h3 class="website-how-step__title">AI Agent keeps the office informed</h3>
+        </header>
+        <p class="website-how-step__lead website-how-step__lead--on-lime">
+            The agent emails the office with aggregated data in one email so both technician and office can skim over the important details that matter. 
+            <br> <br> 
+            Emergency: Critical situations get flagged and are escalated to on-call technicians via call and text.
+
+        </p>
+    </div>
+    <div class="website-booking-visual">
+        {{ render_media(
+            src=email_screenshot,
+            alt="Booking alert email — AC tune-up booked for Ken Reynolds with window, address, and notes, answered by Calli",
+            placeholder="Booking email preview coming soon",
+            classes="website-booking-visual__email"
+        ) }}
+    </div>
+</article>

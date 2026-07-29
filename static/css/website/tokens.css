@@ -1,0 +1,53 @@
+/*
+ * Calliflowr website design tokens (desktop v1).
+ * Brand colors: Deep Fir, Sulu.
+ */
+
+:root {
+    /* Brand */
+    --color-deep-fir: #0a1f0a;
+    --color-sulu: #9fe870;
+    --color-deep-fir-footer: #0a1f0a;
+
+    /* Surfaces */
+    --color-page: #f4f7f0;
+    --color-panel: #ffffff;
+
+    /* Text */
+    --color-ink: #0a1f0a;
+    --color-body: #5a6957;
+    --color-muted: #8a948a;
+    --color-link: #245a12;
+    --color-nav: #3a4a38;
+
+    /* Accents */
+    --color-eyebrow-bg: #eaf2e0;
+    --color-eyebrow-border: #d8e4c8;
+    --color-eyebrow-text: #245a12;
+    --color-live-dot: #5fbf3f;
+    --color-on-dark-muted: #c9dcb6;
+    --color-on-dark-accent: #8fb56a;
+
+    /* Borders */
+    --color-border: #d7ddce;
+    --color-border-soft: #e2e8da;
+
+    /* Typography */
+    --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+
+    /* Layout (desktop) */
+    --site-gutter: 56px;
+    --section-gutter: 60px;
+    --mobile-max: 768px;
+
+    /* Shape */
+    --radius-sm: 10px;
+    --radius-md: 11px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-pill: 999px;
+
+    /* Motion */
+    --ease-hover: 0.15s ease;
+}
