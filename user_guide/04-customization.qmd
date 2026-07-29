@@ -107,6 +107,7 @@ Both paths use the same POST route URLs and form field contracts. (See [Architec
     - Dashboard page: `dashboard.py`
     - Static pages (e.g., about, privacy policy, terms of service): `static_pages.py`
 - Custom FastAPI routes for your app: `routers/app/`
+    - Organization billing (Stripe Checkout, portal, webhooks): `billing.py` — see [Billing](https://promptlytechnologies.com/fastapi-jinja2-postgres-webapp/user-guide/billing.html)
 - Jinja2 templates: `templates/`
 - Static assets: `static/`
 - Unit tests: `tests/`
@@ -121,6 +122,7 @@ Both paths use the same POST route URLs and form field contracts. (See [Architec
 - Shared helper functions: `utils/`
     - HTMX request detection: `htmx.py`
 - Custom template helper functions for your app: `utils/app/`
+    - Billing helpers and Stripe sync: `billing.py`, `stripe_billing.py`, `credentials.py`
 - Exceptions: `exceptions/`
     - HTTP exceptions: `http_exceptions.py`
     - Other custom exceptions: `exceptions.py`

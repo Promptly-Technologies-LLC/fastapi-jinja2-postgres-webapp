@@ -592,12 +592,12 @@ def test_account_recovery_token_is_expired(session: Session, test_account: Accou
     expired_token = AccountRecoveryToken(
         account_id=test_account.id,
         email="expired@example.com",
-        expires_at=datetime.now(UTC) - timedelta(hours=1),
+        expires_at=utc_naive_now() - timedelta(hours=1),
     )
     valid_token = AccountRecoveryToken(
         account_id=test_account.id,
         email="valid@example.com",
-        expires_at=datetime.now(UTC) + timedelta(days=7),
+        expires_at=utc_naive_now() + timedelta(days=7),
     )
     session.add(expired_token)
     session.add(valid_token)

@@ -248,6 +248,41 @@ class InvitationProcessingError(HTTPException):
         )
 
 
+class StripeSubscriptionCancelError(HTTPException):
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=409,
+            detail=(
+                "Could not cancel the Stripe subscription for this organization. "
+                "Open Billing, cancel the subscription in Stripe, and try deleting again."
+            ),
+        )
+
+
+class ActiveSubscriptionError(HTTPException):
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=409,
+            detail="This organization already has an active subscription.",
+        )
+
+
+class StripeServiceUnavailableError(HTTPException):
+    def __init__(self, action: str) -> None:
+        super().__init__(
+            status_code=503,
+            detail=f"Unable to {action}. Please try again later.",
+        )
+
+
+class StripeSessionError(HTTPException):
+    def __init__(self, session_kind: str) -> None:
+        super().__init__(
+            status_code=502,
+            detail=f"Stripe did not return a {session_kind} URL.",
+        )
+
+
 class CsrfError(HTTPException):
     """Raised when CSRF validation fails."""
 

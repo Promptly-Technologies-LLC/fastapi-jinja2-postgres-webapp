@@ -207,7 +207,7 @@ def create_tracked_refresh_token(
         expires_delta = timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     else:
         expires_delta = timedelta(hours=SESSION_REFRESH_TOKEN_EXPIRE_HOURS)
-    expires_at = datetime.now(UTC) + expires_delta
+    expires_at = datetime.now(UTC).replace(tzinfo=None) + expires_delta
     db_token = RefreshToken(
         account_id=account_id,
         jti=jti,
