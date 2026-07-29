@@ -3,11 +3,13 @@ import os
 from typing import Generator, cast
 
 pytest_plugins = ["tests.frontend.fixtures"]
-from sqlmodel import create_engine, Session, select
+from sqlmodel import Session, select
 from fastapi.testclient import TestClient
 from dotenv import load_dotenv
 from utils.core.db import (
+    clear_engine_cache,
     get_connection_url,
+    get_engine,
     tear_down_db,
     set_up_db,
     create_default_roles,
@@ -74,15 +76,19 @@ def engine(env_vars):
     Create a new SQLModel engine for the test database.
     Use PostgreSQL for testing to match production environment.
     """
-    # Use PostgreSQL for testing to match production environment
+    # Use PostgreSQL for testing to match production environment. get_engine()
+    # returns the same cached pool the app itself uses via get_session(), so
+    # TestClient requests and direct test queries share one pool instead of
+    # opening a second one for the same database.
     ensure_database_exists(get_connection_url())
-    engine = create_engine(get_connection_url())
+    engine = get_engine()
     set_up_db(drop=True)
 
     yield engine
 
     # Clean up after tests
     tear_down_db()
+    clear_engine_cache()
 
 
 @pytest.fixture

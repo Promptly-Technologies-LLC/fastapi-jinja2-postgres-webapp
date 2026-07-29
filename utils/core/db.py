@@ -1,8 +1,9 @@
 import os
 import logging
+import threading
 from itertools import chain
 from typing import Union, Sequence
-from sqlalchemy.engine import URL
+from sqlalchemy.engine import Engine, URL
 from sqlmodel import create_engine, Session, SQLModel, select, text
 from utils.core.models import (
     Account,
@@ -28,17 +29,60 @@ default_roles = ["Owner", "Administrator", "Member"]
 # --- Database connection functions ---
 
 
+# Cache by URL object (not str(url)): str(URL) masks passwords as "***", so
+# different credentials would collide on one cache key. Guarded by a lock:
+# sync dependencies run in FastAPI's threadpool, so concurrent first requests
+# would otherwise race and orphan an undisposed engine.
+_engines: dict[URL, Engine] = {}
+_engines_lock = threading.Lock()
+
+
+def get_engine() -> Engine:
+    """Return a process-wide cached engine for the current connection URL.
+
+    Calling create_engine() per request leaks pooled connections until GC
+    reclaims them. Cache one engine per URL so tests that swap DB_NAME still
+    get a separate pool per database. Pool settings (DB_POOL_SIZE,
+    DB_MAX_OVERFLOW) are read only when the engine for a URL is first
+    created; later environment changes have no effect on a cached engine.
+    """
+    url = get_connection_url()
+    with _engines_lock:
+        engine = _engines.get(url)
+        if engine is None:
+            engine = create_engine(
+                url,
+                pool_pre_ping=True,
+                pool_size=int(os.getenv("DB_POOL_SIZE", "5")),
+                max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "5")),
+            )
+            _engines[url] = engine
+    return engine
+
+
+def clear_engine_cache() -> None:
+    """Dispose and drop all cached engines (shutdown / tests)."""
+    with _engines_lock:
+        engines = list(_engines.values())
+        _engines.clear()
+    for engine in engines:
+        engine.dispose()
+
+
 def ensure_database_exists(url: URL) -> None:
     dbname = url.database
     server_url = url.set(database="postgres")
     engine = create_engine(server_url, isolation_level="AUTOCOMMIT")
-    with engine.connect() as conn:
-        exists = conn.execute(
-            text("SELECT 1 FROM pg_database WHERE datname = :n"),
-            {"n": dbname},
-        ).scalar()
-        if not exists:
-            conn.execute(text(f'CREATE DATABASE "{dbname}"'))
+    try:
+        with engine.connect() as conn:
+            exists = conn.execute(
+                text("SELECT 1 FROM pg_database WHERE datname = :n"),
+                {"n": dbname},
+            ).scalar()
+            if not exists:
+                conn.execute(text(f'CREATE DATABASE "{dbname}"'))
+    finally:
+        engine.dispose()
 
 
 def get_connection_url() -> URL:
@@ -259,19 +303,21 @@ def set_up_db(drop: bool = False) -> None:
         drop (bool): If True, drops all existing tables before creating new ones.
     """
     engine = create_engine(get_connection_url())
-    if drop:
-        SQLModel.metadata.drop_all(engine)
-    # Ensure the private schema exists before creating tables
-    with engine.connect() as conn:
-        conn.execute(text("CREATE SCHEMA IF NOT EXISTS private"))
-        conn.commit()
-    SQLModel.metadata.create_all(engine)
-    # Create default permissions and seed account emails
-    with Session(engine) as session:
-        create_permissions(session)
-        session.commit()
-        seed_account_emails(session)
-    engine.dispose()
+    try:
+        if drop:
+            SQLModel.metadata.drop_all(engine)
+        # Ensure the private schema exists before creating tables
+        with engine.connect() as conn:
+            conn.execute(text("CREATE SCHEMA IF NOT EXISTS private"))
+            conn.commit()
+        SQLModel.metadata.create_all(engine)
+        # Create default permissions and seed account emails
+        with Session(engine) as session:
+            create_permissions(session)
+            session.commit()
+            seed_account_emails(session)
+    finally:
+        engine.dispose()
 
 
 def tear_down_db() -> None:
@@ -279,8 +325,10 @@ def tear_down_db() -> None:
     Tears down the database by dropping all tables and the private schema.
     """
     engine = create_engine(get_connection_url())
-    SQLModel.metadata.drop_all(engine)
-    with engine.connect() as conn:
-        conn.execute(text("DROP SCHEMA IF EXISTS private CASCADE"))
-        conn.commit()
-    engine.dispose()
+    try:
+        SQLModel.metadata.drop_all(engine)
+        with engine.connect() as conn:
+            conn.execute(text("DROP SCHEMA IF EXISTS private CASCADE"))
+            conn.commit()
+    finally:
+        engine.dispose()
