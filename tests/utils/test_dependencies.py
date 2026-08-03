@@ -1,10 +1,8 @@
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import MagicMock, patch
 from datetime import datetime, timedelta, UTC
-from typing import Any, Coroutine, TypeVar
 from starlette.concurrency import run_in_threadpool
 from starlette.requests import Request
+from tests.async_helpers import run_async
 from utils.core.models import (
     Account,
     AccountRecoveryToken,
@@ -716,23 +714,6 @@ def _request_with_auth_cookies(
     )
 
 
-T = TypeVar("T")
-
-
-def _run_async(coro: Coroutine[Any, Any, T]) -> T:
-    """Drive an async helper from sync tests.
-
-    The full suite may already have an event loop (e.g. after Playwright), so
-    asyncio.run() on the main thread can fail. Always run in a fresh thread.
-    """
-
-    def _runner() -> T:
-        return asyncio.run(coro)
-
-    with ThreadPoolExecutor(max_workers=1) as pool:
-        return pool.submit(_runner).result()
-
-
 def test_get_user_from_request_resolves_user_via_threadpool() -> None:
     """
     Exception handlers await get_user_from_request directly (not via Depends).
@@ -757,7 +738,7 @@ def test_get_user_from_request_resolves_user_via_threadpool() -> None:
         mock_session_cls.return_value.__exit__.return_value = None
         mock_get_user.return_value = (mock_user, None, None)
 
-        user = _run_async(get_user_from_request(request))
+        user = run_async(get_user_from_request(request))
 
         assert user is mock_user
         mock_threadpool.assert_called_once_with(
@@ -778,5 +759,5 @@ def test_get_user_from_request_resolves_user_via_threadpool() -> None:
         mock_session_cls.return_value.__exit__.return_value = None
         mock_get_user.return_value = (None, None, None)
 
-        assert _run_async(get_user_from_request(bare_request)) is None
+        assert run_async(get_user_from_request(bare_request)) is None
         mock_get_user.assert_called_once_with((None, None), mock_session)
