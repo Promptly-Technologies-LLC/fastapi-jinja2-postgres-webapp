@@ -15,7 +15,7 @@ templates = Jinja2Templates(directory="templates")
 
 
 @router.get("/")
-async def read_dashboard(
+def read_dashboard(
     request: Request,
     user: User = Depends(get_user_with_relations),
     session: Session = Depends(get_session),
@@ -77,7 +77,7 @@ async def read_dashboard(
 
 
 @router.post("/select-organization/{org_id}")
-async def select_organization(
+def select_organization(
     request: Request,
     org_id: int,
     user: User = Depends(get_user_with_relations),

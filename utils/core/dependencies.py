@@ -1,5 +1,6 @@
 import logging
 from fastapi import Depends, Form, Query, Request
+from starlette.concurrency import run_in_threadpool
 from pydantic import EmailStr
 from sqlmodel import Session, select
 from sqlalchemy.orm import selectinload
@@ -445,9 +446,22 @@ async def get_user_from_request(request: Request) -> Optional[User]:
     """
     Helper function to get user from request cookies in exception handlers.
     Exception handlers can't use Depends(), so we manually extract tokens and get the user.
+
+    Cookie reads stay on the event loop; sync DB/session work runs in the thread
+    pool. This is called directly (not via Depends()) from async exception
+    handlers, so without offloading it would block the loop while querying.
     """
     access_token = request.cookies.get("access_token")
     refresh_token = request.cookies.get("refresh_token")
+    return await run_in_threadpool(
+        _get_user_from_request_sync, access_token, refresh_token
+    )
+
+
+def _get_user_from_request_sync(
+    access_token: Optional[str],
+    refresh_token: Optional[str],
+) -> Optional[User]:
     tokens = (access_token, refresh_token)
 
     # Get a database session

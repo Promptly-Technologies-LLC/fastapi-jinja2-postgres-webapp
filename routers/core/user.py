@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Form, UploadFile, File, Request, HTTPException
 from fastapi.responses import RedirectResponse, Response
+from starlette.concurrency import run_in_threadpool
 from sqlmodel import Session, select, col
 from typing import Optional, List
 from fastapi.templating import Jinja2Templates
@@ -51,7 +52,7 @@ templates = Jinja2Templates(directory="templates")
 
 
 @router.get("/profile")
-async def read_profile(
+def read_profile(
     request: Request,
     user: User = Depends(get_user_with_relations),
     session: Session = Depends(get_session),
@@ -82,7 +83,7 @@ async def read_profile(
 
 
 @router.get("/edit-form")
-async def edit_profile_form(
+def edit_profile_form(
     request: Request,
     user: User = Depends(get_authenticated_user),
 ):
@@ -104,7 +105,7 @@ async def edit_profile_form(
 
 
 @router.get("/profile-display")
-async def profile_display(
+def profile_display(
     request: Request,
     user: User = Depends(get_authenticated_user),
 ):
@@ -131,17 +132,17 @@ async def update_profile(
 ):
     avatar_changed = bool(avatar_file and avatar_file.filename)
 
-    # Handle avatar update
+    # Async upload read stays on the event loop. CPU-bound image work is
+    # offloaded; Session/ORM mutations stay here so the Session is not passed
+    # into the thread pool.
     if avatar_changed:
         assert avatar_file is not None
         reject_oversized_content_length(
             request.headers.get("content-length"), MAX_AVATAR_UPLOAD_BYTES
         )
         avatar_data = await read_upload_with_size_limit(avatar_file, MAX_FILE_SIZE)
-        avatar_content_type = avatar_file.content_type
-
-        processed_image, content_type = validate_and_process_image(
-            avatar_data, avatar_content_type
+        processed_image, content_type = await run_in_threadpool(
+            validate_and_process_image, avatar_data, avatar_file.content_type
         )
         if user.avatar:
             user.avatar.avatar_data = processed_image
@@ -154,9 +155,7 @@ async def update_profile(
                 avatar_content_type=content_type,
             )
 
-    # Update user details
     user.name = name
-
     session.commit()
     session.refresh(user)
 
@@ -185,7 +184,7 @@ async def update_profile(
 
 
 @router.post("/communication-preferences", response_class=RedirectResponse)
-async def update_communication_preferences(
+def update_communication_preferences(
     request: Request,
     comm_opt_in: Optional[str] = Form(None),
     comm_updates: Optional[str] = Form(None),
@@ -210,7 +209,7 @@ async def update_communication_preferences(
 
 
 @router.get("/avatar")
-async def get_avatar(user: User = Depends(get_authenticated_user)):
+def get_avatar(user: User = Depends(get_authenticated_user)):
     """Serve avatar image from database"""
     if not user.avatar:
         raise DataIntegrityError(resource="User avatar")

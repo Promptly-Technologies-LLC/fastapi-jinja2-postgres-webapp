@@ -16,7 +16,7 @@ VALID_PAGES = {
 
 
 @router.get("/{page_name}", name="read_static_page")
-async def read_static_page(
+def read_static_page(
     page_name: str, request: Request, user: Optional[User] = Depends(get_optional_user)
 ):
     """
