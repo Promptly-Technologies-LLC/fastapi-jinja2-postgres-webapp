@@ -124,6 +124,7 @@ class TestJinjaCheckAndGetSmokeIntegration:
         }
         runtime_reads.add("read_reset_password")
         runtime_reads.add("recover_account_confirm")
+        runtime_reads.add("read_billing")
 
         uncovered = checked_reads - runtime_reads
         assert not uncovered, (
@@ -198,6 +199,21 @@ class TestJinjaCheckAndGetSmokeIntegration:
         )
         assert_full_page_rendered(response)
         assert "recover" in response.text.lower()
+
+    def test_billing_page_renders(
+        self,
+        auth_client_owner,
+        test_organization,
+        missing_context_variables,
+    ):
+        assert not missing_context_variables
+        assert test_organization.id is not None
+        response = auth_client_owner.get(
+            _url("read_billing", org_id=test_organization.id)
+        )
+        assert_full_page_rendered(response)
+        assert "Organization billing" in response.text
+        assert "Pro plan" in response.text
 
     def test_register_with_invitation_token_renders(
         self, unauth_client, test_invitation, missing_context_variables

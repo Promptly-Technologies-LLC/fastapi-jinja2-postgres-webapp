@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Billing — {{ organization.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4 billing-page">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div>
+      <p class="text-muted mb-1 billing-page-eyebrow">Organization billing</p>
+      <h1 class="mb-0">{{ organization.name }}</h1>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-primary" href="{{ url_for('read_organization', org_id=organization.id) }}">
+        Organization settings
+      </a>
+      <a class="btn btn-outline-secondary" href="{{ url_for('read_dashboard') }}">
+        Dashboard
+      </a>
+    </div>
+  </div>
+
+  <div class="card billing-status-card">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <h2 class="h5 mb-0">{{ plan_name }} plan</h2>
+      <span class="badge billing-status-badge billing-status-badge-{{ billing_status.value }}">
+        {{ billing_status_label }}
+      </span>
+    </div>
+    <div class="card-body">
+      <dl class="row mb-0 billing-details-list">
+        <dt class="col-sm-4">Organization</dt>
+        <dd class="col-sm-8">{{ organization.name }}</dd>
+
+        {% if billing and billing.current_period_end %}
+        <dt class="col-sm-4">{% if billing.cancel_at_period_end %}Access until{% else %}Renews on{% endif %}</dt>
+        <dd class="col-sm-8">{{ billing.current_period_end.strftime('%Y-%m-%d %H:%M UTC') }}</dd>
+        {% endif %}
+
+        {% if billing and billing.last_payment_at %}
+        <dt class="col-sm-4">Last payment</dt>
+        <dd class="col-sm-8">{{ billing.last_payment_at.strftime('%Y-%m-%d %H:%M UTC') }}</dd>
+        {% endif %}
+
+        {% if billing and billing.cancel_at_period_end %}
+        <dt class="col-sm-4">Cancellation</dt>
+        <dd class="col-sm-8">Scheduled at period end</dd>
+        {% endif %}
+      </dl>
+
+      {% if can_manage_billing %}
+      <div class="d-flex flex-wrap gap-2 mt-4 billing-actions">
+        {% if can_subscribe %}
+        <form method="post" action="{{ url_for('start_checkout', org_id=organization.id) }}">
+          {% include 'base/partials/csrf_field.html' %}
+          <button type="submit" class="btn btn-primary">Subscribe with Stripe</button>
+        </form>
+        {% endif %}
+
+        {% if can_manage_portal %}
+        <form method="post" action="{{ url_for('start_customer_portal', org_id=organization.id) }}">
+          {% include 'base/partials/csrf_field.html' %}
+          <button type="submit" class="btn btn-outline-primary">Manage billing</button>
+        </form>
+        {% endif %}
+      </div>
+      <p class="small text-muted mt-3 mb-0">
+        Checkout and payment method updates are handled securely by Stripe.
+        {% if billing_status.value == 'past_due' %}
+        Your subscription is past due — use <strong>Manage billing</strong> to update your payment method.
+        {% elif billing_status.value == 'incomplete' %}
+        Your last checkout did not finish — use <strong>Subscribe with Stripe</strong> to try again.
+        {% endif %}
+      </p>
+      {% else %}
+      <p class="text-muted mb-0 mt-3">
+        Only the organization owner can start or manage billing.
+      </p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
