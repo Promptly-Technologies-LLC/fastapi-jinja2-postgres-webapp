@@ -393,9 +393,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 
 @app.get("/")
-async def read_home(
-    request: Request, _: None = Depends(require_unauthenticated_client)
-):
+def read_home(request: Request, _: None = Depends(require_unauthenticated_client)):
     return templates.TemplateResponse(request, "index.html", {"user": None})
 
 

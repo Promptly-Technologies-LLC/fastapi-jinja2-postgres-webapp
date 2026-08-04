@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- version list -->
 
+## v1.1.9 (2026-07-29)
+
+### Bug Fixes
+
+- Address review feedback on engine cache
+  ([#231](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/231),
+  [`246f969`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/246f969c4f9aa3d1e0ce1ace408563b5fe8d1ee5))
+
+- Engine too many connections
+  ([#231](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/231),
+  [`246f969`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/246f969c4f9aa3d1e0ce1ace408563b5fe8d1ee5))
+
+### Refactoring
+
+- Use lru cached engine
+  ([#231](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/231),
+  [`246f969`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/246f969c4f9aa3d1e0ce1ace408563b5fe8d1ee5))
+
+
 ## v1.1.8 (2026-07-14)
 
 ### Bug Fixes

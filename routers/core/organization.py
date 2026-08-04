@@ -36,7 +36,7 @@ templates = Jinja2Templates(directory="templates")
 
 
 @router.get("/{org_id}")
-async def read_organization(
+def read_organization(
     org_id: int,
     request: Request,
     user: User = Depends(get_user_with_relations),
