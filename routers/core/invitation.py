@@ -108,7 +108,7 @@ def _members_table_response(
 
 
 @router.post("/", name="create_invitation")
-async def create_invitation(
+def create_invitation(
     request: Request,
     current_user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session),
@@ -205,7 +205,7 @@ async def create_invitation(
 
 
 @router.post("/resend", name="resend_invitation", response_class=RedirectResponse)
-async def resend_invitation(
+def resend_invitation(
     request: Request,
     current_user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session),
@@ -277,7 +277,7 @@ async def resend_invitation(
 
 
 @router.post("/delete", name="delete_invitation", response_class=RedirectResponse)
-async def delete_invitation(
+def delete_invitation(
     request: Request,
     current_user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session),
@@ -318,7 +318,7 @@ async def delete_invitation(
 
 
 @router.get("/accept", name="accept_invitation")
-async def accept_invitation(
+def accept_invitation(
     token: str = Query(...),
     current_user: Optional[User] = Depends(get_optional_user),
     session: Session = Depends(get_session),

@@ -188,7 +188,7 @@ def logout(
 
 
 @router.get("/login")
-async def read_login(
+def read_login(
     request: Request,
     _: None = Depends(require_unauthenticated_unless_invitation_warning),
     invitation_token: Optional[str] = Query(None),
@@ -215,7 +215,7 @@ async def read_login(
 
 
 @router.get("/register")
-async def read_register(
+def read_register(
     request: Request,
     _: None = Depends(require_unauthenticated_unless_invitation_warning),
     email: Optional[EmailStr] = Query(None),
@@ -246,7 +246,7 @@ async def read_register(
 
 
 @router.get("/forgot_password")
-async def read_forgot_password(
+def read_forgot_password(
     request: Request,
     _: None = Depends(require_unauthenticated_client),
     show_form: Optional[str] = "true",
@@ -262,7 +262,7 @@ async def read_forgot_password(
 
 
 @router.get("/reset_password")
-async def read_reset_password(
+def read_reset_password(
     request: Request,
     email: str,
     token: str,
@@ -291,7 +291,7 @@ async def read_reset_password(
 
 
 @router.post("/delete", response_class=RedirectResponse)
-async def delete_account(
+def delete_account(
     account: Account = Depends(get_verified_account),
     session: Session = Depends(get_session),
 ):
@@ -314,7 +314,7 @@ async def delete_account(
 
 
 @router.post("/register", response_class=RedirectResponse)
-async def register(
+def register(
     request: Request,
     _ip_check: None = Depends(check_register_ip_rate_limit),
     name: str = Form(
@@ -473,7 +473,7 @@ async def register(
 
 
 @router.post("/login", response_class=RedirectResponse)
-async def login(
+def login(
     request: Request,
     _ip_check: None = Depends(check_login_ip_rate_limit),
     _email_check: EmailStr = Depends(check_login_email_rate_limit),
@@ -588,7 +588,7 @@ async def login(
 
 # Updated refresh_token endpoint
 @router.post("/refresh", response_class=RedirectResponse)
-async def refresh_token(
+def refresh_token(
     tokens: tuple[Optional[str], Optional[str]] = Depends(oauth2_scheme_cookie),
     session: Session = Depends(get_session),
 ) -> RedirectResponse:
@@ -666,7 +666,7 @@ async def refresh_token(
 
 
 @router.post("/forgot_password")
-async def forgot_password(
+def forgot_password(
     background_tasks: BackgroundTasks,
     request: Request,
     _ip_check: None = Depends(check_forgot_password_ip_rate_limit),
@@ -703,7 +703,7 @@ async def forgot_password(
 
 
 @router.post("/reset_password")
-async def reset_password(
+def reset_password(
     request: Request,
     email: EmailStr = Form(..., title="Email", description="Account email address"),
     token: str = Form(
@@ -765,7 +765,7 @@ async def reset_password(
 
 
 @router.get("/recover")
-async def recover_account_confirm(
+def recover_account_confirm(
     request: Request,
     token: str = Query(...),
     session: Session = Depends(get_session),
@@ -784,7 +784,7 @@ async def recover_account_confirm(
 
 
 @router.post("/recover")
-async def recover_account(
+def recover_account(
     token: str = Form(...),
     session: Session = Depends(get_session),
 ):
@@ -852,7 +852,7 @@ async def recover_account(
 
 
 @router.post("/emails/add")
-async def add_email(
+def add_email(
     request: Request,
     new_email: EmailStr = Form(
         ..., title="New email", description="New email address to add"
@@ -905,7 +905,7 @@ async def add_email(
 
 
 @router.get("/emails/verify")
-async def verify_email(
+def verify_email(
     token: str,
     session: Session = Depends(get_session),
 ):
@@ -958,7 +958,7 @@ async def verify_email(
 
 
 @router.post("/emails/promote")
-async def promote_email(
+def promote_email(
     request: Request,
     email_id: int = Form(
         ..., title="Email ID", description="ID of the email to promote"
@@ -1047,7 +1047,7 @@ async def promote_email(
 
 
 @router.post("/emails/remove")
-async def remove_email(
+def remove_email(
     request: Request,
     email_id: int = Form(
         ..., title="Email ID", description="ID of the email to remove"
