@@ -3,6 +3,23 @@
 This changelog is generated automatically from [GitHub Releases](https://github.com/promptly-technologies-llc/fastapi-jinja2-postgres-webapp/releases).
 
 
+# v1.1.9
+
+*2026-07-29* · [GitHub](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/releases/tag/v1.1.9)
+
+
+## What's Changed
+
+- fix: engine too many connections by [<span class="citation" data-cites="bhtabor">@bhtabor</span>](https://github.com/bhtabor) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/231
+
+
+## New Contributors
+
+- [<span class="citation" data-cites="bhtabor">@bhtabor</span>](https://github.com/bhtabor) made their first contribution in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/231
+
+**Full Changelog**: https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/compare/v1.1.8…v1.1.9
+
+
 # v1.1.8
 
 *2026-07-14* · [GitHub](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/releases/tag/v1.1.8)
