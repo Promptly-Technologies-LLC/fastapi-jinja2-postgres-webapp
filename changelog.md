@@ -3,6 +3,18 @@
 This changelog is generated automatically from [GitHub Releases](https://github.com/promptly-technologies-llc/fastapi-jinja2-postgres-webapp/releases).
 
 
+# v1.1.10
+
+*2026-08-04* · [GitHub](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/releases/tag/v1.1.10)
+
+
+## What's Changed
+
+- Fix get user from request blocks loop by [<span class="citation" data-cites="bhtabor">@bhtabor</span>](https://github.com/bhtabor) in https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/pull/236
+
+**Full Changelog**: https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/compare/v1.1.9…v1.1.10
+
+
 # v1.1.9
 
 *2026-07-29* · [GitHub](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/releases/tag/v1.1.9)
