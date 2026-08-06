@@ -66,15 +66,12 @@ class _RedirectVisitor(ast.NodeVisitor):
         for keyword in node.keywords:
             if keyword.arg == "url":
                 url_expr = keyword.value
-            if keyword.arg == "status_code":
-                if isinstance(keyword.value, ast.Constant) and keyword.value.value in (
-                    301,
-                    302,
-                    303,
-                    307,
-                    308,
-                ):
-                    status_is_redirect = True
+            if (
+                keyword.arg == "status_code"
+                and isinstance(keyword.value, ast.Constant)
+                and keyword.value.value in (301, 302, 303, 307, 308)
+            ):
+                status_is_redirect = True
         if url_expr is None and node.args:
             url_expr = node.args[0]
 

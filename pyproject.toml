@@ -31,7 +31,7 @@ dev = [
     "pytest>=8.3.3",
     "sqlalchemy-schemadisplay<3.0,>=2.0",
     "ty>=0.0.21",
-    "ruff>=0.15.5",
+    "ruff>=0.16.1",
     "pytest-jinja-check[fastapi]>=1.0.3",
     "pytest-playwright>=0.7.2",
     "pre-commit>=4.6.0",
@@ -42,6 +42,17 @@ dev = [
 [tool.ruff.lint.per-file-ignores]
 # pytest_plugins must be declared before plugin imports in conftest.
 "tests/conftest.py" = ["E402"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's dependency injection is expressed as calls in argument defaults;
+# these are the framework's intended usage, not accidental shared mutable state.
+extend-immutable-calls = [
+    "fastapi.Cookie",
+    "fastapi.Depends",
+    "fastapi.File",
+    "fastapi.Form",
+    "fastapi.Query",
+]
 
 [tool.ty.rules]
 # SQLModel/SQLAlchemy metaclass attributes (__table__) and constructor

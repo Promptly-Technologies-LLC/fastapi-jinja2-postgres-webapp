@@ -6,11 +6,11 @@ Any SQLModel table classes defined here will be automatically created in the
 database on startup, as long as this module is imported in utils/core/db.py.
 """
 
-from typing import Optional
 from datetime import datetime
-from sqlmodel import SQLModel, Field
-from utils.core.models import utc_now
 
+from sqlmodel import Field, SQLModel
+
+from utils.core.models import utc_now
 
 # --- Replace the example model below with your own application models ---
 
@@ -26,11 +26,11 @@ class OrganizationResource(SQLModel, table=True):
     users with DELETE_ORGANIZATION_RESOURCES can delete them.
     """
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     organization_id: int = Field(
         foreign_key="organization.id", ondelete="CASCADE", index=True
     )
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)

@@ -1,9 +1,11 @@
 import json
 from urllib.parse import quote, unquote
+
+from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 from starlette.responses import Response
-from fastapi.templating import Jinja2Templates
 from starlette.templating import _TemplateResponse as TemplateResponse
+
 from utils.core.auth import COOKIE_SECURE
 
 

@@ -1,12 +1,14 @@
+import re
+from unittest.mock import MagicMock, patch
+
 from fastapi.testclient import TestClient
 from httpx import Response
 from sqlmodel import Session
-from unittest.mock import patch, MagicMock
-from tests.conftest import SetupError
+
 from main import app
-from utils.core.models import User, Role, Organization
+from tests.conftest import SetupError
 from utils.core.images import InvalidImageError
-import re
+from utils.core.models import Organization, Role, User
 
 # Mock data for consistent testing
 MOCK_IMAGE_DATA = b"processed fake image data"

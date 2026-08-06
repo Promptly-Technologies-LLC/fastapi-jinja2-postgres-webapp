@@ -1,40 +1,44 @@
-import pytest
 import os
-from typing import Generator, cast
+from collections.abc import Generator
+from typing import cast
+
+import pytest
 
 pytest_plugins = ["tests.frontend.fixtures"]
-from sqlmodel import Session, select
-from fastapi.testclient import TestClient
+from datetime import UTC, datetime, timedelta
+
 from dotenv import load_dotenv
+from fastapi.testclient import TestClient
+from sqlmodel import Session, select
+
+from main import app
+from utils.core.auth import (
+    create_access_token,
+    create_tracked_refresh_token,
+    get_password_hash,
+)
 from utils.core.db import (
     clear_engine_cache,
-    get_connection_url,
-    get_engine,
-    tear_down_db,
-    set_up_db,
     create_default_roles,
     ensure_database_exists,
+    get_connection_url,
+    get_engine,
+    set_up_db,
+    tear_down_db,
 )
 from utils.core.models import (
-    User,
-    Organization,
-    Role,
     Account,
     AccountEmail,
     Invitation,
+    Organization,
+    Role,
+    User,
 )
-from utils.core.auth import (
-    get_password_hash,
-    create_access_token,
-    create_tracked_refresh_token,
-)
-from main import app
-from datetime import datetime, UTC, timedelta
 from utils.core.rate_limit import clear_all_rate_limiters
 
 
 @pytest.fixture(autouse=True)
-def reset_rate_limiters() -> Generator[None, None, None]:
+def reset_rate_limiters() -> Generator[None]:
     clear_all_rate_limiters()
     yield
     clear_all_rate_limiters()
@@ -92,7 +96,7 @@ def engine(env_vars):
 
 
 @pytest.fixture
-def session(engine) -> Generator[Session, None, None]:
+def session(engine) -> Generator[Session]:
     """
     Provide a session for database operations in tests.
     """
@@ -148,7 +152,7 @@ def test_account_email(session: Session, test_account: Account) -> AccountEmail:
 
 
 @pytest.fixture
-def unauth_client(session: Session) -> Generator[TestClient, None, None]:
+def unauth_client(session: Session) -> Generator[TestClient]:
     """
     Provides a TestClient instance without authentication.
     """
@@ -159,7 +163,7 @@ def unauth_client(session: Session) -> Generator[TestClient, None, None]:
 @pytest.fixture
 def auth_client(
     session: Session, test_account: Account, test_user: User
-) -> Generator[TestClient, None, None]:
+) -> Generator[TestClient]:
     """
     Provides a TestClient instance with valid authentication tokens.
     """
@@ -313,9 +317,7 @@ def non_member_user(session: Session) -> User:
 
 
 @pytest.fixture
-def auth_client_owner(
-    session: Session, org_owner: User
-) -> Generator[TestClient, None, None]:
+def auth_client_owner(session: Session, org_owner: User) -> Generator[TestClient]:
     """Provides a TestClient authenticated as the organization owner"""
     client = TestClient(app, follow_redirects=False)
 
@@ -338,9 +340,7 @@ def auth_client_owner(
 
 
 @pytest.fixture
-def auth_client_admin(
-    session: Session, org_admin_user: User
-) -> Generator[TestClient, None, None]:
+def auth_client_admin(session: Session, org_admin_user: User) -> Generator[TestClient]:
     """Provides a TestClient authenticated as an organization administrator"""
     client = TestClient(app, follow_redirects=False)
 
@@ -365,7 +365,7 @@ def auth_client_admin(
 @pytest.fixture
 def auth_client_member(
     session: Session, org_member_user: User
-) -> Generator[TestClient, None, None]:
+) -> Generator[TestClient]:
     """Provides a TestClient authenticated as the organization member"""
     client = TestClient(app, follow_redirects=False)
 
@@ -390,7 +390,7 @@ def auth_client_member(
 @pytest.fixture
 def auth_client_non_member(
     session: Session, non_member_user: User
-) -> Generator[TestClient, None, None]:
+) -> Generator[TestClient]:
     """Provides a TestClient authenticated as a non-member"""
     client = TestClient(app, follow_redirects=False)
 
@@ -562,7 +562,7 @@ def existing_invitee_user(session: Session, existing_invitee_account: Account) -
 @pytest.fixture
 def auth_client_invitee(
     session: Session, existing_invitee_user: User
-) -> Generator[TestClient, None, None]:
+) -> Generator[TestClient]:
     """Provides a TestClient authenticated as the existing_invitee_user."""
     client = TestClient(app, follow_redirects=False)
 

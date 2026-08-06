@@ -1,34 +1,37 @@
 # TODO: User with permission to create/edit roles can only assign permissions
 # they themselves have.
-from typing import Annotated, List, Sequence, Optional
+from collections.abc import Sequence
 from logging import getLogger
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlmodel import Session, select, col
-from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
-from utils.core.dependencies import get_authenticated_user, get_session
-from utils.core.models import (
-    Role,
-    Permission,
-    utc_now,
-    User,
-    DataIntegrityError,
-)
-from utils.core.organizations import load_org_for_roles_partial
-from utils.core.enums import ValidPermissions
-from utils.app.enums import AppPermissions
+from sqlalchemy.orm import selectinload
+from sqlmodel import Session, col, select
+
 from exceptions.http_exceptions import (
+    CannotModifyDefaultRoleError,
     InsufficientPermissionsError,
     InvalidPermissionError,
     RoleAlreadyExistsError,
-    RoleNotFoundError,
     RoleHasUsersError,
-    CannotModifyDefaultRoleError,
+    RoleNotFoundError,
 )
 from routers.core.organization import router as organization_router
-from utils.core.htmx import is_htmx_request, append_toast
+from utils.app.enums import AppPermissions
+from utils.core.dependencies import get_authenticated_user, get_session
+from utils.core.enums import ValidPermissions
+from utils.core.htmx import append_toast, is_htmx_request
+from utils.core.models import (
+    DataIntegrityError,
+    Permission,
+    Role,
+    User,
+    utc_now,
+)
+from utils.core.organizations import load_org_for_roles_partial
 
 logger = getLogger("uvicorn.error")
 
@@ -56,7 +59,7 @@ def create_role(
         title="Organization ID",
         description="ID of the organization this role belongs to",
     ),
-    permissions: List[str] = Form(
+    permissions: list[str] = Form(
         default=[],
         title="Permissions",
         description="List of permissions to assign to this role",
@@ -134,7 +137,7 @@ def update_role(
         title="Organization ID",
         description="ID of the organization this role belongs to",
     ),
-    permissions: List[str] = Form(
+    permissions: list[str] = Form(
         default=[],
         title="Permissions",
         description="Updated list of permissions for this role",
@@ -147,7 +150,7 @@ def update_role(
         raise InsufficientPermissionsError()
 
     # Select db_role to update, along with its permissions, by ID
-    db_role: Optional[Role] = session.exec(
+    db_role: Role | None = session.exec(
         select(Role).where(Role.id == id).options(selectinload(Role.permissions))
     ).first()
 
@@ -167,7 +170,7 @@ def update_role(
     # Add any user-selected permissions that are not already associated with the role
     for permission in permissions:
         if permission not in [p.name for p in db_role.permissions]:
-            db_permission: Optional[Permission] = session.exec(
+            db_permission: Permission | None = session.exec(
                 select(Permission).where(Permission.name == permission)
             ).first()
             if db_permission:

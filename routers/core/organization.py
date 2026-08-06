@@ -1,30 +1,32 @@
 from logging import getLogger
 from typing import Annotated
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
-from sqlmodel import Session, select
+from pydantic import EmailStr
 from sqlalchemy.orm import selectinload
+from sqlmodel import Session, select
+
+from exceptions.http_exceptions import (
+    DataIntegrityError,
+    InsufficientPermissionsError,
+    OrganizationNameTakenError,
+    OrganizationNotFoundError,
+    OrganizationSetupError,
+    UserAlreadyMemberError,
+    UserNotFoundError,
+)
+from utils.app.enums import AppPermissions
 from utils.core.db import create_default_roles
 from utils.core.dependencies import (
     get_authenticated_user,
-    get_user_with_relations,
     get_session,
+    get_user_with_relations,
 )
-from utils.core.models import Organization, User, Role, Account, utc_now, Invitation
 from utils.core.enums import ValidPermissions
-from utils.app.enums import AppPermissions
-from exceptions.http_exceptions import (
-    OrganizationNotFoundError,
-    OrganizationNameTakenError,
-    InsufficientPermissionsError,
-    OrganizationSetupError,
-    UserNotFoundError,
-    UserAlreadyMemberError,
-    DataIntegrityError,
-)
-from pydantic import EmailStr
 from utils.core.htmx import is_htmx_request, set_flash_cookie
+from utils.core.models import Account, Invitation, Organization, Role, User, utc_now
 
 logger = getLogger("uvicorn.error")
 

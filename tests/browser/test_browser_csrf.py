@@ -126,6 +126,7 @@ def test_register_form_post_without_csrf_is_rejected(browser, live_server_csrf: 
 
     with browser_csrf_db_session() as session:
         from sqlmodel import select
+
         from utils.core.models import Account
 
         account = session.exec(

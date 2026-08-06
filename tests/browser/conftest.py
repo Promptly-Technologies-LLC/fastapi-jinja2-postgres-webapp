@@ -6,6 +6,7 @@ from contextlib import contextmanager
 
 import pytest
 from playwright.sync_api import Browser, Page
+
 from tests.browser.db_helpers import browser_db_env
 from utils.core.db import (
     clear_engine_cache,

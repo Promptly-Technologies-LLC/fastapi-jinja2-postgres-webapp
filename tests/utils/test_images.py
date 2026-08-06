@@ -1,17 +1,19 @@
-import pytest
-from PIL import Image
 import io
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+from PIL import Image
+
 from tests.async_helpers import run_async
 from utils.core.images import (
-    validate_and_process_image,
+    MAX_AVATAR_UPLOAD_BYTES,
+    MAX_DIMENSION,
+    MAX_FILE_SIZE,
+    MIN_DIMENSION,
+    InvalidImageError,
     read_upload_with_size_limit,
     reject_oversized_content_length,
-    InvalidImageError,
-    MAX_FILE_SIZE,
-    MAX_AVATAR_UPLOAD_BYTES,
-    MIN_DIMENSION,
-    MAX_DIMENSION,
+    validate_and_process_image,
 )
 
 
@@ -55,7 +57,7 @@ def test_valid_rectangular_image():
 def test_minimum_size_image():
     """Test processing an image with minimum allowed dimensions"""
     image_data = create_test_image(MIN_DIMENSION, MIN_DIMENSION)
-    processed_data, content_type = validate_and_process_image(image_data, "image/png")
+    processed_data, _ = validate_and_process_image(image_data, "image/png")
 
     processed_image = Image.open(io.BytesIO(processed_data))
     assert processed_image.size == (100, 100)

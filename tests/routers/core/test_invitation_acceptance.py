@@ -1,12 +1,13 @@
+from urllib.parse import parse_qs, urlparse
+
 import httpx
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session, select
 from sqlalchemy.orm import joinedload
-from urllib.parse import urlparse, parse_qs
+from sqlmodel import Session, select
 
 from main import app
-from utils.core.models import User, Account, Invitation
+from utils.core.models import Account, Invitation, User
 
 # --- Test Scenarios ---
 
