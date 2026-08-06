@@ -1,9 +1,9 @@
 from typing import Any, cast
 
-from sqlmodel import Session, select
 from sqlalchemy.orm import InstrumentedAttribute, selectinload
+from sqlmodel import Session, select
 
-from utils.core.models import Organization, Role, User, Invitation
+from utils.core.models import Invitation, Organization, Role, User
 
 
 def _user_permissions_for_org(user: User, organization_id: int) -> set[str]:

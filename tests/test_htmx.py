@@ -8,10 +8,11 @@ Convention: HTMX requests send the HX-Request: true header.
 - Non-HTMX paths remain unchanged (303 RedirectResponse or full-page error).
 """
 
-from starlette.requests import Request
 from fastapi.templating import Jinja2Templates
+from starlette.requests import Request
+
 from tests.conftest import htmx_headers
-from utils.core.htmx import is_htmx_request, toast_response, append_toast
+from utils.core.htmx import append_toast, is_htmx_request, toast_response
 from utils.core.rate_limit import (
     forgot_password_ip_limiter,
     login_ip_limiter,
@@ -488,6 +489,7 @@ def test_avatar_upload_htmx_returns_oob_swap(auth_client):
     """When an avatar is uploaded, the HTMX response should include an OOB
     swap for the navbar avatar instead of a full page refresh."""
     import io
+
     from PIL import Image
 
     buf = io.BytesIO()
@@ -1086,10 +1088,12 @@ def test_flash_cookie_value_is_valid_json_decodable_by_js():
     encoding (which mangles commas as \\054) by simulating the JS
     decode path on the raw Set-Cookie header value.
     """
-    from starlette.responses import Response
-    from utils.core.htmx import set_flash_cookie
     import json
     from urllib.parse import unquote
+
+    from starlette.responses import Response
+
+    from utils.core.htmx import set_flash_cookie
 
     response = Response()
     set_flash_cookie(response, "Email address verified and added to your account.")
@@ -1179,7 +1183,7 @@ def test_resend_invitation_htmx_returns_members_partial(
 
 
 def test_csrf_enabled_htmx_login_returns_toast(unauth_client, monkeypatch):
-    from utils.core.csrf import generate_csrf_token, CSRF_COOKIE_NAME
+    from utils.core.csrf import CSRF_COOKIE_NAME, generate_csrf_token
 
     monkeypatch.setenv("CSRF_ENABLED", "1")
     token = generate_csrf_token()

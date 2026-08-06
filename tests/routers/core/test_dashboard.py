@@ -1,8 +1,9 @@
-from main import app
 from sqlmodel import Session
-from utils.core.models import Organization, User
-from utils.app.models import OrganizationResource
+
+from main import app
 from tests.conftest import add_owner_to_organization, htmx_headers
+from utils.app.models import OrganizationResource
+from utils.core.models import Organization, User
 
 
 def test_dashboard_authenticated(auth_client_owner):

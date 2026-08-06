@@ -1,41 +1,41 @@
 from datetime import timedelta
+from logging import getLogger
 from uuid import uuid4
-from typing import Optional
+
 from fastapi import APIRouter, Depends, Form, Query, Request, status
+from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
-from fastapi.exceptions import HTTPException
 from pydantic import EmailStr
 from sqlmodel import Session, select
-from logging import getLogger
 
+from exceptions.exceptions import EmailSendFailedError
+from exceptions.http_exceptions import (
+    InsufficientPermissionsError,
+    InvalidRoleForOrganizationError,
+    InvitationEmailSendError,
+    InvitationNotFoundError,
+    OrganizationNotFoundError,
+    RoleNotFoundError,
+    UserIsAlreadyMemberError,
+)
+from routers.core.account import router as account_router
+from routers.core.organization import router as org_router
+from utils.app.enums import AppPermissions
 from utils.core.dependencies import (
     get_authenticated_user,
     get_optional_user,
     get_session,
 )
-from utils.core.models import User, Role, Account, Invitation, Organization, utc_now
 from utils.core.enums import ValidPermissions
-from utils.app.enums import AppPermissions
+from utils.core.htmx import append_toast, is_htmx_request
 from utils.core.invitations import (
-    send_invitation_email,
     process_invitation,
     require_active_invitation_by_token,
+    send_invitation_email,
 )
-from exceptions.http_exceptions import (
-    UserIsAlreadyMemberError,
-    InvalidRoleForOrganizationError,
-    OrganizationNotFoundError,
-    InvitationEmailSendError,
-    InvitationNotFoundError,
-    InsufficientPermissionsError,
-    RoleNotFoundError,
-)
-from exceptions.exceptions import EmailSendFailedError
-from utils.core.htmx import is_htmx_request, append_toast
+from utils.core.models import Account, Invitation, Organization, Role, User, utc_now
 from utils.core.organizations import load_org_for_members_partial
-from routers.core.account import router as account_router
-from routers.core.organization import router as org_router
 
 logger = getLogger("uvicorn.error")
 
@@ -55,7 +55,7 @@ def get_valid_invitation(
 
 
 def _redirect_for_inactive_invitation(
-    invitation: Optional[Invitation],
+    invitation: Invitation | None,
     token: str,
     session: Session,
 ) -> RedirectResponse:
@@ -146,11 +146,10 @@ def create_invitation(
         existing_user = session.exec(
             select(User).where(User.account_id == existing_account.id)
         ).first()
-        if existing_user:
-            if any(
-                role.organization_id == organization_id for role in existing_user.roles
-            ):
-                raise UserIsAlreadyMemberError()
+        if existing_user and any(
+            role.organization_id == organization_id for role in existing_user.roles
+        ):
+            raise UserIsAlreadyMemberError()
 
     Invitation.invalidate_pending_for_email(session, organization_id, invitee_email)
     session.flush()
@@ -182,11 +181,10 @@ def create_invitation(
         )
         session.rollback()
         raise InvitationEmailSendError()
-    except Exception as e:
-        logger.error(
+    except Exception:
+        logger.exception(
             f"Unexpected error during invitation creation/sending for {invitee_email} "
-            f"in org {organization_id}: {e}",
-            exc_info=True,
+            f"in org {organization_id}"
         )
         session.rollback()
         raise HTTPException(status_code=500, detail="An unexpected error occurred.")
@@ -256,11 +254,10 @@ def resend_invitation(
         )
         session.rollback()
         raise InvitationEmailSendError()
-    except Exception as e:
-        logger.error(
+    except Exception:
+        logger.exception(
             f"Unexpected error during invitation resend for {invitation.invitee_email} "
-            f"in org {organization_id}: {e}",
-            exc_info=True,
+            f"in org {organization_id}"
         )
         session.rollback()
         raise HTTPException(status_code=500, detail="An unexpected error occurred.")
@@ -320,7 +317,7 @@ def delete_invitation(
 @router.get("/accept", name="accept_invitation")
 def accept_invitation(
     token: str = Query(...),
-    current_user: Optional[User] = Depends(get_optional_user),
+    current_user: User | None = Depends(get_optional_user),
     session: Session = Depends(get_session),
 ):
     """Handles the acceptance of an invitation via the link in the email."""
@@ -360,10 +357,9 @@ def accept_invitation(
                 return RedirectResponse(
                     url=str(redirect_url), status_code=status.HTTP_303_SEE_OTHER
                 )
-            except Exception as e:
-                logger.error(
-                    f"Error processing invitation {invitation.id} for user {current_user.id}: {e}",
-                    exc_info=True,
+            except Exception:
+                logger.exception(
+                    f"Error processing invitation {invitation.id} for user {current_user.id}"
                 )
                 session.rollback()
                 raise HTTPException(

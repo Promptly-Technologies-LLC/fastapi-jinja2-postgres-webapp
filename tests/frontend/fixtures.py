@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import pytest
 from datetime import UTC, datetime, timedelta
+
+import pytest
 
 from utils.core.models import AccountRecoveryToken, PasswordResetToken
 

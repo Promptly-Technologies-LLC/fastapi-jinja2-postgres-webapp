@@ -1,25 +1,13 @@
-from fastapi.testclient import TestClient
-from starlette.datastructures import URLPath
-from sqlmodel import Session, select
-from datetime import datetime, timedelta, UTC
-from urllib.parse import urlparse, parse_qs
+from datetime import UTC, datetime, timedelta
 from html import unescape
+from urllib.parse import parse_qs, urlparse
+
+from fastapi.testclient import TestClient
 from sqlalchemy import inspect
+from sqlmodel import Session, select
+from starlette.datastructures import URLPath
 
 from main import app
-from utils.core.models import (
-    User,
-    AccountEmail,
-    AccountRecoveryToken,
-    EmailVerificationToken,
-    Invitation,
-    Organization,
-    PasswordResetToken,
-    RefreshToken,
-    Account,
-    Role,
-    UserRoleLink,
-)
 from utils.app.models import OrganizationResource
 from utils.core.auth import (
     create_access_token,
@@ -27,9 +15,22 @@ from utils.core.auth import (
     create_refresh_token,
     create_tracked_refresh_token,
     generate_recovery_url,
-    verify_password,
-    validate_token,
     get_password_hash,
+    validate_token,
+    verify_password,
+)
+from utils.core.models import (
+    Account,
+    AccountEmail,
+    AccountRecoveryToken,
+    EmailVerificationToken,
+    Invitation,
+    Organization,
+    PasswordResetToken,
+    RefreshToken,
+    Role,
+    User,
+    UserRoleLink,
 )
 from utils.core.rate_limit import (
     forgot_password_email_limiter,
@@ -221,7 +222,7 @@ def test_login_with_remember_me_sets_max_age(
     auth_cookies = [
         header
         for header in cookie_headers
-        if header.startswith("access_token=") or header.startswith("refresh_token=")
+        if header.startswith(("access_token=", "refresh_token="))
     ]
     assert len(auth_cookies) == 2
     assert all("Max-Age=" in header for header in auth_cookies)
@@ -239,7 +240,7 @@ def test_login_without_remember_me_uses_session_cookies(
     auth_cookies = [
         header
         for header in cookie_headers
-        if header.startswith("access_token=") or header.startswith("refresh_token=")
+        if header.startswith(("access_token=", "refresh_token="))
     ]
     assert len(auth_cookies) == 2
     assert all("Max-Age=" not in header for header in auth_cookies)
@@ -261,7 +262,7 @@ def test_login_with_non_on_remember_uses_session_cookies(
     auth_cookies = [
         header
         for header in cookie_headers
-        if header.startswith("access_token=") or header.startswith("refresh_token=")
+        if header.startswith(("access_token=", "refresh_token="))
     ]
     assert len(auth_cookies) == 2
     assert all("Max-Age=" not in header for header in auth_cookies)
@@ -318,7 +319,7 @@ def test_refresh_token_endpoint_preserves_persistent_max_age(
     auth_cookies = [
         header
         for header in response.headers.get_list("set-cookie")
-        if header.startswith("access_token=") or header.startswith("refresh_token=")
+        if header.startswith(("access_token=", "refresh_token="))
     ]
     assert len(auth_cookies) == 2
     assert all("Max-Age=" in header for header in auth_cookies)
@@ -345,7 +346,7 @@ def test_refresh_token_endpoint_preserves_session_cookies(
     auth_cookies = [
         header
         for header in response.headers.get_list("set-cookie")
-        if header.startswith("access_token=") or header.startswith("refresh_token=")
+        if header.startswith(("access_token=", "refresh_token="))
     ]
     assert len(auth_cookies) == 2
     assert all("Max-Age=" not in header for header in auth_cookies)
@@ -740,7 +741,7 @@ def test_password_reset_revokes_existing_sessions(
     active_tokens = session.exec(
         select(RefreshToken).where(
             RefreshToken.account_id == test_account.id,
-            RefreshToken.revoked == False,  # noqa: E712
+            RefreshToken.revoked == False,
         )
     ).all()
     assert len(active_tokens) == 1
@@ -1080,7 +1081,7 @@ def test_logout_revokes_refresh_token(
     db_tokens_before = session.exec(
         select(RefreshToken).where(
             RefreshToken.account_id == test_account.id,
-            RefreshToken.revoked == False,  # noqa: E712
+            RefreshToken.revoked == False,
         )
     ).all()
     assert len(db_tokens_before) >= 1
@@ -1092,7 +1093,7 @@ def test_logout_revokes_refresh_token(
     active_tokens = session.exec(
         select(RefreshToken).where(
             RefreshToken.account_id == test_account.id,
-            RefreshToken.revoked == False,  # noqa: E712
+            RefreshToken.revoked == False,
         )
     ).all()
     assert len(active_tokens) == 0
@@ -1112,7 +1113,7 @@ def test_refresh_endpoint_rotates_token(
     active_before = session.exec(
         select(RefreshToken).where(
             RefreshToken.account_id == test_account.id,
-            RefreshToken.revoked == False,  # noqa: E712
+            RefreshToken.revoked == False,
         )
     ).all()
     assert len(active_before) == 1
@@ -1132,7 +1133,7 @@ def test_refresh_endpoint_rotates_token(
     active_after = session.exec(
         select(RefreshToken).where(
             RefreshToken.account_id == test_account.id,
-            RefreshToken.revoked == False,  # noqa: E712
+            RefreshToken.revoked == False,
         )
     ).all()
     assert len(active_after) == 1
@@ -1152,7 +1153,7 @@ def test_refresh_reuse_detection_revokes_all_tokens(
     db_token = session.exec(
         select(RefreshToken).where(
             RefreshToken.account_id == test_account.id,
-            RefreshToken.revoked == False,  # noqa: E712
+            RefreshToken.revoked == False,
         )
     ).first()
     assert db_token is not None
@@ -1177,7 +1178,7 @@ def test_refresh_reuse_detection_revokes_all_tokens(
     active_tokens = session.exec(
         select(RefreshToken).where(
             RefreshToken.account_id == test_account.id,
-            RefreshToken.revoked == False,  # noqa: E712
+            RefreshToken.revoked == False,
         )
     ).all()
     assert len(active_tokens) == 0
@@ -1235,7 +1236,7 @@ def test_automatic_token_refresh_via_dependency(
     auth_cookies = [
         header
         for header in cookie_headers
-        if header.startswith("access_token=") or header.startswith("refresh_token=")
+        if header.startswith(("access_token=", "refresh_token="))
     ]
     assert len(auth_cookies) == 2
     assert all("Max-Age=" in header for header in auth_cookies)
@@ -1245,7 +1246,7 @@ def test_automatic_token_refresh_via_dependency(
     active_tokens = session.exec(
         select(RefreshToken).where(
             RefreshToken.account_id == test_account.id,
-            RefreshToken.revoked == False,  # noqa: E712
+            RefreshToken.revoked == False,
         )
     ).all()
     # Should have exactly 1 active token (the new one)
@@ -1275,7 +1276,7 @@ def test_automatic_token_refresh_preserves_session_cookies(
     auth_cookies = [
         header
         for header in response.headers.get_list("set-cookie")
-        if header.startswith("access_token=") or header.startswith("refresh_token=")
+        if header.startswith(("access_token=", "refresh_token="))
     ]
     assert len(auth_cookies) == 2
     assert all("Max-Age=" not in header for header in auth_cookies)
@@ -2390,7 +2391,7 @@ def test_recover_account_restores_email_as_primary(
     primary = session.exec(
         select(AccountEmail).where(
             AccountEmail.account_id == account.id,
-            AccountEmail.is_primary == True,  # noqa: E712
+            AccountEmail.is_primary == True,
         )
     ).first()
     assert primary is not None
@@ -2442,7 +2443,7 @@ def test_recover_account_generates_password_reset_token(
     reset_token = session.exec(
         select(PasswordResetToken).where(
             PasswordResetToken.account_id == account.id,
-            PasswordResetToken.used == False,  # noqa: E712
+            PasswordResetToken.used == False,
         )
     ).first()
     assert reset_token is not None
@@ -2452,7 +2453,7 @@ def test_recover_account_redirects_to_reset_password(
     unauth_client: TestClient, session: Session
 ):
     """Test that recovery redirects to the reset password page."""
-    account, recovery_token, original_email = _setup_compromised_account(session)
+    _, recovery_token, original_email = _setup_compromised_account(session)
 
     response = _submit_account_recovery(unauth_client, recovery_token.token)
     assert response.status_code == 303
@@ -2463,7 +2464,7 @@ def test_recover_account_redirects_to_reset_password(
 
 def test_recover_account_marks_token_used(unauth_client: TestClient, session: Session):
     """Test that the recovery token is marked as used after recovery."""
-    account, recovery_token, _ = _setup_compromised_account(session)
+    _, recovery_token, _ = _setup_compromised_account(session)
 
     _submit_account_recovery(unauth_client, recovery_token.token)
 
@@ -2475,7 +2476,7 @@ def test_recover_account_expired_token_fails(
     unauth_client: TestClient, session: Session
 ):
     """Test that an expired recovery token fails."""
-    account, recovery_token, _ = _setup_compromised_account(session)
+    _, recovery_token, _ = _setup_compromised_account(session)
     recovery_token.expires_at = datetime.now(UTC) - timedelta(hours=1)
     session.commit()
 
@@ -2485,7 +2486,7 @@ def test_recover_account_expired_token_fails(
 
 def test_recover_account_used_token_fails(unauth_client: TestClient, session: Session):
     """Test that a used recovery token fails."""
-    account, recovery_token, _ = _setup_compromised_account(session)
+    _, recovery_token, _ = _setup_compromised_account(session)
     recovery_token.used = True
     session.commit()
 

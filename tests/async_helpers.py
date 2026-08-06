@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Coroutine
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Coroutine, TypeVar
-
-T = TypeVar("T")
+from typing import Any
 
 
-def run_async(coro: Coroutine[Any, Any, T]) -> T:
+def run_async[T](coro: Coroutine[Any, Any, T]) -> T:
     """Drive an async helper from sync tests.
 
     The full suite may already have an event loop (e.g. after Playwright), so

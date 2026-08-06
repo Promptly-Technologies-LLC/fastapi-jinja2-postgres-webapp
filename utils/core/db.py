@@ -1,20 +1,22 @@
-import os
 import logging
+import os
 import threading
+from collections.abc import Sequence
 from itertools import chain
-from typing import Union, Sequence
-from sqlalchemy.engine import Engine, URL
-from sqlmodel import create_engine, Session, SQLModel, select, text
+
+from sqlalchemy.engine import URL, Engine
+from sqlmodel import Session, SQLModel, create_engine, select, text
+
+from utils.app.enums import AppPermissions
+from utils.app.models import *  # registers app models with SQLModel.metadata
+from utils.core.enums import ValidPermissions
 from utils.core.models import (
     Account,
     AccountEmail,
-    Role,
     Permission,
+    Role,
     RolePermissionLink,
 )
-from utils.core.enums import ValidPermissions
-from utils.app.enums import AppPermissions
-from utils.app.models import *  # noqa: F401, F403 — registers app models with SQLModel.metadata
 
 # Set up a logger for error reporting
 logger = logging.getLogger("uvicorn.error")
@@ -165,7 +167,7 @@ def get_connection_url() -> URL:
 def assign_permissions_to_role(
     session: Session,
     role: Role,
-    permissions: Union[list[Permission], Sequence[Permission]],
+    permissions: list[Permission] | Sequence[Permission],
     check_first: bool = False,
 ) -> None:
     """
@@ -275,7 +277,7 @@ def seed_account_emails(session: Session) -> None:
     Backfill AccountEmail rows for existing accounts that don't have one.
     Each account gets a primary, verified AccountEmail matching its email field.
     """
-    from datetime import datetime, UTC
+    from datetime import UTC, datetime
 
     accounts = session.exec(select(Account)).all()
     for account in accounts:

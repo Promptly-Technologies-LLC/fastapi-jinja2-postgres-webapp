@@ -1,5 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
+
 from routers.core.static_pages import VALID_PAGES
 
 # Get valid page names from the router module

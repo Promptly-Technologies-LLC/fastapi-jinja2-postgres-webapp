@@ -1,87 +1,88 @@
 # auth.py
 import os
 from logging import getLogger
-from typing import Optional, Tuple
 from urllib.parse import urlparse
-from fastapi import APIRouter, Depends, BackgroundTasks, Form, Request, Query
+
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, Query, Request
 from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
-from starlette.datastructures import URLPath
 from pydantic import EmailStr
 from sqlmodel import Session, col, select
-from utils.core.models import (
-    User,
-    DataIntegrityError,
-    Account,
-    AccountEmail,
-    Invitation,
-    Organization,
-    Role,
-    UserRoleLink,
+from starlette.datastructures import URLPath
+
+from exceptions.http_exceptions import (
+    CannotRemovePrimaryEmailError,
+    CredentialsError,
+    EmailAlreadyRegisteredError,
+    EmailNotVerifiedError,
+    InvitationEmailMismatchError,
+    InvitationProcessingError,
+    MaxEmailsReachedError,
+    PasswordValidationError,
 )
-from utils.core.dependencies import get_session
-from utils.core.models import RefreshToken
+from routers.core.dashboard import router as dashboard_router
+from routers.core.organization import router as org_router
+from routers.core.user import router as user_router
 from utils.core.auth import (
-    HTML_PASSWORD_PATTERN,
     COMPILED_PASSWORD_PATTERN,
+    HTML_PASSWORD_PATTERN,
     MAX_EMAILS_PER_ACCOUNT,
-    oauth2_scheme_cookie,
-    get_password_hash,
-    create_access_token,
-    create_tracked_refresh_token,
-    revoke_all_refresh_tokens,
-    validate_token,
-    set_auth_cookies,
     clear_auth_cookies,
-    send_reset_email_task,
+    create_access_token,
+    create_recovery_token,
+    create_tracked_refresh_token,
+    generate_recovery_url,
+    get_password_hash,
+    oauth2_scheme_cookie,
+    revoke_all_refresh_tokens,
+    send_email_removed_notification,
     send_email_verification,
     send_email_verified_notification,
     send_primary_email_changed_notification,
-    send_email_removed_notification,
-    create_recovery_token,
-    generate_recovery_url,
+    send_reset_email_task,
+    set_auth_cookies,
+    validate_token,
+)
+from utils.core.communication_preferences import (
+    apply_communication_preferences,
+    parse_communication_preferences,
 )
 from utils.core.dependencies import (
-    get_authenticated_account,
-    get_optional_user,
-    get_account_from_reset_token,
+    get_account_from_credentials,
     get_account_from_email_verification_token,
     get_account_from_recovery_token,
-    get_account_from_credentials,
+    get_account_from_reset_token,
+    get_authenticated_account,
+    get_optional_user,
+    get_session,
+    get_verified_account,
     require_unauthenticated_client,
     require_unauthenticated_unless_invitation_warning,
-    get_verified_account,
 )
-from exceptions.http_exceptions import (
-    EmailAlreadyRegisteredError,
-    CannotRemovePrimaryEmailError,
-    CredentialsError,
-    EmailNotVerifiedError,
-    MaxEmailsReachedError,
-    PasswordValidationError,
-    InvitationEmailMismatchError,
-    InvitationProcessingError,
-)
-from routers.core.dashboard import router as dashboard_router
-from routers.core.user import router as user_router
-from routers.core.organization import router as org_router
+from utils.core.htmx import is_htmx_request, set_flash_cookie, toast_response
 from utils.core.invitations import (
+    get_invitation_token_warning,
     process_invitation,
     require_active_invitation_by_token,
-    get_invitation_token_warning,
+)
+from utils.core.models import (
+    Account,
+    AccountEmail,
+    DataIntegrityError,
+    Invitation,
+    Organization,
+    RefreshToken,
+    Role,
+    User,
+    UserRoleLink,
 )
 from utils.core.rate_limit import (
-    check_login_ip_rate_limit,
-    check_login_email_rate_limit,
-    check_register_ip_rate_limit,
-    check_forgot_password_ip_rate_limit,
     check_forgot_password_email_rate_limit,
+    check_forgot_password_ip_rate_limit,
+    check_login_email_rate_limit,
+    check_login_ip_rate_limit,
+    check_register_ip_rate_limit,
     login_email_limiter,
-)
-from utils.core.htmx import is_htmx_request, toast_response, set_flash_cookie
-from utils.core.communication_preferences import (
-    parse_communication_preferences,
-    apply_communication_preferences,
 )
 
 logger = getLogger("uvicorn.error")
@@ -164,7 +165,7 @@ def validate_password_strength_and_match(
 
 @router.get("/logout", response_class=RedirectResponse)
 def logout(
-    tokens: tuple[Optional[str], Optional[str]] = Depends(oauth2_scheme_cookie),
+    tokens: tuple[str | None, str | None] = Depends(oauth2_scheme_cookie),
     session: Session = Depends(get_session),
 ):
     """
@@ -191,8 +192,8 @@ def logout(
 def read_login(
     request: Request,
     _: None = Depends(require_unauthenticated_unless_invitation_warning),
-    invitation_token: Optional[str] = Query(None),
-    user: Optional[User] = Depends(get_optional_user),
+    invitation_token: str | None = Query(None),
+    user: User | None = Depends(get_optional_user),
     session: Session = Depends(get_session),
 ):
     """
@@ -218,9 +219,9 @@ def read_login(
 def read_register(
     request: Request,
     _: None = Depends(require_unauthenticated_unless_invitation_warning),
-    email: Optional[EmailStr] = Query(None),
-    invitation_token: Optional[str] = Query(None),
-    user: Optional[User] = Depends(get_optional_user),
+    email: EmailStr | None = Query(None),
+    invitation_token: str | None = Query(None),
+    user: User | None = Depends(get_optional_user),
     session: Session = Depends(get_session),
 ):
     """
@@ -249,7 +250,7 @@ def read_register(
 def read_forgot_password(
     request: Request,
     _: None = Depends(require_unauthenticated_client),
-    show_form: Optional[str] = "true",
+    show_form: str | None = "true",
 ):
     """
     Render forgot password page or redirect to dashboard if already logged in.
@@ -266,7 +267,7 @@ def read_reset_password(
     request: Request,
     email: str,
     token: str,
-    user: Optional[User] = Depends(get_optional_user),
+    user: User | None = Depends(get_optional_user),
     session: Session = Depends(get_session),
 ):
     """
@@ -330,19 +331,19 @@ def register(
     session: Session = Depends(get_session),
     _: None = Depends(validate_password_strength_and_match),
     password: str = Form(..., title="Password", description="Account password"),
-    invitation_token: Optional[str] = Form(
+    invitation_token: str | None = Form(
         None,
         title="Invitation token",
         description="Optional invitation token to join an organization",
     ),
-    comm_opt_in: Optional[str] = Form(None),
-    comm_updates: Optional[str] = Form(None),
-    comm_marketing: Optional[str] = Form(None),
+    comm_opt_in: str | None = Form(None),
+    comm_updates: str | None = Form(None),
+    comm_marketing: str | None = Form(None),
 ) -> Response:
     """
     Register a new user account, optionally processing an invitation.
     """
-    pending_invitation: Optional[Invitation] = None
+    pending_invitation: Invitation | None = None
     if invitation_token:
         pending_invitation = require_active_invitation_by_token(
             session, invitation_token
@@ -355,7 +356,7 @@ def register(
             raise InvitationEmailMismatchError()
 
     # Check if the email is already registered
-    existing_account: Optional[Account] = session.exec(
+    existing_account: Account | None = session.exec(
         select(Account).where(Account.email == email)
     ).one_or_none()
 
@@ -386,7 +387,7 @@ def register(
     session.add(new_user)
 
     # Create the primary AccountEmail entry
-    from datetime import datetime, UTC
+    from datetime import UTC, datetime
 
     account_email = AccountEmail(
         account_id=account.id,
@@ -419,10 +420,9 @@ def register(
             logger.info(
                 f"Redirecting new user {new_user.name} to organization {pending_invitation.organization_id} after accepting invitation {pending_invitation.id}."
             )
-        except Exception as e:
-            logger.error(
-                f"Error processing invitation {pending_invitation.id} for new user {new_user.name} ({email}) during registration: {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                f"Error processing invitation {pending_invitation.id} for new user {new_user.name} ({email}) during registration"
             )
             session.rollback()
             raise InvitationProcessingError()
@@ -435,10 +435,9 @@ def register(
     # Commit all changes (Account, User, potentially Invitation)
     try:
         session.commit()
-    except Exception as e:
-        logger.error(
-            f"Error committing transaction during registration for {email}: {e}",
-            exc_info=True,
+    except Exception:
+        logger.exception(
+            f"Error committing transaction during registration for {email}"
         )
         session.rollback()
         # Use DataIntegrityError for commit failure
@@ -477,11 +476,11 @@ def login(
     request: Request,
     _ip_check: None = Depends(check_login_ip_rate_limit),
     _email_check: EmailStr = Depends(check_login_email_rate_limit),
-    account_and_session: Tuple[Account, Session] = Depends(
+    account_and_session: tuple[Account, Session] = Depends(
         get_account_from_credentials
     ),
-    remember: Optional[str] = Form(None),
-    invitation_token: Optional[str] = Form(
+    remember: str | None = Form(None),
+    invitation_token: str | None = Form(
         None,
         title="Invitation token",
         description="Optional invitation token to join an organization after login",
@@ -509,7 +508,7 @@ def login(
         account_emails = session.exec(
             select(AccountEmail.email).where(
                 AccountEmail.account_id == account.id,
-                AccountEmail.verified == True,  # noqa: E712
+                AccountEmail.verified == True,
             )
         ).all()
         if invitation.invitee_email not in account_emails:
@@ -548,10 +547,8 @@ def login(
             else:
                 logger.error("User has no ID during invitation processing.")
                 raise DataIntegrityError(resource="User ID")
-        except Exception as e:
-            logger.error(
-                f"Error processing invitation during login: {e}", exc_info=True
-            )
+        except Exception:
+            logger.exception("Error processing invitation during login")
             session.rollback()
             # Raise the specific invitation processing error
             raise InvitationProcessingError()
@@ -589,7 +586,7 @@ def login(
 # Updated refresh_token endpoint
 @router.post("/refresh", response_class=RedirectResponse)
 def refresh_token(
-    tokens: tuple[Optional[str], Optional[str]] = Depends(oauth2_scheme_cookie),
+    tokens: tuple[str | None, str | None] = Depends(oauth2_scheme_cookie),
     session: Session = Depends(get_session),
 ) -> RedirectResponse:
     """
@@ -813,7 +810,8 @@ def recover_account(
     session.flush()
 
     # Restore the victim's email as primary
-    from datetime import datetime as dt, UTC as utc_tz
+    from datetime import UTC as utc_tz
+    from datetime import datetime as dt
 
     restored_email = AccountEmail(
         account_id=account.id,
@@ -933,7 +931,8 @@ def verify_email(
         raise EmailAlreadyRegisteredError()
 
     # Create the AccountEmail row
-    from datetime import datetime as dt, UTC as utc_tz
+    from datetime import UTC as utc_tz
+    from datetime import datetime as dt
 
     account_email = AccountEmail(
         account_id=account.id,
@@ -997,7 +996,7 @@ def promote_email(
     current_primary = session.exec(
         select(AccountEmail).where(
             AccountEmail.account_id == account.id,
-            AccountEmail.is_primary == True,  # noqa: E712
+            AccountEmail.is_primary == True,
         )
     ).first()
 

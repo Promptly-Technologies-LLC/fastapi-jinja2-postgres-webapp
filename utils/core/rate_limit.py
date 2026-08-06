@@ -1,15 +1,15 @@
-import os
-import time
-import threading
-import math
-from datetime import UTC, datetime, timedelta
 import ipaddress
+import math
+import os
+import threading
+import time
+from datetime import UTC, datetime, timedelta
 from logging import getLogger
-from typing import Protocol, Tuple, runtime_checkable
+from typing import Protocol, runtime_checkable
 
-from fastapi import Request, Form
-from pydantic import EmailStr
 from dotenv import load_dotenv
+from fastapi import Form, Request
+from pydantic import EmailStr
 from sqlmodel import Session, col, delete, select
 
 from utils.core.db import get_engine
@@ -24,7 +24,7 @@ class RateLimiter(Protocol):
     max_attempts: int
     window_seconds: int
 
-    def check(self, key: str) -> Tuple[bool, int]: ...
+    def check(self, key: str) -> tuple[bool, int]: ...
 
     def record(self, key: str) -> None: ...
 
@@ -142,7 +142,7 @@ class RateLimitWindow:
         self._prune_stale_keys(now)
         self._next_prune_at = now + self.prune_interval_seconds
 
-    def check(self, key: str) -> Tuple[bool, int]:
+    def check(self, key: str) -> tuple[bool, int]:
         """
         Check whether a key is currently rate-limited.
 
@@ -224,7 +224,7 @@ class PostgresRateLimitWindow:
             .order_by(col(RateLimitAttempt.attempted_at))
         ).all()
 
-    def check(self, key: str) -> Tuple[bool, int]:
+    def check(self, key: str) -> tuple[bool, int]:
         now = datetime.now(UTC)
         with Session(get_engine()) as session:
             attempts = self._recent_attempts(session, key, now)

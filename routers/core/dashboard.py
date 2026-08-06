@@ -1,11 +1,11 @@
-from typing import Optional, List
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.templating import Jinja2Templates
-from sqlmodel import Session, select, col
-from utils.core.dependencies import get_user_with_relations, get_session
-from utils.core.models import User, Organization
+from sqlmodel import Session, col, select
+
 from utils.app.enums import AppPermissions
 from utils.app.models import OrganizationResource
+from utils.core.dependencies import get_session, get_user_with_relations
+from utils.core.models import Organization, User
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 templates = Jinja2Templates(directory="templates")
@@ -21,8 +21,8 @@ def read_dashboard(
     session: Session = Depends(get_session),
 ):
     organizations = user.organizations
-    selected_org: Optional[Organization] = None
-    resources: List[OrganizationResource] = []
+    selected_org: Organization | None = None
+    resources: list[OrganizationResource] = []
     can_read = False
     can_write = False
     can_delete = False

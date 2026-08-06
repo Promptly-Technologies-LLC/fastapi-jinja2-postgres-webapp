@@ -1,27 +1,33 @@
 import logging
 from contextlib import asynccontextmanager
+
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request, Depends, status
+from fastapi import Depends, FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
+
+from exceptions.exceptions import NeedsNewTokens
+from exceptions.http_exceptions import (
+    AlreadyAuthenticatedError,
+    AuthenticationError,
+    CredentialsError,
+    CsrfError,
+    PasswordValidationError,
+    RateLimitError,
+)
 from routers.core import (
     account,
     dashboard,
+    invitation,
     organization,
     role,
-    user,
     static_pages,
-    invitation,
-)
-from utils.core.dependencies import (
-    get_user_from_request,
-    require_unauthenticated_client,
+    user,
 )
 from utils.core.auth import refresh_token_is_persistent, set_auth_cookies
-from utils.core.rate_limit import get_trusted_proxy_hosts
 from utils.core.csrf import (
     CSRF_COOKIE_NAME,
     UNSAFE_HTTP_METHODS,
@@ -31,22 +37,18 @@ from utils.core.csrf import (
     set_csrf_cookie,
     validate_csrf_token,
 )
+from utils.core.db import clear_engine_cache, set_up_db
+from utils.core.dependencies import (
+    get_user_from_request,
+    require_unauthenticated_client,
+)
 from utils.core.htmx import (
+    FLASH_COOKIE_NAME,
+    get_flash_cookie,
     is_htmx_request,
     toast_response,
-    get_flash_cookie,
-    FLASH_COOKIE_NAME,
 )
-from exceptions.http_exceptions import (
-    AlreadyAuthenticatedError,
-    AuthenticationError,
-    CsrfError,
-    PasswordValidationError,
-    CredentialsError,
-    RateLimitError,
-)
-from exceptions.exceptions import NeedsNewTokens
-from utils.core.db import set_up_db, clear_engine_cache
+from utils.core.rate_limit import get_trusted_proxy_hosts
 
 logger = logging.getLogger("uvicorn.error")
 logger.setLevel(logging.DEBUG)
@@ -363,7 +365,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
     # Log the error for debugging
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    logger.error(f"Unhandled exception: {exc}", exc_info=exc)
 
     if is_htmx_request(request):
         return toast_response(
