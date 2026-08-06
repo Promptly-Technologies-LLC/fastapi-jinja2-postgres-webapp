@@ -1,17 +1,21 @@
-from datetime import timedelta, datetime, UTC
-from typing import Optional
-from sqlmodel import select, Session
+from datetime import UTC, datetime, timedelta
+
+import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
-import pytest
+from sqlmodel import Session, select
+
+from tests.conftest import SetupError
+from utils.app.enums import AppPermissions
+from utils.core.enums import ValidPermissions
 from utils.core.models import (
     Account,
     AccountEmail,
     AccountRecoveryToken,
     EmailVerificationToken,
     Organization,
-    Permission,
     PasswordResetToken,
+    Permission,
     Role,
     RolePermissionLink,
     User,
@@ -19,10 +23,6 @@ from utils.core.models import (
     UserRoleLink,
     utc_naive_now,
 )
-from utils.core.enums import ValidPermissions
-from utils.app.enums import AppPermissions
-from tests.conftest import SetupError
-
 
 # --- Schema placement tests ---
 
@@ -262,12 +262,12 @@ def test_user_has_permission(
     session.refresh(role)
 
     # Assign permissions to the role
-    delete_org_permission: Optional[Permission] = session.exec(
+    delete_org_permission: Permission | None = session.exec(
         select(Permission).where(
             Permission.name == ValidPermissions.DELETE_ORGANIZATION
         )
     ).first()
-    edit_org_permission: Optional[Permission] = session.exec(
+    edit_org_permission: Permission | None = session.exec(
         select(Permission).where(Permission.name == ValidPermissions.EDIT_ORGANIZATION)
     ).first()
 

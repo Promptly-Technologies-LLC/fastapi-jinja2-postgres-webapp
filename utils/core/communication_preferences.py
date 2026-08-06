@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from utils.core.models import User
 
@@ -10,9 +10,9 @@ class CommunicationPreferences(NamedTuple):
 
 
 def parse_communication_preferences(
-    comm_opt_in: Optional[str] = None,
-    comm_updates: Optional[str] = None,
-    comm_marketing: Optional[str] = None,
+    comm_opt_in: str | None = None,
+    comm_updates: str | None = None,
+    comm_marketing: str | None = None,
 ) -> CommunicationPreferences:
     """Parse HTML checkbox form values into communication preference booleans."""
     if comm_opt_in != "on":

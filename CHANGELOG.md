@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- version list -->
 
+## v1.1.10 (2026-08-04)
+
+### Bug Fixes
+
+- Keep Session off the thread pool in update_profile
+  ([`3797f03`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/3797f0378e229945be7a2e4b789f4122c0f4d568))
+
+### Chores
+
+- Drop issue reference from update_profile comment
+  ([`f48264a`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/f48264a8a90d827a88a9b7dec427753486164e7b))
+
+### Refactoring
+
+- **tests**: Share typed run_async helper
+  ([`2796c97`](https://github.com/Promptly-Technologies-LLC/fastapi-jinja2-postgres-webapp/commit/2796c97e1f6a35133a4f0e4c90ba2b99f7d259b6))
+
+
 ## v1.1.9 (2026-07-29)
 
 ### Bug Fixes

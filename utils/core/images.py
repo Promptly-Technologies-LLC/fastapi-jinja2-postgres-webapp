@@ -1,10 +1,10 @@
 # utils/images.py
-from PIL import Image
 import io
-from typing import Tuple
-from fastapi import UploadFile
-from exceptions.http_exceptions import InvalidImageError
 
+from fastapi import UploadFile
+from PIL import Image
+
+from exceptions.http_exceptions import InvalidImageError
 
 # --- Constants ---
 
@@ -55,7 +55,7 @@ async def read_upload_with_size_limit(
 
 def validate_and_process_image(
     image_data: bytes, content_type: str | None
-) -> Tuple[bytes, str]:
+) -> tuple[bytes, str]:
     """
     Validates and processes an image file.
     Returns a tuple of (processed_image_data, content_type).
@@ -76,8 +76,10 @@ def validate_and_process_image(
         # Open and validate image
         image: Image.Image = Image.open(io.BytesIO(image_data))
         width, height = image.size
-    except Exception:
-        raise InvalidImageError(message="Invalid image file")
+    except (OSError, ValueError, Image.DecompressionBombError) as e:
+        # Pillow signals unreadable, truncated, or absurdly large images with
+        # these; UnidentifiedImageError is itself an OSError subclass.
+        raise InvalidImageError(message="Invalid image file") from e
 
     # Check minimum dimensions
     if width < MIN_DIMENSION or height < MIN_DIMENSION:

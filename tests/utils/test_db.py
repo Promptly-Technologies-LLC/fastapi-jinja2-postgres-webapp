@@ -1,30 +1,30 @@
 import pytest
-from sqlmodel import Session, select, inspect
 from sqlalchemy import Engine
+from sqlmodel import Session, inspect, select
+
+from tests.conftest import SetupError
+from utils.app.enums import AppPermissions
+from utils.core.auth import get_password_hash
 from utils.core.db import (
-    get_connection_url,
-    get_engine,
-    clear_engine_cache,
     assign_permissions_to_role,
+    clear_engine_cache,
     create_default_roles,
     create_permissions,
+    get_connection_url,
+    get_engine,
     seed_account_emails,
-    tear_down_db,
     set_up_db,
+    tear_down_db,
 )
+from utils.core.enums import ValidPermissions
 from utils.core.models import (
     Account,
     AccountEmail,
-    Role,
-    Permission,
     Organization,
+    Permission,
+    Role,
     RolePermissionLink,
 )
-from utils.core.auth import get_password_hash
-from utils.core.enums import ValidPermissions
-from utils.app.enums import AppPermissions
-from tests.conftest import SetupError
-
 
 # --- Connection URL Tests ---
 

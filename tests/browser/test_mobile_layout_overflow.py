@@ -1,9 +1,9 @@
 """Regression: pages must not widen the document on narrow viewports."""
 
 import re
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
 
 import pytest
 from playwright.sync_api import Browser, Page

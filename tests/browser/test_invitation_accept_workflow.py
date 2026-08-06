@@ -3,6 +3,7 @@
 import uuid
 
 from playwright.sync_api import expect
+from sqlmodel import select
 
 from tests.browser.db_helpers import (
     browser_db_session,
@@ -11,7 +12,6 @@ from tests.browser.db_helpers import (
     seed_invitation,
 )
 from utils.core.models import Account, Invitation, User
-from sqlmodel import select
 
 
 def _accept_url(live_server: str, token: str) -> str:

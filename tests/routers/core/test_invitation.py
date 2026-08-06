@@ -1,13 +1,15 @@
-import pytest
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
-from urllib.parse import urlparse, parse_qs
-from sqlmodel import Session, select, col
-from tests.conftest import SetupError
-from utils.core.models import Role, Permission, User, Invitation, Organization, Account
-from utils.core.enums import ValidPermissions
+from urllib.parse import parse_qs, urlparse
+
+import pytest
+from sqlmodel import Session, col, select
+
 from main import app
+from tests.conftest import SetupError
+from utils.core.enums import ValidPermissions
 from utils.core.invitations import generate_invitation_link
+from utils.core.models import Account, Invitation, Organization, Permission, Role, User
 
 
 @pytest.fixture

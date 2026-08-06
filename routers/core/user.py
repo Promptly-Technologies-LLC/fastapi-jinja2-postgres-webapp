@@ -1,48 +1,49 @@
-from fastapi import APIRouter, Depends, Form, UploadFile, File, Request, HTTPException
+import os
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse, Response
-from starlette.concurrency import run_in_threadpool
-from sqlmodel import Session, select, col
-from typing import Optional, List
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import selectinload
-import os
+from sqlmodel import Session, col, select
+from starlette.concurrency import run_in_threadpool
+
+from exceptions.http_exceptions import (
+    InsufficientPermissionsError,
+    OrganizationNotFoundError,
+    UserNotFoundError,
+)
+from routers.core.organization import router as organization_router
+from utils.app.enums import AppPermissions
+from utils.core.auth import MAX_EMAILS_PER_ACCOUNT
+from utils.core.communication_preferences import (
+    apply_communication_preferences,
+    parse_communication_preferences,
+)
+from utils.core.dependencies import (
+    get_authenticated_user,
+    get_session,
+    get_user_with_relations,
+)
+from utils.core.enums import ValidPermissions
+from utils.core.htmx import append_toast, is_htmx_request, toast_response
+from utils.core.images import (
+    ALLOWED_CONTENT_TYPES,
+    MAX_AVATAR_UPLOAD_BYTES,
+    MAX_DIMENSION,
+    MAX_FILE_SIZE,
+    MIN_DIMENSION,
+    read_upload_with_size_limit,
+    reject_oversized_content_length,
+    validate_and_process_image,
+)
 from utils.core.models import (
-    User,
-    UserAvatar,
     AccountEmail,
     DataIntegrityError,
     Organization,
+    User,
+    UserAvatar,
 )
 from utils.core.organizations import load_org_for_members_partial
-from utils.core.auth import MAX_EMAILS_PER_ACCOUNT
-from utils.core.dependencies import (
-    get_authenticated_user,
-    get_user_with_relations,
-    get_session,
-)
-from utils.core.images import (
-    validate_and_process_image,
-    read_upload_with_size_limit,
-    reject_oversized_content_length,
-    MAX_FILE_SIZE,
-    MAX_AVATAR_UPLOAD_BYTES,
-    MIN_DIMENSION,
-    MAX_DIMENSION,
-    ALLOWED_CONTENT_TYPES,
-)
-from utils.core.enums import ValidPermissions
-from utils.app.enums import AppPermissions
-from exceptions.http_exceptions import (
-    InsufficientPermissionsError,
-    UserNotFoundError,
-    OrganizationNotFoundError,
-)
-from routers.core.organization import router as organization_router
-from utils.core.htmx import is_htmx_request, append_toast, toast_response
-from utils.core.communication_preferences import (
-    parse_communication_preferences,
-    apply_communication_preferences,
-)
 
 router = APIRouter(prefix="/user", tags=["user"])
 templates = Jinja2Templates(directory="templates")
@@ -56,7 +57,7 @@ def read_profile(
     request: Request,
     user: User = Depends(get_user_with_relations),
     session: Session = Depends(get_session),
-    show_form: Optional[str] = "true",
+    show_form: str | None = "true",
 ):
     # Load account emails
     account_emails = (
@@ -123,10 +124,10 @@ def profile_display(
 @router.post("/update", response_class=RedirectResponse)
 async def update_profile(
     request: Request,
-    name: Optional[str] = Form(
+    name: str | None = Form(
         None, strip_whitespace=True, title="Name", description="Updated display name"
     ),
-    avatar_file: Optional[UploadFile] = File(None),
+    avatar_file: UploadFile | None = File(None),
     user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session),
 ):
@@ -186,9 +187,9 @@ async def update_profile(
 @router.post("/communication-preferences", response_class=RedirectResponse)
 def update_communication_preferences(
     request: Request,
-    comm_opt_in: Optional[str] = Form(None),
-    comm_updates: Optional[str] = Form(None),
-    comm_marketing: Optional[str] = Form(None),
+    comm_opt_in: str | None = Form(None),
+    comm_updates: str | None = Form(None),
+    comm_marketing: str | None = Form(None),
     user: User = Depends(get_authenticated_user),
     session: Session = Depends(get_session),
 ) -> Response:
@@ -228,7 +229,7 @@ def update_user_role(
     organization_id: int = Form(
         ..., title="Organization ID", description="ID of the organization"
     ),
-    roles: Optional[List[int]] = Form(
+    roles: list[int] | None = Form(
         None, title="Role IDs", description="List of role IDs to assign to the user"
     ),
     user: User = Depends(get_authenticated_user),

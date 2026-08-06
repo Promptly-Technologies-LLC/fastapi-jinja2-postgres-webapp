@@ -1,24 +1,26 @@
+import random
 import re
 import string
-import random
+import uuid
 from datetime import timedelta
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
+
 from starlette.datastructures import URLPath
 from starlette.responses import Response
-import uuid
+
 from main import app
 from utils.core.auth import (
+    COMPILED_PASSWORD_PATTERN,
+    auth_cookie_max_ages,
+    convert_python_regex_to_html,
     create_access_token,
     create_refresh_token,
-    verify_password,
-    get_password_hash,
-    validate_token,
     generate_password_reset_url,
-    COMPILED_PASSWORD_PATTERN,
-    convert_python_regex_to_html,
-    auth_cookie_max_ages,
-    set_auth_cookies,
+    get_password_hash,
     refresh_token_is_persistent,
+    set_auth_cookies,
+    validate_token,
+    verify_password,
 )
 
 
@@ -120,12 +122,12 @@ def test_password_pattern() -> None:
     }
 
     # Valid password tests
-    for element in required_elements:
-        for c in required_elements[element]:
+    for element, characters in required_elements.items():
+        for c in characters:
             password = c + "test"
-            for other_element in required_elements:
+            for other_element, other_characters in required_elements.items():
                 if other_element != element:
-                    password += random.choice(required_elements[other_element])
+                    password += random.choice(other_characters)
             # Randomize the order of the characters in the string
             password = "".join(random.sample(password, len(password)))
             assert re.match(COMPILED_PASSWORD_PATTERN, password) is not None, (

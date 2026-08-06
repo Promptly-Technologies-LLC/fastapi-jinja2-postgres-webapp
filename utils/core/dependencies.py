@@ -1,29 +1,14 @@
 import logging
-from fastapi import Depends, Form, Query, Request
-from starlette.concurrency import run_in_threadpool
-from pydantic import EmailStr
-from sqlmodel import Session, select
-from sqlalchemy.orm import selectinload
+from collections.abc import Generator
 from datetime import UTC, datetime
-from typing import Optional, Tuple, Generator
-from utils.core.auth import (
-    validate_token,
-    create_access_token,
-    create_tracked_refresh_token,
-    revoke_all_refresh_tokens,
-    oauth2_scheme_cookie,
-    verify_password,
-)
-from utils.core.db import get_engine
-from utils.core.models import (
-    User,
-    Role,
-    AccountRecoveryToken,
-    PasswordResetToken,
-    EmailVerificationToken,
-    RefreshToken,
-    Account,
-)
+
+from fastapi import Depends, Form, Query, Request
+from pydantic import EmailStr
+from sqlalchemy.orm import selectinload
+from sqlmodel import Session, select
+from starlette.concurrency import run_in_threadpool
+
+from exceptions.exceptions import NeedsNewTokens
 from exceptions.http_exceptions import (
     AlreadyAuthenticatedError,
     AuthenticationError,
@@ -31,13 +16,30 @@ from exceptions.http_exceptions import (
     DataIntegrityError,
     PasswordValidationError,
 )
-from exceptions.exceptions import NeedsNewTokens
+from utils.core.auth import (
+    create_access_token,
+    create_tracked_refresh_token,
+    oauth2_scheme_cookie,
+    revoke_all_refresh_tokens,
+    validate_token,
+    verify_password,
+)
+from utils.core.db import get_engine
 from utils.core.invitations import get_invitation_token_warning
+from utils.core.models import (
+    Account,
+    AccountRecoveryToken,
+    EmailVerificationToken,
+    PasswordResetToken,
+    RefreshToken,
+    Role,
+    User,
+)
 
 logger = logging.getLogger(__name__)
 
 
-def get_session() -> Generator[Session, None, None]:
+def get_session() -> Generator[Session]:
     """
     Provides a database session for executing queries.
 
@@ -50,7 +52,7 @@ def get_session() -> Generator[Session, None, None]:
 
 def validate_token_and_get_account(
     token: str, token_type: str, session: Session
-) -> tuple[Optional[Account], Optional[str], Optional[str]]:
+) -> tuple[Account | None, str | None, str | None]:
     """
     Validates a token and returns the associated account if valid.
     For refresh tokens, performs server-side JTI validation with reuse detection.
@@ -113,7 +115,7 @@ def get_account_from_credentials(
     email: EmailStr = Form(...),
     password: str = Form(...),
     session: Session = Depends(get_session),
-) -> Tuple[Account, Session]:
+) -> tuple[Account, Session]:
     """
     Validates user credentials and returns the account if valid.
 
@@ -137,8 +139,8 @@ def get_account_from_credentials(
 
 
 def get_account_from_tokens(
-    tokens: tuple[Optional[str], Optional[str]], session: Session
-) -> tuple[Optional[Account], Optional[str], Optional[str]]:
+    tokens: tuple[str | None, str | None], session: Session
+) -> tuple[Account | None, str | None, str | None]:
     """
     Attempts to get an account from access or refresh tokens.
 
@@ -173,7 +175,7 @@ def get_account_from_tokens(
 
 
 def get_authenticated_account(
-    tokens: tuple[Optional[str], Optional[str]] = Depends(oauth2_scheme_cookie),
+    tokens: tuple[str | None, str | None] = Depends(oauth2_scheme_cookie),
     session: Session = Depends(get_session),
 ) -> Account:
     """
@@ -208,7 +210,7 @@ def get_authenticated_account(
 
 def validate_token_and_get_user(
     token: str, token_type: str, session: Session
-) -> tuple[Optional[User], Optional[str], Optional[str]]:
+) -> tuple[User | None, str | None, str | None]:
     # Delegate to validate_token_and_get_account for shared JTI logic
     account, new_access_token, new_refresh_token = validate_token_and_get_account(
         token, token_type, session
@@ -219,8 +221,8 @@ def validate_token_and_get_user(
 
 
 def get_user_from_tokens(
-    tokens: tuple[Optional[str], Optional[str]], session: Session
-) -> tuple[Optional[User], Optional[str], Optional[str]]:
+    tokens: tuple[str | None, str | None], session: Session
+) -> tuple[User | None, str | None, str | None]:
     access_token, refresh_token = tokens
 
     # Try to validate the access token first
@@ -245,7 +247,7 @@ def get_user_from_tokens(
 
 
 def get_authenticated_user(
-    tokens: tuple[Optional[str], Optional[str]] = Depends(oauth2_scheme_cookie),
+    tokens: tuple[str | None, str | None] = Depends(oauth2_scheme_cookie),
     session: Session = Depends(get_session),
 ) -> User:
     user, new_access_token, new_refresh_token = get_user_from_tokens(tokens, session)
@@ -261,9 +263,9 @@ def get_authenticated_user(
 # TODO: Maybe instead of an optional function, we have get_account and then
 # get_required_account, which just wraps it?
 def get_optional_user(
-    tokens: tuple[Optional[str], Optional[str]] = Depends(oauth2_scheme_cookie),
+    tokens: tuple[str | None, str | None] = Depends(oauth2_scheme_cookie),
     session: Session = Depends(get_session),
-) -> Optional[User]:
+) -> User | None:
     user, new_access_token, new_refresh_token = get_user_from_tokens(tokens, session)
 
     if user:
@@ -275,7 +277,7 @@ def get_optional_user(
 
 
 def require_unauthenticated_client(
-    user: Optional[User] = Depends(get_optional_user),
+    user: User | None = Depends(get_optional_user),
 ) -> None:
     """
     Dependency that ensures the client is NOT authenticated.
@@ -286,8 +288,8 @@ def require_unauthenticated_client(
 
 
 def require_unauthenticated_unless_invitation_warning(
-    invitation_token: Optional[str] = Query(None),
-    user: Optional[User] = Depends(get_optional_user),
+    invitation_token: str | None = Query(None),
+    user: User | None = Depends(get_optional_user),
     session: Session = Depends(get_session),
 ) -> None:
     """
@@ -325,7 +327,7 @@ def get_verified_account(
 
 def get_account_from_email_verification_token(
     token: str, session: Session
-) -> tuple[Optional[Account], Optional[EmailVerificationToken]]:
+) -> tuple[Account | None, EmailVerificationToken | None]:
     """
     Get account from an email verification token.
 
@@ -336,7 +338,7 @@ def get_account_from_email_verification_token(
         select(Account, EmailVerificationToken).where(
             EmailVerificationToken.token == token,
             EmailVerificationToken.expires_at > datetime.now(UTC),
-            EmailVerificationToken.used == False,  # noqa: E712
+            EmailVerificationToken.used == False,
             EmailVerificationToken.account_id == Account.id,
         )
     ).first()
@@ -350,7 +352,7 @@ def get_account_from_email_verification_token(
 
 def get_account_from_recovery_token(
     token: str, session: Session
-) -> tuple[Optional[Account], Optional[AccountRecoveryToken]]:
+) -> tuple[Account | None, AccountRecoveryToken | None]:
     """
     Get account from an account recovery token.
 
@@ -361,7 +363,7 @@ def get_account_from_recovery_token(
         select(Account, AccountRecoveryToken).where(
             AccountRecoveryToken.token == token,
             AccountRecoveryToken.expires_at > datetime.now(UTC),
-            AccountRecoveryToken.used == False,  # noqa: E712
+            AccountRecoveryToken.used == False,
             AccountRecoveryToken.account_id == Account.id,
         )
     ).first()
@@ -375,7 +377,7 @@ def get_account_from_recovery_token(
 
 def get_account_from_reset_token(
     email: str, token: str, session: Session
-) -> tuple[Optional[Account], Optional[PasswordResetToken]]:
+) -> tuple[Account | None, PasswordResetToken | None]:
     """
     Get account from a password reset token.
 
@@ -392,7 +394,7 @@ def get_account_from_reset_token(
             Account.email == email,
             PasswordResetToken.token == token,
             PasswordResetToken.expires_at > datetime.now(UTC),
-            PasswordResetToken.used == False,  # noqa: E712
+            PasswordResetToken.used == False,
             PasswordResetToken.account_id == Account.id,
         )
     ).first()
@@ -424,7 +426,7 @@ def get_user_with_relations(
     return eager_user
 
 
-async def get_user_from_request(request: Request) -> Optional[User]:
+async def get_user_from_request(request: Request) -> User | None:
     """
     Helper function to get user from request cookies in exception handlers.
     Exception handlers can't use Depends(), so we manually extract tokens and get the user.
@@ -441,9 +443,9 @@ async def get_user_from_request(request: Request) -> Optional[User]:
 
 
 def _get_user_from_request_sync(
-    access_token: Optional[str],
-    refresh_token: Optional[str],
-) -> Optional[User]:
+    access_token: str | None,
+    refresh_token: str | None,
+) -> User | None:
     tokens = (access_token, refresh_token)
 
     # Get a database session

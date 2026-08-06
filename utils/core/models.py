@@ -1,12 +1,14 @@
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
-from logging import getLogger, DEBUG
+from logging import DEBUG, getLogger
+from typing import Optional, Union
 from uuid import uuid4
-from datetime import datetime, UTC, timedelta
-from typing import Optional, List, Union
+
 from pydantic import EmailStr
-from sqlmodel import SQLModel, Field, Relationship, Session, select, col
 from sqlalchemy import Column, LargeBinary, String, UniqueConstraint
 from sqlalchemy.orm import Mapped
+from sqlmodel import Field, Relationship, Session, SQLModel, col, select
+
 from exceptions.http_exceptions import DataIntegrityError
 
 logger = getLogger("uvicorn.error")
@@ -40,7 +42,7 @@ def _expires_at_passed(expires_at: datetime) -> bool:
 class Account(SQLModel, table=True):
     __table_args__ = {"schema": "private"}
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     email: EmailStr = Field(index=True, unique=True)
     hashed_password: str
     created_at: datetime = Field(default_factory=utc_now)
@@ -50,23 +52,23 @@ class Account(SQLModel, table=True):
         back_populates="account",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
-    password_reset_tokens: Mapped[List["PasswordResetToken"]] = Relationship(
+    password_reset_tokens: Mapped[list["PasswordResetToken"]] = Relationship(
         back_populates="account",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
-    emails: Mapped[List["AccountEmail"]] = Relationship(
+    emails: Mapped[list["AccountEmail"]] = Relationship(
         back_populates="account",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
-    email_verification_tokens: Mapped[List["EmailVerificationToken"]] = Relationship(
+    email_verification_tokens: Mapped[list["EmailVerificationToken"]] = Relationship(
         back_populates="account",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
-    refresh_tokens: Mapped[List["RefreshToken"]] = Relationship(
+    refresh_tokens: Mapped[list["RefreshToken"]] = Relationship(
         back_populates="account",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
-    account_recovery_tokens: Mapped[List["AccountRecoveryToken"]] = Relationship(
+    account_recovery_tokens: Mapped[list["AccountRecoveryToken"]] = Relationship(
         back_populates="account",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
@@ -75,15 +77,15 @@ class Account(SQLModel, table=True):
 class PasswordResetToken(SQLModel, table=True):
     __table_args__ = {"schema": "private"}
 
-    id: Optional[int] = Field(default=None, primary_key=True)
-    account_id: Optional[int] = Field(foreign_key="private.account.id")
+    id: int | None = Field(default=None, primary_key=True)
+    account_id: int | None = Field(foreign_key="private.account.id")
     token: str = Field(default_factory=lambda: str(uuid4()), index=True, unique=True)
     expires_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC) + timedelta(hours=1)
     )
     used: bool = Field(default=False)
 
-    account: Mapped[Optional[Account]] = Relationship(
+    account: Mapped[Account | None] = Relationship(
         back_populates="password_reset_tokens"
     )
 
@@ -100,14 +102,14 @@ class AccountEmail(SQLModel, table=True):
         {"schema": "private"},
     )
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     account_id: int = Field(
         foreign_key="private.account.id", ondelete="CASCADE", index=True
     )
     email: str = Field(index=True)
     is_primary: bool = Field(default=False)
     verified: bool = Field(default=False)
-    verified_at: Optional[datetime] = Field(default=None)
+    verified_at: datetime | None = Field(default=None)
     created_at: datetime = Field(default_factory=utc_now)
 
     account: Mapped[Optional["Account"]] = Relationship(back_populates="emails")
@@ -116,8 +118,8 @@ class AccountEmail(SQLModel, table=True):
 class EmailVerificationToken(SQLModel, table=True):
     __table_args__ = {"schema": "private"}
 
-    id: Optional[int] = Field(default=None, primary_key=True)
-    account_id: Optional[int] = Field(foreign_key="private.account.id")
+    id: int | None = Field(default=None, primary_key=True)
+    account_id: int | None = Field(foreign_key="private.account.id")
     token: str = Field(default_factory=lambda: str(uuid4()), index=True, unique=True)
     new_email: str
     expires_at: datetime = Field(
@@ -136,8 +138,8 @@ class EmailVerificationToken(SQLModel, table=True):
 class AccountRecoveryToken(SQLModel, table=True):
     __table_args__ = {"schema": "private"}
 
-    id: Optional[int] = Field(default=None, primary_key=True)
-    account_id: Optional[int] = Field(foreign_key="private.account.id")
+    id: int | None = Field(default=None, primary_key=True)
+    account_id: int | None = Field(foreign_key="private.account.id")
     token: str = Field(default_factory=lambda: str(uuid4()), index=True, unique=True)
     email: str  # the email address to restore
     expires_at: datetime = Field(
@@ -145,7 +147,7 @@ class AccountRecoveryToken(SQLModel, table=True):
     )
     used: bool = Field(default=False)
 
-    account: Mapped[Optional[Account]] = Relationship(
+    account: Mapped[Account | None] = Relationship(
         back_populates="account_recovery_tokens"
     )
 
@@ -156,14 +158,14 @@ class AccountRecoveryToken(SQLModel, table=True):
 class RefreshToken(SQLModel, table=True):
     __table_args__ = {"schema": "private"}
 
-    id: Optional[int] = Field(default=None, primary_key=True)
-    account_id: Optional[int] = Field(foreign_key="private.account.id", index=True)
+    id: int | None = Field(default=None, primary_key=True)
+    account_id: int | None = Field(foreign_key="private.account.id", index=True)
     jti: str = Field(default_factory=lambda: str(uuid4()), index=True, unique=True)
     expires_at: datetime
     revoked: bool = Field(default=False)
     created_at: datetime = Field(default_factory=utc_now)
 
-    account: Mapped[Optional[Account]] = Relationship(back_populates="refresh_tokens")
+    account: Mapped[Account | None] = Relationship(back_populates="refresh_tokens")
 
     def is_expired(self) -> bool:
         return _expires_at_passed(self.expires_at)
@@ -174,7 +176,7 @@ class RateLimitAttempt(SQLModel, table=True):
 
     __table_args__ = {"schema": "private"}
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     scope: str = Field(index=True)
     key: str = Field(index=True)
     attempted_at: datetime = Field(default_factory=utc_now, index=True)
@@ -189,17 +191,17 @@ class UserRoleLink(SQLModel, table=True):
     between users and roles.
     """
 
-    user_id: Optional[int] = Field(foreign_key="user.id", primary_key=True)
-    role_id: Optional[int] = Field(foreign_key="role.id", primary_key=True)
+    user_id: int | None = Field(foreign_key="user.id", primary_key=True)
+    role_id: int | None = Field(foreign_key="role.id", primary_key=True)
 
 
 class RolePermissionLink(SQLModel, table=True):
-    role_id: Optional[int] = Field(foreign_key="role.id", primary_key=True)
-    permission_id: Optional[int] = Field(foreign_key="permission.id", primary_key=True)
+    role_id: int | None = Field(foreign_key="role.id", primary_key=True)
+    permission_id: int | None = Field(foreign_key="permission.id", primary_key=True)
 
 
 class UserBase(SQLModel):
-    name: Optional[str] = None
+    name: str | None = None
     comm_opt_in: bool = Field(default=False)
     comm_updates: bool = Field(default=False)
     comm_marketing: bool = Field(default=False)
@@ -208,7 +210,7 @@ class UserBase(SQLModel):
 class UserAvatar(SQLModel, table=True):
     __tablename__ = "useravatar"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(
         foreign_key="user.id", ondelete="CASCADE", unique=True, index=True
     )
@@ -221,25 +223,25 @@ class UserAvatar(SQLModel, table=True):
 # TODO: Prevent deleting a user who is sole owner of an organization
 # TODO: Automate change of updated_at when user is updated
 class User(UserBase, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
 
-    account_id: Optional[int] = Field(foreign_key="private.account.id", unique=True)
-    account: Mapped[Optional[Account]] = Relationship(back_populates="user")
+    account_id: int | None = Field(foreign_key="private.account.id", unique=True)
+    account: Mapped[Account | None] = Relationship(back_populates="user")
     avatar: Mapped[Optional["UserAvatar"]] = Relationship(
         back_populates="user",
         sa_relationship_kwargs={"cascade": "all, delete-orphan", "uselist": False},
     )
-    roles: Mapped[List["Role"]] = Relationship(
+    roles: Mapped[list["Role"]] = Relationship(
         back_populates="users", link_model=UserRoleLink
     )
-    accepted_invitations: Mapped[List["Invitation"]] = Relationship(
+    accepted_invitations: Mapped[list["Invitation"]] = Relationship(
         back_populates="accepted_by"
     )
 
     @property
-    def organizations(self) -> List["Organization"]:
+    def organizations(self) -> list["Organization"]:
         """
         Returns all organizations the user belongs to via their roles.
         """
@@ -258,7 +260,7 @@ class User(UserBase, table=True):
         Check if the user has a specific permission for a given organization.
         Accepts any StrEnum (ValidPermissions, AppPermissions, etc.).
         """
-        organization_id: Optional[int] = None
+        organization_id: int | None = None
         if isinstance(organization, Organization):
             organization_id = organization.id
         else:
@@ -274,22 +276,22 @@ class User(UserBase, table=True):
 
 
 class Organization(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     name: str
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
 
-    roles: Mapped[List["Role"]] = Relationship(
+    roles: Mapped[list["Role"]] = Relationship(
         back_populates="organization",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
-    invitations: Mapped[List["Invitation"]] = Relationship(
+    invitations: Mapped[list["Invitation"]] = Relationship(
         back_populates="organization",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
 
     @property
-    def users(self) -> List["User"]:
+    def users(self) -> list["User"]:
         """
         Returns all users in the organization via their roles.
         """
@@ -316,20 +318,20 @@ class Role(SQLModel, table=True):
         updated_at: Timestamp when the role was last updated.
     """
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     name: str
     organization_id: int = Field(foreign_key="organization.id")
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
 
     organization: Mapped[Organization] = Relationship(back_populates="roles")
-    users: Mapped[List[User]] = Relationship(
+    users: Mapped[list[User]] = Relationship(
         back_populates="roles", link_model=UserRoleLink
     )
-    permissions: Mapped[List["Permission"]] = Relationship(
+    permissions: Mapped[list["Permission"]] = Relationship(
         back_populates="roles", link_model=RolePermissionLink
     )
-    invitations: Mapped[List["Invitation"]] = Relationship(
+    invitations: Mapped[list["Invitation"]] = Relationship(
         back_populates="role", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
 
@@ -345,12 +347,12 @@ class Permission(SQLModel, table=True):
     during database setup.
     """
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     name: str = Field(sa_column=Column(String, unique=True))
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
 
-    roles: Mapped[List[Role]] = Relationship(
+    roles: Mapped[list[Role]] = Relationship(
         back_populates="permissions", link_model=RolePermissionLink
     )
 
@@ -359,7 +361,7 @@ class Permission(SQLModel, table=True):
 
 
 class Invitation(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     organization_id: int = Field(foreign_key="organization.id", index=True)
     role_id: int = Field(foreign_key="role.id")
     invitee_email: EmailStr = Field(index=True)
@@ -368,8 +370,8 @@ class Invitation(SQLModel, table=True):
     expires_at: datetime = Field(default_factory=lambda: utc_now() + timedelta(days=7))
     created_at: datetime = Field(default_factory=utc_now)
     used: bool = Field(default=False, index=True)
-    accepted_at: Optional[datetime] = Field(default=None)
-    accepted_by_user_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    accepted_at: datetime | None = Field(default=None)
+    accepted_by_user_id: int | None = Field(default=None, foreign_key="user.id")
 
     organization: "Organization" = Relationship(back_populates="invitations")
     role: "Role" = Relationship(back_populates="invitations")

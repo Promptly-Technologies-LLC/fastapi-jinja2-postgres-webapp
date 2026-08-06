@@ -1,11 +1,11 @@
-from utils.core.models import Organization, Role, Permission, User
-from utils.core.enums import ValidPermissions
-from utils.core.db import create_default_roles
-from main import app
-from sqlmodel import select
-from tests.conftest import SetupError
 from fastapi.testclient import TestClient
-from sqlmodel import Session
+from sqlmodel import Session, select
+
+from main import app
+from tests.conftest import SetupError
+from utils.core.db import create_default_roles
+from utils.core.enums import ValidPermissions
+from utils.core.models import Organization, Permission, Role, User
 
 
 def test_create_organization_success(auth_client, session, test_user):

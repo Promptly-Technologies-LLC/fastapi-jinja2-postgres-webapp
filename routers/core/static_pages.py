@@ -1,6 +1,6 @@
-from typing import Optional
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.templating import Jinja2Templates
+
 from utils.core.dependencies import get_optional_user
 from utils.core.models import User
 
@@ -17,7 +17,7 @@ VALID_PAGES = {
 
 @router.get("/{page_name}", name="read_static_page")
 def read_static_page(
-    page_name: str, request: Request, user: Optional[User] = Depends(get_optional_user)
+    page_name: str, request: Request, user: User | None = Depends(get_optional_user)
 ):
     """
     Generic handler for static pages.

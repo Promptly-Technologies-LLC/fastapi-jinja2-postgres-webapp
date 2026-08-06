@@ -1,19 +1,19 @@
 import os
-from logging import getLogger, DEBUG
-from typing import Literal, Optional
-import resend
-from sqlmodel import Session, select
-from jinja2.environment import Template
-from fastapi.templating import Jinja2Templates
+from logging import DEBUG, getLogger
+from typing import Literal
 
-from utils.core.models import utc_now, Invitation, Organization, User
+import resend
+from fastapi.templating import Jinja2Templates
+from jinja2.environment import Template
+from sqlmodel import Session, select
+
 from exceptions.exceptions import EmailSendFailedError
 from exceptions.http_exceptions import (
     DataIntegrityError,
     ExpiredInvitationTokenError,
     InvalidInvitationTokenError,
 )
-
+from utils.core.models import Invitation, Organization, User, utc_now
 
 # Setup logging
 logger = getLogger("uvicorn.error")
@@ -41,7 +41,7 @@ InvitationTokenWarning = Literal["expired", "invalid"]
 
 def get_invitation_token_warning(
     session: Session, token: str
-) -> Optional[InvitationTokenWarning]:
+) -> InvitationTokenWarning | None:
     """Return a warning key for register/login UI, or None if the token is active."""
     invitation = session.exec(
         select(Invitation).where(Invitation.token == token)
@@ -121,9 +121,8 @@ def send_invitation_email(invitation: Invitation, session: Session) -> None:
         )
 
     except Exception as e:
-        logger.error(
-            f"Failed to send organization invitation email to {invitation.invitee_email}: {e}",
-            exc_info=True,
+        logger.exception(
+            f"Failed to send organization invitation email to {invitation.invitee_email}"
         )
         raise EmailSendFailedError() from e
 

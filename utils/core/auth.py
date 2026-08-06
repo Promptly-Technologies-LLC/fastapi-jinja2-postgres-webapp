@@ -1,25 +1,27 @@
 # utils.core.py
+import logging
 import os
 import re
-import jwt
 import uuid
-import logging
-import resend
-from sqlmodel import Session, select
-from bcrypt import gensalt, hashpw, checkpw
 from datetime import UTC, datetime, timedelta
-from typing import Literal, Optional
-from jinja2.environment import Template
-from fastapi.templating import Jinja2Templates
+from typing import Literal
+
+import jwt
+import resend
+from bcrypt import checkpw, gensalt, hashpw
 from fastapi import Cookie
+from fastapi.templating import Jinja2Templates
+from jinja2.environment import Template
+from sqlmodel import Session, select
 from starlette.responses import Response
+
 from utils.core.db import get_engine
 from utils.core.models import (
+    Account,
     AccountRecoveryToken,
     EmailVerificationToken,
     PasswordResetToken,
     RefreshToken,
-    Account,
 )
 
 logger = logging.getLogger(__name__)
@@ -94,13 +96,13 @@ HTML_PASSWORD_PATTERN = "".join(
 
 # Define the oauth2 scheme to get the token from the cookie
 def oauth2_scheme_cookie(
-    access_token: Optional[str] = Cookie(None, alias=ACCESS_TOKEN_COOKIE_NAME),
-    refresh_token: Optional[str] = Cookie(None, alias=REFRESH_TOKEN_COOKIE_NAME),
-) -> tuple[Optional[str], Optional[str]]:
+    access_token: str | None = Cookie(None, alias=ACCESS_TOKEN_COOKIE_NAME),
+    refresh_token: str | None = Cookie(None, alias=REFRESH_TOKEN_COOKIE_NAME),
+) -> tuple[str | None, str | None]:
     return access_token, refresh_token
 
 
-def auth_cookie_max_ages(*, persistent: bool) -> tuple[Optional[int], Optional[int]]:
+def auth_cookie_max_ages(*, persistent: bool) -> tuple[int | None, int | None]:
     """Return (access_max_age, refresh_max_age) in seconds; None means session cookie."""
     if not persistent:
         return None, None
@@ -169,7 +171,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return checkpw(password_bytes, hashed_bytes)
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
     to_encode.update({"type": "access"})
     if expires_delta:
@@ -182,7 +184,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 
 def create_refresh_token(
-    data: dict, jti: str, expires_delta: Optional[timedelta] = None
+    data: dict, jti: str, expires_delta: timedelta | None = None
 ) -> str:
     to_encode = data.copy()
     to_encode.update({"type": "refresh", "jti": jti})
@@ -226,7 +228,7 @@ def revoke_all_refresh_tokens(account_id: int, session: Session) -> None:
     tokens = session.exec(
         select(RefreshToken).where(
             RefreshToken.account_id == account_id,
-            RefreshToken.revoked == False,  # noqa: E712
+            RefreshToken.revoked == False,
         )
     ).all()
     for token in tokens:
@@ -244,7 +246,7 @@ def cleanup_expired_refresh_tokens(session: Session) -> int:
     return count
 
 
-def validate_token(token: str, token_type: str = "access") -> Optional[dict]:
+def validate_token(token: str, token_type: str = "access") -> dict | None:
     try:
         decoded_token = jwt.decode(
             token, os.getenv("SECRET_KEY"), algorithms=[ALGORITHM]
@@ -255,9 +257,12 @@ def validate_token(token: str, token_type: str = "access") -> Optional[dict]:
             return None
 
         # Optional: Add additional checks specific to each token type
-        if token_type == "refresh" and "refresh" not in decoded_token.get("type", ""):
-            return None
-        elif token_type == "access" and "access" not in decoded_token.get("type", ""):
+        if (
+            token_type == "refresh"
+            and "refresh" not in decoded_token.get("type", "")
+            or token_type == "access"
+            and "access" not in decoded_token.get("type", "")
+        ):
             return None
 
         return decoded_token
@@ -282,7 +287,7 @@ def generate_password_reset_url(email: str, token: str) -> str:
 
 def send_reset_email(email: str, session: Session) -> None:
     # Check for an existing unexpired token
-    account: Optional[Account] = session.exec(
+    account: Account | None = session.exec(
         select(Account).where(Account.email == email)
     ).first()
 
@@ -291,7 +296,7 @@ def send_reset_email(email: str, session: Session) -> None:
             select(PasswordResetToken).where(
                 PasswordResetToken.account_id == account.id,
                 PasswordResetToken.expires_at > datetime.now(UTC),
-                PasswordResetToken.used == False,  # noqa: E712 - SQL expression for boolean false
+                PasswordResetToken.used == False,
             )
         ).first()
 
@@ -325,8 +330,8 @@ def send_reset_email(email: str, session: Session) -> None:
             logger.debug(f"Password reset email sent: {sent_email.get('id')}")
 
             session.commit()
-        except Exception as e:
-            logger.error(f"Failed to send password reset email: {e}")
+        except Exception:
+            logger.exception("Failed to send password reset email")
             session.rollback()
     else:
         logger.debug("No account found with the provided email.")
@@ -366,7 +371,7 @@ def send_email_verification(account_id: int, new_email: str, session: Session) -
             EmailVerificationToken.account_id == account_id,
             EmailVerificationToken.new_email == new_email,
             EmailVerificationToken.expires_at > datetime.now(UTC),
-            EmailVerificationToken.used == False,  # noqa: E712
+            EmailVerificationToken.used == False,
         )
     ).first()
 
@@ -400,8 +405,8 @@ def send_email_verification(account_id: int, new_email: str, session: Session) -
 
         session.commit()
         return True
-    except Exception as e:
-        logger.error(f"Failed to send email verification: {e}")
+    except Exception:
+        logger.exception("Failed to send email verification")
         session.rollback()
         return False
 
@@ -422,8 +427,8 @@ def send_email_verified_notification(primary_email: str, new_email: str) -> None
 
         sent_email = resend.Emails.send(params)  # ty: ignore[invalid-argument-type]
         logger.debug(f"Email verified notification sent: {sent_email.get('id')}")
-    except Exception as e:
-        logger.error(f"Failed to send email verified notification: {e}")
+    except Exception:
+        logger.exception("Failed to send email verified notification")
 
 
 def send_primary_email_changed_notification(
@@ -450,8 +455,8 @@ def send_primary_email_changed_notification(
 
         sent_email = resend.Emails.send(params)  # ty: ignore[invalid-argument-type]
         logger.debug(f"Primary email changed notification sent: {sent_email.get('id')}")
-    except Exception as e:
-        logger.error(f"Failed to send primary email changed notification: {e}")
+    except Exception:
+        logger.exception("Failed to send primary email changed notification")
 
 
 def send_email_removed_notification(removed_email: str, recovery_url: str) -> None:
@@ -475,8 +480,8 @@ def send_email_removed_notification(removed_email: str, recovery_url: str) -> No
 
         sent_email = resend.Emails.send(params)  # ty: ignore[invalid-argument-type]
         logger.debug(f"Email removed notification sent: {sent_email.get('id')}")
-    except Exception as e:
-        logger.error(f"Failed to send email removed notification: {e}")
+    except Exception:
+        logger.exception("Failed to send email removed notification")
 
 
 # --- Account recovery functions ---
@@ -499,7 +504,7 @@ def create_recovery_token(account_id: int, email: str, session: Session) -> str:
             AccountRecoveryToken.account_id == account_id,
             AccountRecoveryToken.email == email,
             AccountRecoveryToken.expires_at > datetime.now(UTC),
-            AccountRecoveryToken.used == False,  # noqa: E712
+            AccountRecoveryToken.used == False,
         )
     ).first()
 

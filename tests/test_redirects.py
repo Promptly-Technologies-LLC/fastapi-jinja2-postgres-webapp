@@ -1,5 +1,7 @@
 """Static redirect lint and runtime POST redirect chain smoke tests (Phase 4)."""
 
+from pathlib import Path
+
 import pytest
 
 from main import app
@@ -8,7 +10,6 @@ from tests.frontend.redirect_analysis import (
     extract_redirect_sites,
     validate_redirect_sites,
 )
-from pathlib import Path
 
 
 def _url(name: str, **path_params) -> str:

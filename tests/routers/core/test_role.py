@@ -1,13 +1,15 @@
 # test_role.py
 
-import pytest
-from tests.conftest import SetupError
-from utils.core.models import Role, Permission, User
-from utils.core.enums import ValidPermissions
-from utils.app.enums import AppPermissions
-from sqlmodel import Session, select, col
 import re
+
+import pytest
+from sqlmodel import Session, col, select
+
 from main import app
+from tests.conftest import SetupError
+from utils.app.enums import AppPermissions
+from utils.core.enums import ValidPermissions
+from utils.core.models import Permission, Role, User
 
 
 @pytest.fixture
